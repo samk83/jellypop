@@ -1,0 +1,419 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<title>젤리마을 대소동 스토리보드</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Jua&family=Gowun+Dodum&display=swap">
+<style>
+/* 레이아웃: 레퍼런스 인포그래픽처럼 라벤더 바탕 위 막(Act)별 띠, 컷마다 "휴대폰 화면 + 연출 메모" 카드 */
+:root{
+  color-scheme:light;
+  --bg:#f3ecff;
+  --panel:#ffffff;
+  --ink:#2b1650;
+  --ink-soft:#5e4a86;
+  --line:#e2d4fb;
+  --brand:#7b3fe4;
+  --brand-deep:#4b1fa8;
+  --pink:#ff5fa8;
+  --star:#ffc93c;
+  --night:#24124a;
+  --font-display:"Jua","Gowun Dodum",system-ui,sans-serif;
+  --font-body:"Gowun Dodum","Apple SD Gothic Neo","Malgun Gothic",system-ui,sans-serif;
+  --radius:18px;
+}
+*{box-sizing:border-box}
+html{-webkit-text-size-adjust:100%}
+body{margin:0;background:var(--bg);color:var(--ink);font-family:var(--font-body);font-size:15px;line-height:1.6}
+.wrap{max-width:1180px;margin:0 auto;padding-block:28px 64px;
+  padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px))}
+h1,h2,h3{font-family:var(--font-display);font-weight:400;text-wrap:balance;margin:0}
+
+/* 머리말 */
+.hero{display:grid;grid-template-columns:minmax(0,1.1fr) minmax(0,1fr);gap:28px;align-items:center;
+  background:radial-gradient(120% 140% at 0% 0%,#5a2aa8,var(--night) 70%);color:#fff;border-radius:28px;padding:28px;overflow:hidden}
+.hero .eyebrow{font-size:13px;letter-spacing:.12em;color:#e3d2ff}
+.logo{font-family:var(--font-display);font-size:clamp(46px,8vw,84px);line-height:.95;margin:6px 0 4px;
+  background:linear-gradient(180deg,#fff 0%,#ffd6f0 40%,#ff7fc0 75%,#ffb347);-webkit-background-clip:text;background-clip:text;color:transparent;
+  filter:drop-shadow(0 4px 0 #6a2bb8) drop-shadow(0 10px 24px rgba(0,0,0,.35))}
+.subtitle{font-family:var(--font-display);font-size:26px;color:var(--star)}
+.logline{margin:14px 0 0;color:#efe6ff;max-width:46ch}
+.hero-refs{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+.hero-refs img{width:100%;border-radius:14px;display:block;aspect-ratio:1;object-fit:cover;background:#fff}
+.hero-refs figure{margin:0}
+.hero-refs figcaption{font-size:12px;color:#d9c8ff;margin-top:4px}
+
+.notice{margin:22px 0 0;background:var(--panel);border:2px solid var(--pink);border-radius:var(--radius);padding:16px 18px;display:grid;gap:4px}
+.notice b{font-family:var(--font-display);font-weight:400;font-size:19px;color:var(--pink)}
+
+/* 섹션 띠 */
+.section{margin-top:40px}
+.band{display:flex;align-items:baseline;gap:12px;flex-wrap:wrap;margin-bottom:14px}
+.band h2{font-size:30px;color:var(--brand-deep);display:flex;align-items:center;gap:8px}
+.band h2 svg{width:26px;height:26px;flex:none}
+.band p{margin:0;color:var(--ink-soft)}
+
+/* 등장인물 */
+.cast{display:grid;grid-template-columns:repeat(auto-fill,minmax(min(100%,150px),1fr));gap:14px}
+.who{background:var(--panel);border-radius:var(--radius);overflow:hidden;border:1px solid var(--line);display:flex;flex-direction:column}
+.who img{width:100%;aspect-ratio:4/3;object-fit:cover;display:block;background:#fff}
+.who img.contain{object-fit:contain;padding:10px}
+.who div{padding:12px 14px 16px}
+.who h3{font-size:22px}
+.who .role{display:inline-block;font-size:12px;border-radius:99px;padding:1px 10px;margin:2px 0 6px;background:#efe4ff;color:var(--brand-deep)}
+.who .role.bad{background:#2b1650;color:#ffb3d4}
+.who p{margin:0;font-size:14px;color:var(--ink-soft)}
+.proposed{font-size:11px;color:var(--pink);margin-left:4px}
+
+/* 막 */
+.act{margin-top:34px}
+.act-head{display:flex;align-items:center;gap:12px;margin-bottom:14px;flex-wrap:wrap}
+.act-no{font-family:var(--font-display);background:var(--brand);color:#fff;border-radius:99px;padding:4px 16px;font-size:18px}
+.act-head h3{font-size:26px}
+.act-head p{margin:0;color:var(--ink-soft);flex-basis:100%}
+.shots{display:grid;grid-template-columns:repeat(auto-fill,minmax(min(100%,540px),1fr));gap:16px}
+
+.shot{background:var(--panel);border-radius:var(--radius);border:1px solid var(--line);padding:14px;display:grid;grid-template-columns:200px minmax(0,1fr);gap:16px}
+.shot-id{grid-column:1/-1;display:flex;align-items:center;gap:10px;margin-bottom:-4px}
+.shot-id .num{font-family:var(--font-display);width:46px;height:30px;border-radius:99px;background:var(--brand-deep);color:#fff;display:grid;place-items:center;font-size:16px;flex:none}
+.shot-id h4{margin:0;font-family:var(--font-display);font-weight:400;font-size:21px}
+.shot-id .kind{margin-left:auto;font-size:12px;color:var(--ink-soft);border:1px solid var(--line);border-radius:99px;padding:1px 10px;white-space:nowrap}
+
+/* 휴대폰 화면 목업 */
+.phone{position:relative;width:200px;aspect-ratio:9/16;border-radius:24px;overflow:hidden;background:var(--night);
+  box-shadow:0 0 0 5px #1a0c36,0 10px 24px rgba(43,22,80,.25);align-self:start;color:#fff;isolation:isolate}
+.phone .bg{position:absolute;inset:0;width:100%;height:100%;object-fit:cover;z-index:-1}
+.phone .bg.blur{filter:blur(3px) brightness(.7);transform:scale(1.08)}
+.phone .dim{position:absolute;inset:0;background:linear-gradient(180deg,rgba(20,8,48,.1),rgba(20,8,48,.55));z-index:-1}
+.cap{position:absolute;left:10px;right:10px;bottom:12px;background:rgba(24,10,56,.78);border-radius:12px;padding:7px 9px;font-size:11.5px;line-height:1.45}
+.bubble{position:absolute;background:#fff;color:var(--ink);border-radius:14px;padding:6px 9px;font-size:11.5px;line-height:1.4;box-shadow:0 3px 0 rgba(43,22,80,.2);max-width:78%}
+.bubble .nm{display:block;font-family:var(--font-display);font-size:11px;color:var(--pink)}
+.bubble.dark{background:#1b0d38;color:#ffd1e6;border:1.5px solid #ff4f8f}
+.bubble.dark .nm{color:#ff8ab8}
+.fx{position:absolute;font-family:var(--font-display);text-shadow:0 2px 0 #6a2bb8,0 4px 10px rgba(0,0,0,.5)}
+.pill{position:absolute;left:50%;transform:translateX(-50%);font-family:var(--font-display);background:var(--pink);color:#fff;border-radius:99px;padding:6px 18px;font-size:14px;box-shadow:0 4px 0 #b8246b;white-space:nowrap}
+.hud{position:absolute;top:8px;left:8px;right:8px;display:flex;gap:5px;font-size:9px;line-height:1.1}
+.hud span{background:rgba(255,255,255,.18);backdrop-filter:blur(4px);border-radius:8px;padding:4px 6px}
+.hud b{display:block;font-size:12px}
+.finger{position:absolute;width:30px;height:30px;border-radius:50%;background:rgba(255,255,255,.85);box-shadow:0 0 0 6px rgba(255,255,255,.3)}
+.aim{position:absolute;border-left:3px dotted #ffd6ea}
+.panel-mini{position:absolute;left:14px;right:14px;top:50%;transform:translateY(-50%);background:rgba(255,255,255,.95);color:var(--ink);border-radius:16px;padding:12px;text-align:center}
+.panel-mini .stars{color:var(--star);font-size:26px;letter-spacing:2px;line-height:1}
+.panel-mini h5{margin:2px 0 4px;font-family:var(--font-display);font-weight:400;font-size:18px}
+.panel-mini p{margin:0;font-size:11px;color:var(--ink-soft)}
+.map{position:absolute;inset:0;display:flex;flex-direction:column-reverse;gap:6px;padding:48px 10px 10px;background:linear-gradient(#2b1650,#5a2aa8)}
+.map .w{position:relative;flex:1;border-radius:10px;overflow:hidden;border:2px solid rgba(255,255,255,.6)}
+.map .w img{width:100%;height:100%;object-fit:cover;display:block}
+.map .w span{position:absolute;left:6px;bottom:4px;font-family:var(--font-display);font-size:11px;background:rgba(24,10,56,.75);border-radius:99px;padding:0 8px}
+.map .w.locked img{filter:grayscale(1) brightness(.5)}
+.map .w.locked::after{content:"잠김";position:absolute;right:6px;top:4px;font-size:10px;background:#000a;border-radius:99px;padding:0 6px}
+.map .w.here{border-color:var(--star);box-shadow:0 0 0 2px var(--star)}
+.boss-hp{position:absolute;top:10px;left:10px;right:10px;font-size:10px}
+.boss-hp i{display:block;height:8px;border-radius:99px;background:linear-gradient(90deg,#ff4f8f 70%,rgba(255,255,255,.25) 70%);margin-top:3px}
+.inset{position:absolute;width:86px;height:86px;border-radius:50%;object-fit:cover;border:3px solid #ff4f8f;box-shadow:0 0 18px #ff4f8f}
+
+/* 연출 메모 */
+.notes{display:grid;gap:8px;align-content:start;min-width:0}
+.notes dl{margin:0;display:grid;grid-template-columns:52px minmax(0,1fr);gap:4px 10px;font-size:14px}
+.notes dt{font-family:var(--font-display);color:var(--brand);white-space:nowrap}
+.notes dd{margin:0;color:var(--ink)}
+.notes .line{font-family:var(--font-display);font-size:16px;color:var(--brand-deep)}
+
+/* 월드 표 */
+.table-wrap{overflow-x:auto;background:var(--panel);border-radius:var(--radius);border:1px solid var(--line)}
+table{border-collapse:collapse;width:100%;min-width:640px;font-size:14px}
+th,td{text-align:left;padding:10px 12px;border-bottom:1px solid var(--line);vertical-align:top}
+th{font-family:var(--font-display);font-weight:400;color:var(--brand-deep);font-size:16px;background:#faf6ff}
+td img{width:96px;border-radius:8px;display:block}
+tr:last-child td{border-bottom:0}
+
+.decide{display:grid;grid-template-columns:repeat(auto-fill,minmax(min(100%,300px),1fr));gap:12px}
+.decide div{background:var(--panel);border-radius:var(--radius);border:1px solid var(--line);padding:14px 16px}
+.decide h3{font-size:19px;color:var(--brand-deep)}
+.decide p{margin:4px 0 0;color:var(--ink-soft);font-size:14px}
+.decide .rec{color:var(--pink);font-family:var(--font-display)}
+footer{margin-top:40px;color:var(--ink-soft);font-size:13px}
+
+@media (max-width:620px){
+  .hero{grid-template-columns:1fr;padding:22px}
+  .shot{grid-template-columns:1fr}
+  .phone{justify-self:center;width:220px}
+}
+@media (prefers-reduced-motion:no-preference){
+  .phone .bg{transition:transform .6s ease}
+  .shot:hover .phone .bg:not(.blur){transform:scale(1.04)}
+}
+</style>
+</head>
+<body>
+<div class="wrap">
+
+<header class="hero">
+  <div>
+    <div class="eyebrow">JELLY POP! · 스토리보드 v0.1 · 2026-10-20</div>
+    <div class="logo">JELLY POP!</div>
+    <div class="subtitle">젤리마을 대소동</div>
+    <p class="logline">장난꾸러기 악당 노놈이 마법 거품으로 젤리 친구들을 납치했어요. 혼자 남은 영웅 젤리가 거품 대포를 들고 다섯 디저트 월드를 지나며 친구들을 구해, 다시 웃음 가득한 젤리마을로 돌아가는 이야기예요.</p>
+  </div>
+  <div class="hero-refs">
+    <figure><img src="img/ref-hero.jpg" alt="분홍색 강아지 귀 영웅 젤리 레퍼런스"><figcaption>영웅 젤리 레퍼런스</figcaption></figure>
+    <figure><img src="img/ref-nomnom.jpg" alt="보라색 악당 노놈과 부하들 레퍼런스"><figcaption>노놈 레퍼런스</figcaption></figure>
+  </div>
+</header>
+
+<div class="notice">
+  <b>게임 방식이 바뀌어요</b>
+  <span>올려주신 플레이 화면은 <strong>버블 슈터</strong>예요. 아래 대포로 젤리를 쏘아 같은 색 3개 이상을 붙이면 터지는 방식이죠. 지금 만들어 둔 v0.1(판의 젤리를 톡 눌러 터뜨리기)과 달라서, 이 스토리보드는 버블 슈터를 기준으로 그렸어요. 스토리보드가 확정되면 게임을 이 방식으로 다시 만들 거예요.</span>
+</div>
+
+<!-- 등장인물 -->
+<section class="section">
+  <div class="band">
+    <h2><svg viewBox="0 0 24 24" aria-hidden="true"><path fill="#ffc93c" d="M12 2l2.9 6.6 7.1.6-5.4 4.7 1.6 7L12 17.3 5.8 21l1.6-7L2 9.2l7.1-.6z"/></svg>등장인물</h2>
+    <p>이름에 <span class="proposed">제안</span>이 붙은 건 제가 지어 본 이름이라 바꾸셔도 돼요.</p>
+  </div>
+  <div class="cast">
+    <article class="who"><img src="img/ref-hero.jpg" alt="영웅 젤리"><div>
+      <h3>말랑이<span class="proposed">제안</span></h3><span class="role">주인공 · 영웅 젤리</span>
+      <p>강아지 귀가 달린 분홍 젤리. 겁은 많지만 친구 일이라면 제일 먼저 뛰어나가요. 플레이 화면 아래에서 거품 대포를 쏴요.</p></div></article>
+    <article class="who"><img src="img/ref-nomnom.jpg" alt="노놈"><div>
+      <h3>노놈 (Mr. Nom Nom)</h3><span class="role bad">악당</span>
+      <p>"말랑한 건 전부 내 디저트!" 마법 거품으로 젤리를 가둬 성으로 데려가는 장난꾸러기. 부하 꼬마 놈놈들을 거느려요.</p></div></article>
+    <article class="who"><img class="contain" src="img/char-green-bear.jpg" alt="초록 곰 젤리"><div>
+      <h3>곰찡<span class="proposed">제안</span></h3><span class="role">구출할 친구 · 시럽 숲</span>
+      <p>말랑이의 단짝인 라임 곰젤리. 시럽 숲 보스를 깨면 구출돼 지도에서 길을 알려 줘요.</p></div></article>
+    <article class="who"><img class="contain" src="img/char-pink-jelly.jpg" alt="분홍 젤리"><div>
+      <h3>몽실<span class="proposed">제안</span></h3><span class="role">구출할 친구 · 젤리마을</span>
+      <p>마을의 막내 딸기 젤리. 튜토리얼에서 처음 구하는 친구라, 구출 장면을 처음 보여 주는 역할을 해요.</p></div></article>
+    <article class="who"><img src="img/ref-friends.jpg" alt="다섯 색 젤리 친구들"><div>
+      <h3>젤리 친구들</h3><span class="role">대포 탄 · 구출 대상</span>
+      <p>딸기·포도·레몬·라임·소다·복숭아 색 친구들. 게임 속 거품 색이 곧 친구들 색이에요.</p></div></article>
+  </div>
+</section>
+
+<!-- 스토리보드 -->
+<section class="section">
+  <div class="band">
+    <h2><svg viewBox="0 0 24 24" aria-hidden="true"><path fill="#ffc93c" d="M12 2l2.9 6.6 7.1.6-5.4 4.7 1.6 7L12 17.3 5.8 21l1.6-7L2 9.2l7.1-.6z"/></svg>스토리보드</h2>
+    <p>3막 12컷. 휴대폰 화면은 레퍼런스 그림 위에 자막·대사·버튼 위치를 올린 배치안이에요.</p>
+  </div>
+
+  <!-- 1막 -->
+  <div class="act">
+    <div class="act-head"><span class="act-no">1막</span><h3>프롤로그 · 사라진 친구들</h3>
+      <p>처음 실행할 때 한 번 나오는 짧은 컷신이에요. 화면을 누르면 다음 컷, 오른쪽 위 "건너뛰기"로 바로 넘길 수 있어요.</p></div>
+    <div class="shots">
+
+      <article class="shot">
+        <div class="shot-id"><span class="num">S01</span><h4>평화로운 젤리마을</h4><span class="kind">컷신 · 4초</span></div>
+        <div class="phone"><img class="bg" src="img/ref-village.jpg" alt="젤리마을 풍경"><div class="dim"></div>
+          <div class="cap">말랑말랑한 젤리들이 사는 행복한 젤리마을. 오늘도 모두 신나게 놀아요.</div></div>
+        <div class="notes"><dl>
+          <dt>화면</dt><dd>폭포와 젤리 집이 있는 마을. 친구들이 통통 뛰며 놀아요.</dd>
+          <dt>연출</dt><dd>카메라가 왼쪽에서 오른쪽으로 천천히 이동. 젤리들이 순서대로 점프.</dd>
+          <dt>소리</dt><dd>밝은 오르골 배경음, 통통 튀는 소리.</dd>
+        </dl></div>
+      </article>
+
+      <article class="shot">
+        <div class="shot-id"><span class="num">S02</span><h4>노놈의 습격</h4><span class="kind">컷신 · 5초</span></div>
+        <div class="phone"><img class="bg" src="img/ref-attack.jpg" alt="노놈의 습격"><div class="dim"></div>
+          <div class="bubble dark" style="left:10px;top:16px"><span class="nm">노놈</span>냠냠! 말랑한 젤리는 전부 내 디저트야!</div>
+          <div class="cap">하늘이 보랏빛으로 어두워지고, 마법 거품이 친구들을 하나씩 감싸 하늘로 데려가요.</div></div>
+        <div class="notes"><dl>
+          <dt>화면</dt><dd>노놈이 크게 등장, 꼬마 놈놈들이 둘러싸요. 친구들이 색색의 거품에 갇혀 떠올라요.</dd>
+          <dt>연출</dt><dd>화면 흔들림 1회. 거품에 갇힌 친구 얼굴을 짧게 확대.</dd>
+          <dt>소리</dt><dd>배경음이 낮게 바뀜, 노놈 웃음소리, 거품 "뽁" 소리.</dd>
+        </dl><p class="line">이 컷의 거품 색이 게임 속 거품 색과 같아요.</p></div>
+      </article>
+
+      <article class="shot">
+        <div class="shot-id"><span class="num">S03</span><h4>혼자 남은 영웅 젤리</h4><span class="kind">컷신 · 4초</span></div>
+        <div class="phone"><img class="bg" src="img/ref-hero.jpg" alt="영웅 젤리"><div class="dim"></div>
+          <div class="bubble" style="left:10px;top:16px"><span class="nm">말랑이</span>다들… 어디 간 거야?</div>
+          <div class="bubble" style="right:10px;top:70px"><span class="nm">말랑이</span>아니, 내가 구할 거야!</div>
+          <div class="cap">텅 빈 마을에 남겨진 건 말랑이 하나뿐이었어요.</div></div>
+        <div class="notes"><dl>
+          <dt>화면</dt><dd>빈 광장에 말랑이 혼자. 눈물 한 방울 뒤에 주먹을 꽉 쥐어요.</dd>
+          <dt>연출</dt><dd>슬픈 표정 → 결심한 표정으로 바뀌는 순간에 반짝 효과.</dd>
+          <dt>소리</dt><dd>조용한 피아노 → 짧은 북소리.</dd>
+        </dl></div>
+      </article>
+
+      <article class="shot">
+        <div class="shot-id"><span class="num">S04</span><h4>신비한 거품 대포 발견</h4><span class="kind">컷신 · 4초</span></div>
+        <div class="phone"><img class="bg" src="img/ref-cannon.jpg" alt="거품 대포를 발견한 영웅 젤리"><div class="dim"></div>
+          <div class="bubble" style="left:10px;top:16px"><span class="nm">말랑이</span>이걸로 거품을 맞히면… 친구들이 풀려날지도 몰라!</div>
+          <div class="pill" style="bottom:20px">모험 시작!</div></div>
+        <div class="notes"><dl>
+          <dt>화면</dt><dd>창고에서 별 무늬 거품 대포를 발견. 대포가 반짝이며 말랑이 옆에 놓여요.</dd>
+          <dt>조작</dt><dd>"모험 시작!"을 누르면 타이틀 화면(S05)으로.</dd>
+          <dt>소리</dt><dd>반짝 효과음, 경쾌한 메인 테마 시작.</dd>
+        </dl></div>
+      </article>
+    </div>
+  </div>
+
+  <!-- 2막 -->
+  <div class="act">
+    <div class="act-head"><span class="act-no">2막</span><h3>모험 · 친구들을 구하러</h3>
+      <p>매일 반복해서 보는 화면들이에요. 타이틀 → 월드 지도 → 스테이지 → 결과를 돌며 친구를 한 명씩 구해요.</p></div>
+    <div class="shots">
+
+      <article class="shot">
+        <div class="shot-id"><span class="num">S05</span><h4>타이틀 화면</h4><span class="kind">메뉴</span></div>
+        <div class="phone"><img class="bg blur" src="img/ref-play.jpg" alt="흐린 플레이 화면 배경">
+          <div class="fx" style="left:0;right:0;top:20%;text-align:center;font-size:34px;line-height:.95;color:#ffe3f3">JELLY<br>POP!</div>
+          <div class="fx" style="left:0;right:0;top:41%;text-align:center;font-size:16px;color:#ffc93c">젤리마을 대소동</div>
+          <div class="pill" style="bottom:58px">시작하기</div>
+          <div style="position:absolute;bottom:22px;left:0;right:0;text-align:center;font-size:10px;color:#e3d2ff">설정 · 소리 · 이야기 다시 보기</div></div>
+        <div class="notes"><dl>
+          <dt>화면</dt><dd>밤하늘의 젤리마을 위에 말랑한 로고. 로고 글자가 젤리처럼 출렁여요.</dd>
+          <dt>조작</dt><dd>"시작하기" → 월드 지도. 처음이면 S07 튜토리얼부터.</dd>
+          <dt>기록</dt><dd>구한 친구 수, 모은 별 수를 아래에 작게 표시.</dd>
+        </dl></div>
+      </article>
+
+      <article class="shot">
+        <div class="shot-id"><span class="num">S06</span><h4>월드 지도</h4><span class="kind">메뉴</span></div>
+        <div class="phone">
+          <div class="map">
+            <div class="w here"><img src="img/ref-w1.jpg" alt=""><span>1 젤리마을</span></div>
+            <div class="w"><img src="img/ref-w2.jpg" alt=""><span>2 시럽 숲</span></div>
+            <div class="w locked"><img src="img/ref-w3.jpg" alt=""><span>3 푸딩 동굴</span></div>
+            <div class="w locked"><img src="img/ref-w4.jpg" alt=""><span>4 디저트 공장</span></div>
+            <div class="w locked"><img src="img/ref-w5.jpg" alt=""><span>5 노놈의 성</span></div>
+          </div>
+          <div class="hud"><span>별<b>★ 24</b></span><span>구한 친구<b>3 / 25</b></span></div></div>
+        <div class="notes"><dl>
+          <dt>화면</dt><dd>아래에서 위로 올라가는 세로 지도. 다섯 월드가 길로 이어지고, 다음 월드는 잠겨 있어요.</dd>
+          <dt>조작</dt><dd>월드를 누르면 스테이지 목록. 위아래로 밀어서 이동.</dd>
+          <dt>연출</dt><dd>말랑이 말이 현재 스테이지 위에서 통통 뛰어요.</dd>
+        </dl><p class="line">월드마다 마지막 스테이지는 보스. 스테이지 수는 맨 아래 결정 항목 참고.</p></div>
+      </article>
+
+      <article class="shot">
+        <div class="shot-id"><span class="num">S07</span><h4>튜토리얼 · 조준하고 발사</h4><span class="kind">플레이</span></div>
+        <div class="phone"><img class="bg" src="img/ref-play.jpg" alt="플레이 화면">
+          <div class="aim" style="left:44%;top:46%;height:30%;transform:rotate(-22deg)"></div>
+          <div class="finger" style="left:52%;top:70%"></div>
+          <div class="bubble" style="left:10px;top:44%"><span class="nm">말랑이</span>끌어서 조준하고, 손을 떼면 발사!</div></div>
+        <div class="notes"><dl>
+          <dt>화면</dt><dd>거품 판은 3줄만. 손가락 그림이 조준 방향을 보여 줘요.</dd>
+          <dt>조작</dt><dd>화면을 끌면 점선 조준선, 떼면 발사. 벽에 맞으면 튕겨 나가요.</dd>
+          <dt>목표</dt><dd>몽실이가 갇힌 거품 근처를 터뜨려 몽실이를 구하기.</dd>
+        </dl></div>
+      </article>
+
+      <article class="shot">
+        <div class="shot-id"><span class="num">S08</span><h4>플레이 · 같은 색 3개 펑!</h4><span class="kind">플레이</span></div>
+        <div class="phone"><img class="bg" src="img/ref-play.jpg" alt="플레이 화면에서 분홍 젤리가 터지는 장면">
+          <div class="fx" style="left:26%;top:30%;font-size:22px;color:#fff">콤보 ×3!</div></div>
+        <div class="notes"><dl>
+          <dt>화면</dt><dd>위쪽에 젤리 거품 판, 아래에 말랑이와 대포, 오른쪽 아래 다음 젤리(NEXT).</dd>
+          <dt>규칙</dt><dd>같은 색 3개 이상이 붙으면 터져요. 매달린 곳이 없어진 거품은 함께 떨어져 보너스.</dd>
+          <dt>상단</dt><dd>점수 · 레벨 · 하트 3개(도전 기회).</dd>
+          <dt>연출</dt><dd>터질 때 젤리 조각과 별이 튀고, 연속으로 터지면 "콤보" 글자.</dd>
+        </dl></div>
+      </article>
+
+      <article class="shot">
+        <div class="shot-id"><span class="num">S09</span><h4>친구 구출!</h4><span class="kind">플레이 연출 · 2초</span></div>
+        <div class="phone"><img class="bg" src="img/ref-depart.jpg" alt="구출된 친구들과 기뻐하는 영웅 젤리"><div class="dim"></div>
+          <div class="bubble" style="right:10px;top:16px"><span class="nm">몽실</span>고마워, 말랑아!</div>
+          <div class="fx" style="left:0;right:0;bottom:22px;text-align:center;font-size:22px;color:#ffc93c">친구를 구했어요!</div></div>
+        <div class="notes"><dl>
+          <dt>화면</dt><dd>친구가 갇힌 특별 거품이 터지면 친구가 튀어나와 말랑이 곁으로 날아와요.</dd>
+          <dt>규칙</dt><dd>스테이지마다 갇힌 친구 1~3명. 모두 구하면 클리어.</dd>
+          <dt>소리</dt><dd>큰 "뽀옹" 소리와 짧은 축하 팡파르.</dd>
+        </dl></div>
+      </article>
+
+      <article class="shot">
+        <div class="shot-id"><span class="num">S10</span><h4>클리어 / 실패</h4><span class="kind">결과</span></div>
+        <div class="phone"><img class="bg blur" src="img/ref-play.jpg" alt="">
+          <div class="panel-mini"><div class="stars">★★☆</div><h5>스테이지 클리어!</h5><p>구한 친구 2명 · 점수 12,450</p></div>
+          <div class="pill" style="bottom:40px">다음 스테이지</div></div>
+        <div class="notes"><dl>
+          <dt>클리어</dt><dd>별 1~3개(남은 젤리 수와 점수로). 구한 친구가 결과 창 위에서 손을 흔들어요.</dd>
+          <dt>실패</dt><dd>거품이 바닥 선까지 내려오면 하트 1개를 잃고 "다시 해볼까?" 창.</dd>
+          <dt>하트</dt><dd>하트 3개가 모두 없으면 잠깐 쉬었다 하기(시간이 지나면 다시 참). 결제는 넣지 않아요.</dd>
+        </dl></div>
+      </article>
+    </div>
+  </div>
+
+  <!-- 3막 -->
+  <div class="act">
+    <div class="act-head"><span class="act-no">3막</span><h3>결전과 엔딩</h3>
+      <p>다섯 번째 월드 마지막 스테이지에서 노놈과 대결하고, 모두 함께 마을로 돌아가요.</p></div>
+    <div class="shots">
+
+      <article class="shot">
+        <div class="shot-id"><span class="num">S11</span><h4>보스전 · 노놈의 성</h4><span class="kind">플레이</span></div>
+        <div class="phone"><img class="bg" src="img/ref-w5.jpg" alt="노놈의 성"><div class="dim"></div>
+          <div class="boss-hp">노놈<i></i></div>
+          <img class="inset" src="img/ref-nomnom.jpg" alt="노놈" style="left:50%;top:22%;transform:translateX(-50%)">
+          <div class="bubble dark" style="left:10px;bottom:70px"><span class="nm">노놈</span>내 디저트를 돌려줄 순 없지!</div>
+          <div class="cap">노놈 앞의 거품을 터뜨려 노놈을 맞히세요!</div></div>
+        <div class="notes"><dl>
+          <dt>화면</dt><dd>판 맨 위에 노놈, 위쪽에 노놈 체력 막대. 거품 판이 조금씩 내려와요.</dd>
+          <dt>규칙</dt><dd>노놈 바로 아래 거품을 터뜨리면 노놈이 맞아요. 노놈은 가끔 새 거품 줄을 쏟아내요.</dd>
+          <dt>연출</dt><dd>체력이 반이 되면 화를 내며 색이 붉어지고 판이 빨라져요.</dd>
+        </dl><p class="line">월드 1~4의 보스는 꼬마 놈놈 대장(제안).</p></div>
+      </article>
+
+      <article class="shot">
+        <div class="shot-id"><span class="num">S12</span><h4>엔딩 · 다시 행복한 젤리마을</h4><span class="kind">컷신 · 6초</span></div>
+        <div class="phone"><img class="bg" src="img/ref-ending.jpg" alt="모든 친구와 함께하는 젤리마을" style="object-position:40% 50%"><div class="dim"></div>
+          <div class="bubble" style="left:10px;top:16px"><span class="nm">말랑이</span>모두가 다시 함께 웃을 수 있게 됐어!</div>
+          <div class="bubble dark" style="right:10px;top:84px"><span class="nm">노놈</span>…나도 같이 놀면 안 될까?</div>
+          <div class="cap">HAPPY JELLY VILLAGE! 구한 친구 25명이 모두 모여 파티를 열어요.</div></div>
+        <div class="notes"><dl>
+          <dt>화면</dt><dd>마을 광장에 모든 친구가 모여 춤을 춰요. 마지막에 노놈도 머쓱하게 끼어들어요.</dd>
+          <dt>연출</dt><dd>하트와 별이 떠오르고, 친구들이 한 명씩 인사하는 크레딧.</dd>
+          <dt>이후</dt><dd>엔딩 뒤에도 별 3개 모으기와 무한 모드(제안)로 계속 플레이.</dd>
+        </dl></div>
+      </article>
+    </div>
+  </div>
+</section>
+
+<!-- 월드 -->
+<section class="section">
+  <div class="band">
+    <h2><svg viewBox="0 0 24 24" aria-hidden="true"><path fill="#ffc93c" d="M12 2l2.9 6.6 7.1.6-5.4 4.7 1.6 7L12 17.3 5.8 21l1.6-7L2 9.2l7.1-.6z"/></svg>월드 구성</h2>
+    <p>월드마다 새 장치를 하나씩 더해서 같은 놀이가 지루하지 않게 해요. 장치는 제안이에요.</p>
+  </div>
+  <div class="table-wrap"><table>
+    <thead><tr><th>월드</th><th>그림</th><th>분위기</th><th>새 장치</th><th>구할 친구</th></tr></thead>
+    <tbody>
+      <tr><td>1 젤리마을</td><td><img src="img/ref-w1.jpg" alt=""></td><td>모험이 시작되는 평화로운 마을</td><td>기본 규칙만 (튜토리얼)</td><td>몽실 외 4명</td></tr>
+      <tr><td>2 시럽 숲</td><td><img src="img/ref-w2.jpg" alt=""></td><td>달콤한 시럽이 흐르는 분홍 숲</td><td>끈적 시럽 거품: 두 번 맞혀야 터짐</td><td>곰찡 외 4명</td></tr>
+      <tr><td>3 푸딩 동굴</td><td><img src="img/ref-w3.jpg" alt=""></td><td>탱글탱글 푸딩이 가득한 동굴</td><td>흔들 푸딩: 맞으면 옆 거품 색이 바뀜</td><td>5명</td></tr>
+      <tr><td>4 디저트 공장</td><td><img src="img/ref-w4.jpg" alt=""></td><td>젤리를 가두는 거대한 공장</td><td>컨베이어: 거품 줄이 옆으로 움직임</td><td>5명</td></tr>
+      <tr><td>5 노놈의 성</td><td><img src="img/ref-w5.jpg" alt=""></td><td>모든 친구가 갇힌 어두운 성</td><td>보스 노놈 + 앞 월드 장치 모두</td><td>5명</td></tr>
+    </tbody>
+  </table></div>
+</section>
+
+<!-- 결정 -->
+<section class="section">
+  <div class="band">
+    <h2><svg viewBox="0 0 24 24" aria-hidden="true"><path fill="#ffc93c" d="M12 2l2.9 6.6 7.1.6-5.4 4.7 1.6 7L12 17.3 5.8 21l1.6-7L2 9.2l7.1-.6z"/></svg>정해 주시면 좋은 것</h2>
+    <p>답이 없으면 아래 추천대로 진행해요.</p>
+  </div>
+  <div class="decide">
+    <div><h3>주인공 이름</h3><p>말랑이 / 몽글이 / 직접 짓기</p><p class="rec">추천: 말랑이</p></div>
+    <div><h3>스테이지 수</h3><p>월드당 10개(총 50개) / 월드당 5개(총 25개)</p><p class="rec">추천: 첫 출시는 월드당 5개</p></div>
+    <div><h3>그림 방식</h3><p>레퍼런스 같은 고급 3D 그림은 이미지 파일로 넣어야 해요. 코드로 그린 젤리로 먼저 만들고 그림은 나중에 바꿔 끼울 수 있어요.</p><p class="rec">추천: 코드 그림으로 먼저, 그림은 나중에</p></div>
+  </div>
+</section>
+
+<footer>레퍼런스 그림: Owner 제공 시안(젤리팝 인포그래픽, 플레이 화면, 캐릭터 2종). 저장소 <code>design/reference/</code>에 원본 보관.</footer>
+</div>
+</body>
+</html>
