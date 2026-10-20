@@ -146,17 +146,76 @@ footer{margin-top:40px;color:var(--ink-soft);font-size:13px}
   .phone .bg{transition:transform .6s ease}
   .shot:hover .phone .bg:not(.blur){transform:scale(1.04)}
 }
+
+/* v0.2: 직접 그린 플레이 화면 요소 */
+.band-svg{position:absolute;left:0;right:0;bottom:0;width:100%;height:auto}
+.full-svg{position:absolute;inset:0;width:100%;height:100%}
+.phone .top-crop{position:absolute;left:0;right:0;top:0;height:64%;width:100%;object-fit:cover;object-position:50% 0;z-index:-1}
+.phone .night{position:absolute;inset:0;background:linear-gradient(#2a1660,#24124a);z-index:-2}
+.mj{display:block}
+.sticker{display:grid;place-items:center;width:64px;height:64px;margin:0 auto 4px;border-radius:50%;background:#fff;box-shadow:0 0 0 4px var(--star),0 4px 12px rgba(43,22,80,.3);transform:rotate(-8deg)}
+.sb{position:absolute;inset:0;background:linear-gradient(#fff6fd,#efe4ff);color:var(--ink);padding:14px 10px;display:flex;flex-direction:column;gap:6px}
+.sb-head{font-family:var(--font-display);font-size:16px;color:var(--brand-deep);display:flex;justify-content:space-between;align-items:center;margin-bottom:4px}
+.sb-head span{font-size:12px;background:var(--brand);color:#fff;border-radius:99px;padding:1px 8px}
+.sb-row{position:relative;display:grid;grid-template-columns:14px repeat(6,1fr);gap:3px;align-items:center;background:#fff;border-radius:10px;padding:5px 4px}
+.sb-row b{font-family:var(--font-display);font-weight:400;font-size:11px;color:var(--brand)}
+.sb-cell{aspect-ratio:1;border-radius:50%;border:1.5px dashed #c9b6ff;display:grid;place-items:center;font-size:10px;color:#b9a6e6}
+.sb-cell.got{border:2px solid var(--star);background:#fffbe9}
+.sb-stamp{position:absolute;right:-4px;top:-8px;font-family:var(--font-display);font-size:11px;color:#ff4f8f;border:2px solid #ff4f8f;border-radius:8px;padding:0 5px;background:#fff;transform:rotate(12deg)}
+.sb-foot{margin-top:auto;font-size:10px;color:var(--ink-soft);text-align:center}
+.worlds{display:grid;gap:16px}
+.world{background:var(--panel);border:1px solid var(--line);border-radius:var(--radius);overflow:hidden}
+.world-head{display:grid;grid-template-columns:150px minmax(0,1fr);gap:14px;padding:12px;align-items:center}
+.world-head img{width:150px;aspect-ratio:2/1.2;object-fit:cover;border-radius:12px;display:block}
+.world-head h3{font-size:22px;color:var(--brand-deep)}
+.world-head p{margin:2px 0 0;font-size:14px;color:var(--ink-soft)}
+.world-head .mech{display:inline-block;margin-top:6px;font-size:12px;background:#efe4ff;color:var(--brand-deep);border-radius:99px;padding:1px 10px}
+.stages{list-style:none;margin:0;padding:0;display:grid;grid-template-columns:repeat(auto-fill,minmax(min(100%,170px),1fr));gap:1px;background:var(--line);border-top:1px solid var(--line)}
+.stages li{background:var(--panel);padding:10px 12px;display:grid;gap:2px;align-content:start}
+.stages .no{font-family:var(--font-display);font-size:13px;color:#fff;background:var(--brand);border-radius:99px;padding:0 9px;justify-self:start}
+.stages li.boss .no{background:#2b1650;color:#ffb3d4}
+.stages h4{margin:2px 0 0;font-family:var(--font-display);font-weight:400;font-size:17px}
+.stages .bgd{font-size:13px;color:var(--ink-soft)}
+.stages .friend{display:flex;align-items:center;gap:6px;font-size:13px;margin-top:4px}
+.stages .mechs{font-size:12px;color:var(--brand)}
+.rules{display:grid;grid-template-columns:repeat(auto-fill,minmax(min(100%,260px),1fr));gap:12px}
+.rules div{background:var(--panel);border:1px solid var(--line);border-radius:var(--radius);padding:14px 16px}
+.rules h3{font-size:19px;color:var(--brand-deep)}
+.rules p{margin:4px 0 0;font-size:14px;color:var(--ink-soft)}
+@media (max-width:620px){.world-head{grid-template-columns:1fr}.world-head img{width:100%}}
 </style>
 </head>
 <body>
+<svg width="0" height="0" style="position:absolute" aria-hidden="true">
+  <defs>
+    <symbol id="j" viewBox="0 0 40 36">
+      <path d="M4 24C4 8 12 3 20 3s16 5 16 21c0 8-6 10-16 10S4 32 4 24z" fill="currentColor"/>
+      <path d="M4 24C4 8 12 3 20 3s16 5 16 21c0 8-6 10-16 10S4 32 4 24z" fill="url(#gloss)"/>
+      <ellipse cx="13" cy="11" rx="5" ry="2.8" fill="#fff" opacity=".75" transform="rotate(-20 13 11)"/>
+      <circle cx="15" cy="20" r="2.3" fill="#2b1650"/><circle cx="25" cy="20" r="2.3" fill="#2b1650"/>
+      <circle cx="15.7" cy="19.3" r=".7" fill="#fff"/><circle cx="25.7" cy="19.3" r=".7" fill="#fff"/>
+      <path d="M17.5 24.5q2.5 2.6 5 0" stroke="#2b1650" stroke-width="1.5" fill="none" stroke-linecap="round"/>
+      <ellipse cx="10.5" cy="24.5" rx="2.6" ry="1.5" fill="#ff6f9f" opacity=".45"/><ellipse cx="29.5" cy="24.5" rx="2.6" ry="1.5" fill="#ff6f9f" opacity=".45"/>
+    </symbol>
+    <linearGradient id="gloss" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#fff" stop-opacity=".45"/><stop offset=".55" stop-color="#fff" stop-opacity="0"/><stop offset="1" stop-color="#2b1650" stop-opacity=".18"/>
+    </linearGradient>
+    <symbol id="m" viewBox="0 0 56 44">
+      <ellipse cx="9" cy="22" rx="7" ry="13" fill="#ff8cc0" transform="rotate(18 9 22)"/>
+      <ellipse cx="47" cy="22" rx="7" ry="13" fill="#ff8cc0" transform="rotate(-18 47 22)"/>
+      <g transform="translate(8 6)"><use href="#j" width="40" height="36" style="color:#ff6fae"/></g>
+    </symbol>
+    <marker id="arr" viewBox="0 0 6 6" refX="3" refY="3" markerWidth="5" markerHeight="5" orient="auto"><path d="M0 0L6 3L0 6z" fill="#ffc93c"/></marker>
+  </defs>
+</svg>
 <div class="wrap">
 
 <header class="hero">
   <div>
-    <div class="eyebrow">JELLY POP! · 스토리보드 v0.1 · 2026-10-20</div>
+    <div class="eyebrow">JELLY POP! · 스토리보드 v0.2 · 2026-10-20</div>
     <div class="logo">JELLY POP!</div>
     <div class="subtitle">젤리마을 대소동</div>
-    <p class="logline">장난꾸러기 악당 노놈이 마법 거품으로 젤리 친구들을 납치했어요. 혼자 남은 영웅 젤리가 거품 대포를 들고 다섯 디저트 월드를 지나며 친구들을 구해, 다시 웃음 가득한 젤리마을로 돌아가는 이야기예요.</p>
+    <p class="logline">장난꾸러기 악당 노놈이 마법 거품으로 젤리 친구들을 납치했어요. 혼자 남은 영웅 젤리 말랑이가 거품 대포를 끌고 다섯 디저트 월드, 30개 스테이지를 지나며 친구 30명을 구해, 다시 웃음 가득한 젤리마을로 돌아가는 이야기예요.</p>
   </div>
   <div class="hero-refs">
     <figure><img src="img/ref-hero.jpg" alt="분홍색 강아지 귀 영웅 젤리 레퍼런스"><figcaption>영웅 젤리 레퍼런스</figcaption></figure>
@@ -177,20 +236,20 @@ footer{margin-top:40px;color:var(--ink-soft);font-size:13px}
   </div>
   <div class="cast">
     <article class="who"><img src="img/ref-hero.jpg" alt="영웅 젤리"><div>
-      <h3>말랑이<span class="proposed">제안</span></h3><span class="role">주인공 · 영웅 젤리</span>
-      <p>강아지 귀가 달린 분홍 젤리. 겁은 많지만 친구 일이라면 제일 먼저 뛰어나가요. 플레이 화면 아래에서 거품 대포를 쏴요.</p></div></article>
+      <h3>말랑이</h3><span class="role">주인공 · 영웅 젤리</span>
+      <p>강아지 귀가 달린 분홍 젤리. 겁은 많지만 친구 일이라면 제일 먼저 뛰어나가요. 플레이 화면 아래에서 핸들을 돌려 거품 대포를 움직여요.</p></div></article>
     <article class="who"><img src="img/ref-nomnom.jpg" alt="노놈"><div>
       <h3>노놈 (Mr. Nom Nom)</h3><span class="role bad">악당</span>
       <p>"말랑한 건 전부 내 디저트!" 마법 거품으로 젤리를 가둬 성으로 데려가는 장난꾸러기. 부하 꼬마 놈놈들을 거느려요.</p></div></article>
     <article class="who"><img class="contain" src="img/char-green-bear.jpg" alt="초록 곰 젤리"><div>
-      <h3>곰찡<span class="proposed">제안</span></h3><span class="role">구출할 친구 · 시럽 숲</span>
-      <p>말랑이의 단짝인 라임 곰젤리. 시럽 숲 보스를 깨면 구출돼 지도에서 길을 알려 줘요.</p></div></article>
+      <h3>곰찡<span class="proposed">제안</span></h3><span class="role">7스테이지에서 구출</span>
+      <p>말랑이의 단짝인 라임 곰젤리. 시럽 숲 첫 스테이지에서 구출돼요. 구한 뒤엔 행렬 맨 앞에서 길을 안내해요.</p></div></article>
     <article class="who"><img class="contain" src="img/char-pink-jelly.jpg" alt="분홍 젤리"><div>
-      <h3>몽실<span class="proposed">제안</span></h3><span class="role">구출할 친구 · 젤리마을</span>
+      <h3>몽실<span class="proposed">제안</span></h3><span class="role">1스테이지에서 구출</span>
       <p>마을의 막내 딸기 젤리. 튜토리얼에서 처음 구하는 친구라, 구출 장면을 처음 보여 주는 역할을 해요.</p></div></article>
     <article class="who"><img src="img/ref-friends.jpg" alt="다섯 색 젤리 친구들"><div>
-      <h3>젤리 친구들</h3><span class="role">대포 탄 · 구출 대상</span>
-      <p>딸기·포도·레몬·라임·소다·복숭아 색 친구들. 게임 속 거품 색이 곧 친구들 색이에요.</p></div></article>
+      <h3>젤리 친구들</h3><span class="role">구출할 친구 30명</span>
+      <p>스테이지마다 1명씩, 모두 30명. 구한 친구는 대포 옆에 줄 서서 차례를 기다리다 대포 탄이 되어 줘요.</p></div></article>
   </div>
 </section>
 
@@ -198,7 +257,7 @@ footer{margin-top:40px;color:var(--ink-soft);font-size:13px}
 <section class="section">
   <div class="band">
     <h2><svg viewBox="0 0 24 24" aria-hidden="true"><path fill="#ffc93c" d="M12 2l2.9 6.6 7.1.6-5.4 4.7 1.6 7L12 17.3 5.8 21l1.6-7L2 9.2l7.1-.6z"/></svg>스토리보드</h2>
-    <p>3막 12컷. 휴대폰 화면은 레퍼런스 그림 위에 자막·대사·버튼 위치를 올린 배치안이에요.</p>
+    <p>3막 14컷. 휴대폰 화면은 레퍼런스 그림 위에 자막·대사·버튼을 올린 배치안이고, 핸들·줄서기·지도·스티커 북은 새로 그렸어요.</p>
   </div>
 
   <!-- 1막 -->
@@ -259,8 +318,8 @@ footer{margin-top:40px;color:var(--ink-soft);font-size:13px}
 
   <!-- 2막 -->
   <div class="act">
-    <div class="act-head"><span class="act-no">2막</span><h3>모험 · 친구들을 구하러</h3>
-      <p>매일 반복해서 보는 화면들이에요. 타이틀 → 월드 지도 → 스테이지 → 결과를 돌며 친구를 한 명씩 구해요.</p></div>
+    <div class="act-head"><span class="act-no">2막</span><h3>모험 · 30개 스테이지, 친구 30명</h3>
+      <p>스테이지를 하나 깰 때마다 친구 한 명을 구하고, 친구 스티커를 받고, 말랑이가 지도에서 한 칸 앞으로 걸어가요.</p></div>
     <div class="shots">
 
       <article class="shot">
@@ -278,69 +337,157 @@ footer{margin-top:40px;color:var(--ink-soft);font-size:13px}
       </article>
 
       <article class="shot">
-        <div class="shot-id"><span class="num">S06</span><h4>월드 지도</h4><span class="kind">메뉴</span></div>
-        <div class="phone">
-          <div class="map">
-            <div class="w here"><img src="img/ref-w1.jpg" alt=""><span>1 젤리마을</span></div>
-            <div class="w"><img src="img/ref-w2.jpg" alt=""><span>2 시럽 숲</span></div>
-            <div class="w locked"><img src="img/ref-w3.jpg" alt=""><span>3 푸딩 동굴</span></div>
-            <div class="w locked"><img src="img/ref-w4.jpg" alt=""><span>4 디저트 공장</span></div>
-            <div class="w locked"><img src="img/ref-w5.jpg" alt=""><span>5 노놈의 성</span></div>
-          </div>
-          <div class="hud"><span>별<b>★ 24</b></span><span>구한 친구<b>3 / 25</b></span></div></div>
+        <div class="shot-id"><span class="num">S06</span><h4>모험 지도 · 30칸 길</h4><span class="kind">메뉴</span></div>
+        <div class="phone"><img class="bg" src="img/ref-w1.jpg" alt="젤리마을 배경의 지도"><div class="dim"></div>
+          <svg class="full-svg" viewBox="0 0 180 320" aria-hidden="true">
+  <path d="M40,286 118,256 62,214 128,176 58,136 108,86" stroke="#fff" stroke-width="7" fill="none" stroke-linecap="round" stroke-linejoin="round" opacity=".85"/>
+  <path d="M40,286 118,256 62,214 128,176 58,136 108,86" stroke="#c9a0ff" stroke-width="3" fill="none" stroke-dasharray="1 7" stroke-linecap="round"/>
+  <path d="M108 86 Q 90 50 60 20" stroke="#fff" stroke-width="5" fill="none" stroke-dasharray="4 6" opacity=".5"/>
+  <text x="66" y="16" font-size="9" fill="#fff" font-family="Jua, sans-serif">→ 시럽 숲</text>
+  <circle cx="40" cy="286" r="13" fill="#ffc93c" stroke="#fff" stroke-width="2.5"/><text x="40" y="290" text-anchor="middle" font-size="12" fill="#4b1fa8" font-family="Jua, sans-serif">1</text><text x="55" y="277" font-size="8" fill="#ffc93c">★★★</text><circle cx="118" cy="256" r="13" fill="#ffc93c" stroke="#fff" stroke-width="2.5"/><text x="118" y="260" text-anchor="middle" font-size="12" fill="#4b1fa8" font-family="Jua, sans-serif">2</text><text x="133" y="247" font-size="8" fill="#ffc93c">★★★</text><circle cx="62" cy="214" r="13" fill="#ffc93c" stroke="#fff" stroke-width="2.5"/><text x="62" y="218" text-anchor="middle" font-size="12" fill="#4b1fa8" font-family="Jua, sans-serif">3</text><text x="77" y="205" font-size="8" fill="#ffc93c">★★★</text><circle cx="128" cy="176" r="13" fill="#fff" stroke="#c9b6ff" stroke-width="2.5"/><text x="128" y="180" text-anchor="middle" font-size="12" fill="#7b3fe4" font-family="Jua, sans-serif">4</text><circle cx="58" cy="136" r="13" fill="#fff" stroke="#c9b6ff" stroke-width="2.5"/><text x="58" y="140" text-anchor="middle" font-size="12" fill="#7b3fe4" font-family="Jua, sans-serif">5</text><circle cx="108" cy="86" r="16" fill="#24124a" stroke="#ff4f8f" stroke-width="2.5"/><text x="108" y="90" text-anchor="middle" font-size="10" fill="#ffb3d4" font-family="Jua, sans-serif">보스</text>
+  <path d="M62,214 Q 100 200 124,180" stroke="#ffc93c" stroke-width="2" fill="none" stroke-dasharray="3 3" marker-end="url(#arr)"/>
+  <use href="#m" x="104" y="146" width="42" height="33"/>
+  <use href="#j" x="82" y="198" width="20" height="18" style="color:#ffd23f"/>
+  <use href="#j" x="66" y="190" width="18" height="16" style="color:#ff9f7a"/>
+</svg>
+          <div class="hud"><span>월드 1<b>젤리마을</b></span><span>스티커<b>3 / 30</b></span></div></div>
         <div class="notes"><dl>
-          <dt>화면</dt><dd>아래에서 위로 올라가는 세로 지도. 다섯 월드가 길로 이어지고, 다음 월드는 잠겨 있어요.</dd>
-          <dt>조작</dt><dd>월드를 누르면 스테이지 목록. 위아래로 밀어서 이동.</dd>
-          <dt>연출</dt><dd>말랑이 말이 현재 스테이지 위에서 통통 뛰어요.</dd>
-        </dl><p class="line">월드마다 마지막 스테이지는 보스. 스테이지 수는 맨 아래 결정 항목 참고.</p></div>
-      </article>
-
-      <article class="shot">
-        <div class="shot-id"><span class="num">S07</span><h4>튜토리얼 · 조준하고 발사</h4><span class="kind">플레이</span></div>
-        <div class="phone"><img class="bg" src="img/ref-play.jpg" alt="플레이 화면">
-          <div class="aim" style="left:44%;top:46%;height:30%;transform:rotate(-22deg)"></div>
-          <div class="finger" style="left:52%;top:70%"></div>
-          <div class="bubble" style="left:10px;top:44%"><span class="nm">말랑이</span>끌어서 조준하고, 손을 떼면 발사!</div></div>
-        <div class="notes"><dl>
-          <dt>화면</dt><dd>거품 판은 3줄만. 손가락 그림이 조준 방향을 보여 줘요.</dd>
-          <dt>조작</dt><dd>화면을 끌면 점선 조준선, 떼면 발사. 벽에 맞으면 튕겨 나가요.</dd>
-          <dt>목표</dt><dd>몽실이가 갇힌 거품 근처를 터뜨려 몽실이를 구하기.</dd>
+          <dt>화면</dt><dd>아래에서 위로 이어지는 구불구불한 길. 월드마다 6칸, 6번째 칸은 보스. 월드를 넘어가면 배경이 그 월드 풍경으로 바뀌어요.</dd>
+          <dt>칸 표시</dt><dd>깬 칸은 노란색과 별, 갈 칸은 흰색, 보스 칸은 노놈 색.</dd>
+          <dt>함께 걷기</dt><dd>구한 친구들이 말랑이 뒤를 졸졸 따라와요. 친구가 늘수록 행렬이 길어져요.</dd>
+          <dt>조작</dt><dd>말랑이가 서 있는 칸을 누르면 시작. 위아래로 밀어 지도 이동.</dd>
         </dl></div>
       </article>
 
       <article class="shot">
-        <div class="shot-id"><span class="num">S08</span><h4>플레이 · 같은 색 3개 펑!</h4><span class="kind">플레이</span></div>
-        <div class="phone"><img class="bg" src="img/ref-play.jpg" alt="플레이 화면에서 분홍 젤리가 터지는 장면">
-          <div class="fx" style="left:26%;top:30%;font-size:22px;color:#fff">콤보 ×3!</div></div>
+        <div class="shot-id"><span class="num">S07</span><h4>튜토리얼 · 핸들 돌려 조준</h4><span class="kind">플레이 · 1스테이지</span></div>
+        <div class="phone"><div class="night"></div><img class="top-crop" src="img/ref-play.jpg" alt="거품 판">
+          <div class="aim" style="left:45%;top:36%;height:36%;transform:rotate(-20deg)"></div>
+          <svg class="band-svg" viewBox="8 44 172 82" aria-hidden="true">
+  <defs><linearGradient id="floor" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#8b6fd6"/><stop offset="1" stop-color="#3a2275"/></linearGradient></defs>
+  <path d="M-5 72Q100 54 205 72V125H-5z" fill="url(#floor)"/>
+  <path d="M-5 72Q100 54 205 72" stroke="#d9c8ff" stroke-width="1.5" fill="none" opacity=".7"/>
+  <!-- 대포 -->
+  <g transform="rotate(-20 92 74)">
+    <rect x="84" y="30" width="16" height="44" rx="8" fill="#e6dbff" stroke="#7b3fe4" stroke-width="2"/>
+    <ellipse cx="92" cy="32" rx="11" ry="4" fill="none" stroke="#ffc93c" stroke-width="3"/>
+    <circle cx="92" cy="30" r="7" fill="#ff5f8a"/><circle cx="90" cy="28" r="2" fill="#fff" opacity=".8"/>
+  </g>
+  <rect x="74" y="68" width="38" height="24" rx="11" fill="#9b7be6" stroke="#5a2bb8" stroke-width="2"/>
+  <circle cx="93" cy="80" r="7.5" fill="#ffd1e6"/>
+  <path d="M93 75.5l1.4 2.9 3.1.3-2.3 2 .7 3.1-2.9-1.6-2.9 1.6.7-3.1-2.3-2 3.1-.3z" fill="#ffc93c"/>
+  <!-- 핸들(크랭크) -->
+  <line x1="58" y1="80" x2="75" y2="80" stroke="#c9b6ff" stroke-width="4" stroke-linecap="round"/>
+  <circle cx="56" cy="80" r="11" fill="none" stroke="#ffc93c" stroke-width="3"/>
+  <line x1="45" y1="80" x2="67" y2="80" stroke="#ffc93c" stroke-width="2"/><line x1="56" y1="69" x2="56" y2="91" stroke="#ffc93c" stroke-width="2"/>
+  <circle cx="56" cy="69" r="3.2" fill="#ff5f8a" stroke="#fff" stroke-width="1"/>
+  <path d="M41 70A17 17 0 0 1 64 62" stroke="#ffc93c" stroke-width="1.6" fill="none" stroke-dasharray="2 2" marker-end="url(#arr)"/>
+  <!-- 말랑이 -->
+  <use href="#m" x="14" y="66" width="38" height="30"/>
+  <path d="M44 80Q50 72 55 70" stroke="#ff6fae" stroke-width="4" fill="none" stroke-linecap="round"/>
+  <!-- 차례를 기다리는 친구들 -->
+  <rect x="117" y="56" width="26" height="11" rx="5.5" fill="#fff"/><text x="130" y="64" text-anchor="middle" font-size="7" fill="#7b3fe4" font-family="Jua, sans-serif">다음!</text>
+  <use href="#j" x="118" y="68" width="24" height="22" style="color:#4fb4ff"/>
+  <use href="#j" x="141" y="73" width="20" height="18" style="color:#6fd96a"/>
+  <use href="#j" x="159" y="74" width="18" height="17" style="color:#ffd23f"/>
+  <use href="#j" x="175" y="75" width="17" height="16" style="color:#a76bff"/>
+  <use href="#j" x="190" y="76" width="16" height="15" style="color:#ff9f7a"/>
+  <path d="M120 96H205" stroke="#ffc93c" stroke-width="1.2" stroke-dasharray="3 3" opacity=".7"/>
+</svg>
+          <div class="bubble" style="left:10px;top:40%"><span class="nm">말랑이</span>끌면 내가 핸들을 돌려서 대포를 움직여! 손을 떼면 발사!</div></div>
         <div class="notes"><dl>
-          <dt>화면</dt><dd>위쪽에 젤리 거품 판, 아래에 말랑이와 대포, 오른쪽 아래 다음 젤리(NEXT).</dd>
-          <dt>규칙</dt><dd>같은 색 3개 이상이 붙으면 터져요. 매달린 곳이 없어진 거품은 함께 떨어져 보너스.</dd>
-          <dt>상단</dt><dd>점수 · 레벨 · 하트 3개(도전 기회).</dd>
-          <dt>연출</dt><dd>터질 때 젤리 조각과 별이 튀고, 연속으로 터지면 "콤보" 글자.</dd>
-        </dl></div>
+          <dt>조작</dt><dd>화면을 좌우로 끌면 말랑이가 대포 옆 핸들을 빙글빙글 돌리고, 대포가 그 방향으로 돌아가요. 손을 떼면 발사.</dd>
+          <dt>조준선</dt><dd>점선이 벽에 튕기는 길까지 보여 줘요.</dd>
+          <dt>목표</dt><dd>몽실이가 갇힌 거품 근처를 터뜨려 몽실이 구하기.</dd>
+        </dl><p class="line">핸들을 빨리 돌리면 말랑이가 땀을 흘리고, 멈추면 숨을 고르는 작은 연출(제안).</p></div>
+      </article>
+
+      <article class="shot">
+        <div class="shot-id"><span class="num">S08</span><h4>플레이 · 줄 서서 기다리는 친구들</h4><span class="kind">플레이</span></div>
+        <div class="phone"><div class="night"></div><img class="top-crop" src="img/ref-play.jpg" alt="거품 판">
+                    <div class="fx" style="left:24%;top:30%;font-size:20px;color:#fff">콤보 ×3!</div>
+          <svg class="band-svg" viewBox="8 44 172 82" aria-hidden="true">
+  <defs><linearGradient id="floor" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#8b6fd6"/><stop offset="1" stop-color="#3a2275"/></linearGradient></defs>
+  <path d="M-5 72Q100 54 205 72V125H-5z" fill="url(#floor)"/>
+  <path d="M-5 72Q100 54 205 72" stroke="#d9c8ff" stroke-width="1.5" fill="none" opacity=".7"/>
+  <!-- 대포 -->
+  <g transform="rotate(-20 92 74)">
+    <rect x="84" y="30" width="16" height="44" rx="8" fill="#e6dbff" stroke="#7b3fe4" stroke-width="2"/>
+    <ellipse cx="92" cy="32" rx="11" ry="4" fill="none" stroke="#ffc93c" stroke-width="3"/>
+    <circle cx="92" cy="30" r="7" fill="#ff5f8a"/><circle cx="90" cy="28" r="2" fill="#fff" opacity=".8"/>
+  </g>
+  <rect x="74" y="68" width="38" height="24" rx="11" fill="#9b7be6" stroke="#5a2bb8" stroke-width="2"/>
+  <circle cx="93" cy="80" r="7.5" fill="#ffd1e6"/>
+  <path d="M93 75.5l1.4 2.9 3.1.3-2.3 2 .7 3.1-2.9-1.6-2.9 1.6.7-3.1-2.3-2 3.1-.3z" fill="#ffc93c"/>
+  <!-- 핸들(크랭크) -->
+  <line x1="58" y1="80" x2="75" y2="80" stroke="#c9b6ff" stroke-width="4" stroke-linecap="round"/>
+  <circle cx="56" cy="80" r="11" fill="none" stroke="#ffc93c" stroke-width="3"/>
+  <line x1="45" y1="80" x2="67" y2="80" stroke="#ffc93c" stroke-width="2"/><line x1="56" y1="69" x2="56" y2="91" stroke="#ffc93c" stroke-width="2"/>
+  <circle cx="56" cy="69" r="3.2" fill="#ff5f8a" stroke="#fff" stroke-width="1"/>
+  <path d="M41 70A17 17 0 0 1 64 62" stroke="#ffc93c" stroke-width="1.6" fill="none" stroke-dasharray="2 2" marker-end="url(#arr)"/>
+  <!-- 말랑이 -->
+  <use href="#m" x="14" y="66" width="38" height="30"/>
+  <path d="M44 80Q50 72 55 70" stroke="#ff6fae" stroke-width="4" fill="none" stroke-linecap="round"/>
+  <!-- 차례를 기다리는 친구들 -->
+  <rect x="117" y="56" width="26" height="11" rx="5.5" fill="#fff"/><text x="130" y="64" text-anchor="middle" font-size="7" fill="#7b3fe4" font-family="Jua, sans-serif">다음!</text>
+  <use href="#j" x="118" y="68" width="24" height="22" style="color:#4fb4ff"/>
+  <use href="#j" x="141" y="73" width="20" height="18" style="color:#6fd96a"/>
+  <use href="#j" x="159" y="74" width="18" height="17" style="color:#ffd23f"/>
+  <use href="#j" x="175" y="75" width="17" height="16" style="color:#a76bff"/>
+  <use href="#j" x="190" y="76" width="16" height="15" style="color:#ff9f7a"/>
+  <path d="M120 96H205" stroke="#ffc93c" stroke-width="1.2" stroke-dasharray="3 3" opacity=".7"/>
+</svg></div>
+        <div class="notes"><dl>
+          <dt>줄서기</dt><dd>NEXT 상자 대신 젤리마을 친구들이 대포 오른쪽에 한 줄로 서 있어요. 맨 앞 친구 머리 위에 "다음!" 표시.</dd>
+          <dt>발사</dt><dd>쏘면 맨 앞 친구가 폴짝 뛰어 대포에 쏙 들어가고, 뒤 친구들이 한 칸씩 앞으로 통통 걸어와요.</dd>
+          <dt>바꾸기</dt><dd>맨 앞 친구를 누르면 둘째 친구와 자리를 바꿔요(색 바꾸기).</dd>
+          <dt>규칙</dt><dd>같은 색 3개 이상이 붙으면 펑. 매달린 곳이 없어진 거품은 함께 떨어져 보너스.</dd>
+        </dl><p class="line">줄에 선 친구 수 = 남은 발사 횟수라서 따로 숫자를 안 봐도 돼요.</p></div>
       </article>
 
       <article class="shot">
         <div class="shot-id"><span class="num">S09</span><h4>친구 구출!</h4><span class="kind">플레이 연출 · 2초</span></div>
         <div class="phone"><img class="bg" src="img/ref-depart.jpg" alt="구출된 친구들과 기뻐하는 영웅 젤리"><div class="dim"></div>
           <div class="bubble" style="right:10px;top:16px"><span class="nm">몽실</span>고마워, 말랑아!</div>
-          <div class="fx" style="left:0;right:0;bottom:22px;text-align:center;font-size:22px;color:#ffc93c">친구를 구했어요!</div></div>
+          <div class="fx" style="left:0;right:0;bottom:22px;text-align:center;font-size:22px;color:#ffc93c">몽실이를 구했어요!</div></div>
         <div class="notes"><dl>
-          <dt>화면</dt><dd>친구가 갇힌 특별 거품이 터지면 친구가 튀어나와 말랑이 곁으로 날아와요.</dd>
-          <dt>규칙</dt><dd>스테이지마다 갇힌 친구 1~3명. 모두 구하면 클리어.</dd>
+          <dt>화면</dt><dd>친구가 갇힌 특별 거품(무늬가 있는 큰 거품)이 터지면 친구가 튀어나와 말랑이 곁으로 날아와요.</dd>
+          <dt>규칙</dt><dd>스테이지마다 그 스테이지의 친구 1명이 갇혀 있어요. 구하면 클리어.</dd>
           <dt>소리</dt><dd>큰 "뽀옹" 소리와 짧은 축하 팡파르.</dd>
         </dl></div>
       </article>
 
       <article class="shot">
-        <div class="shot-id"><span class="num">S10</span><h4>클리어 / 실패</h4><span class="kind">결과</span></div>
+        <div class="shot-id"><span class="num">S10</span><h4>클리어 · 친구 스티커 받기</h4><span class="kind">결과</span></div>
         <div class="phone"><img class="bg blur" src="img/ref-play.jpg" alt="">
-          <div class="panel-mini"><div class="stars">★★☆</div><h5>스테이지 클리어!</h5><p>구한 친구 2명 · 점수 12,450</p></div>
-          <div class="pill" style="bottom:40px">다음 스테이지</div></div>
+          <div class="panel-mini"><div class="sticker"><svg class="mj" viewBox="0 0 40 36" width="46" height="41" style="color:#ff5f8a"  aria-hidden="true"><use href="#j"/></svg></div><div class="stars">★★☆</div><h5>몽실 스티커 획득!</h5><p>스티커 북 1 / 30 · 점수 12,450</p></div>
+          <div class="pill" style="bottom:40px">스티커 붙이기</div></div>
         <div class="notes"><dl>
-          <dt>클리어</dt><dd>별 1~3개(남은 젤리 수와 점수로). 구한 친구가 결과 창 위에서 손을 흔들어요.</dd>
-          <dt>실패</dt><dd>거품이 바닥 선까지 내려오면 하트 1개를 잃고 "다시 해볼까?" 창.</dd>
-          <dt>하트</dt><dd>하트 3개가 모두 없으면 잠깐 쉬었다 하기(시간이 지나면 다시 참). 결제는 넣지 않아요.</dd>
+          <dt>보상</dt><dd>구한 친구의 얼굴 스티커 1장. 반짝이며 빙글 돌다가 화면 가운데에 착!</dd>
+          <dt>별</dt><dd>남은 친구(줄) 수와 점수로 별 1~3개. 별은 다시 하기로 더 모을 수 있어요.</dd>
+          <dt>실패</dt><dd>거품이 바닥 선까지 내려오면 하트 1개를 잃고 "다시 해볼까?" 창. 하트는 시간이 지나면 다시 차요. 결제는 넣지 않아요.</dd>
+        </dl></div>
+      </article>
+
+      <article class="shot">
+        <div class="shot-id"><span class="num">S11</span><h4>스티커 북 · 스탬프 모으기</h4><span class="kind">메뉴</span></div>
+        <div class="phone"><div class="sb"><div class="sb-head">친구 스티커 북 <span>9 / 30</span></div><div class="sb-row"><b>1</b><span class="sb-cell got"><svg class="mj" viewBox="0 0 40 36" width="18" height="16" style="color:#ff5f8a"  aria-hidden="true"><use href="#j"/></svg></span><span class="sb-cell got"><svg class="mj" viewBox="0 0 40 36" width="18" height="16" style="color:#4fb4ff"  aria-hidden="true"><use href="#j"/></svg></span><span class="sb-cell got"><svg class="mj" viewBox="0 0 40 36" width="18" height="16" style="color:#ff9f7a"  aria-hidden="true"><use href="#j"/></svg></span><span class="sb-cell got"><svg class="mj" viewBox="0 0 40 36" width="18" height="16" style="color:#ffd23f"  aria-hidden="true"><use href="#j"/></svg></span><span class="sb-cell got"><svg class="mj" viewBox="0 0 40 36" width="18" height="16" style="color:#a76bff"  aria-hidden="true"><use href="#j"/></svg></span><span class="sb-cell got"><svg class="mj" viewBox="0 0 40 36" width="18" height="16" style="color:#ffb3e0"  aria-hidden="true"><use href="#j"/></svg></span><span class="sb-stamp">완주!</span></div><div class="sb-row"><b>2</b><span class="sb-cell got"><svg class="mj" viewBox="0 0 40 36" width="18" height="16" style="color:#6fd96a"  aria-hidden="true"><use href="#j"/></svg></span><span class="sb-cell got"><svg class="mj" viewBox="0 0 40 36" width="18" height="16" style="color:#ffb3e0"  aria-hidden="true"><use href="#j"/></svg></span><span class="sb-cell got"><svg class="mj" viewBox="0 0 40 36" width="18" height="16" style="color:#e0a050"  aria-hidden="true"><use href="#j"/></svg></span><span class="sb-cell">?</span><span class="sb-cell">?</span><span class="sb-cell">?</span></div><div class="sb-row"><b>3</b><span class="sb-cell">?</span><span class="sb-cell">?</span><span class="sb-cell">?</span><span class="sb-cell">?</span><span class="sb-cell">?</span><span class="sb-cell">?</span></div><div class="sb-row"><b>4</b><span class="sb-cell">?</span><span class="sb-cell">?</span><span class="sb-cell">?</span><span class="sb-cell">?</span><span class="sb-cell">?</span><span class="sb-cell">?</span></div><div class="sb-row"><b>5</b><span class="sb-cell">?</span><span class="sb-cell">?</span><span class="sb-cell">?</span><span class="sb-cell">?</span><span class="sb-cell">?</span><span class="sb-cell">?</span></div><div class="sb-foot">월드 한 줄을 다 채우면 월드 스탬프 쾅!</div></div></div>
+        <div class="notes"><dl>
+          <dt>화면</dt><dd>월드마다 한 줄, 줄마다 6칸. 받은 스티커가 칸에 붙고, 아직 못 구한 친구는 물음표.</dd>
+          <dt>스탬프</dt><dd>한 줄을 다 채우면 월드 스탬프가 "쾅" 찍혀요. 스탬프 5개를 다 모으면 엔딩 뒤 특별 보상(제안: 말랑이 황금 대포 꾸미기).</dd>
+          <dt>조작</dt><dd>스티커를 누르면 그 친구의 짧은 소개와 구한 스테이지가 나와요.</dd>
+        </dl></div>
+      </article>
+
+      <article class="shot">
+        <div class="shot-id"><span class="num">S12</span><h4>지도로 돌아와 한 칸 이동</h4><span class="kind">연출 · 3초</span></div>
+        <div class="phone"><img class="bg" src="img/ref-w2.jpg" alt="시럽 숲으로 넘어가는 지도"><div class="dim"></div>
+          <div class="fx" style="left:0;right:0;top:28%;text-align:center;font-size:22px;color:#fff">월드 2<br><span style="font-size:28px;color:#ffc93c">시럽 숲</span></div>
+          <div class="cap">6번째 스테이지를 깨면 다음 월드로! 배경이 시럽 숲으로 바뀌어요.</div></div>
+        <div class="notes"><dl>
+          <dt>연출</dt><dd>결과 창을 닫으면 지도로 돌아와, 말랑이가 다음 칸으로 통통 걸어가고 방금 구한 친구가 행렬 끝에 합류해요.</dd>
+          <dt>월드 전환</dt><dd>월드 마지막 칸을 깨면 화면이 젤리처럼 출렁이며 다음 월드 이름이 크게 나와요.</dd>
+          <dt>배경</dt><dd>스테이지마다 배경이 그 장소에 맞게 바뀌어요(아래 30개 목록의 "배경").</dd>
         </dl></div>
       </article>
     </div>
@@ -349,33 +496,63 @@ footer{margin-top:40px;color:var(--ink-soft);font-size:13px}
   <!-- 3막 -->
   <div class="act">
     <div class="act-head"><span class="act-no">3막</span><h3>결전과 엔딩</h3>
-      <p>다섯 번째 월드 마지막 스테이지에서 노놈과 대결하고, 모두 함께 마을로 돌아가요.</p></div>
+      <p>30번째 스테이지에서 노놈과 대결하고, 친구 30명과 함께 마을로 돌아가요.</p></div>
     <div class="shots">
 
       <article class="shot">
-        <div class="shot-id"><span class="num">S11</span><h4>보스전 · 노놈의 성</h4><span class="kind">플레이</span></div>
+        <div class="shot-id"><span class="num">S13</span><h4>최종 보스 · 노놈의 왕좌</h4><span class="kind">플레이 · 30스테이지</span></div>
         <div class="phone"><img class="bg" src="img/ref-w5.jpg" alt="노놈의 성"><div class="dim"></div>
           <div class="boss-hp">노놈<i></i></div>
-          <img class="inset" src="img/ref-nomnom.jpg" alt="노놈" style="left:50%;top:22%;transform:translateX(-50%)">
-          <div class="bubble dark" style="left:10px;bottom:70px"><span class="nm">노놈</span>내 디저트를 돌려줄 순 없지!</div>
-          <div class="cap">노놈 앞의 거품을 터뜨려 노놈을 맞히세요!</div></div>
+          <img class="inset" src="img/ref-nomnom.jpg" alt="노놈" style="left:50%;top:18%;transform:translateX(-50%)">
+          <div class="bubble dark" style="left:10px;top:48%"><span class="nm">노놈</span>내 디저트를 돌려줄 순 없지!</div>
+          <svg class="band-svg" viewBox="8 44 172 82" aria-hidden="true">
+  <defs><linearGradient id="floor" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#8b6fd6"/><stop offset="1" stop-color="#3a2275"/></linearGradient></defs>
+  <path d="M-5 72Q100 54 205 72V125H-5z" fill="url(#floor)"/>
+  <path d="M-5 72Q100 54 205 72" stroke="#d9c8ff" stroke-width="1.5" fill="none" opacity=".7"/>
+  <!-- 대포 -->
+  <g transform="rotate(-20 92 74)">
+    <rect x="84" y="30" width="16" height="44" rx="8" fill="#e6dbff" stroke="#7b3fe4" stroke-width="2"/>
+    <ellipse cx="92" cy="32" rx="11" ry="4" fill="none" stroke="#ffc93c" stroke-width="3"/>
+    <circle cx="92" cy="30" r="7" fill="#ff5f8a"/><circle cx="90" cy="28" r="2" fill="#fff" opacity=".8"/>
+  </g>
+  <rect x="74" y="68" width="38" height="24" rx="11" fill="#9b7be6" stroke="#5a2bb8" stroke-width="2"/>
+  <circle cx="93" cy="80" r="7.5" fill="#ffd1e6"/>
+  <path d="M93 75.5l1.4 2.9 3.1.3-2.3 2 .7 3.1-2.9-1.6-2.9 1.6.7-3.1-2.3-2 3.1-.3z" fill="#ffc93c"/>
+  <!-- 핸들(크랭크) -->
+  <line x1="58" y1="80" x2="75" y2="80" stroke="#c9b6ff" stroke-width="4" stroke-linecap="round"/>
+  <circle cx="56" cy="80" r="11" fill="none" stroke="#ffc93c" stroke-width="3"/>
+  <line x1="45" y1="80" x2="67" y2="80" stroke="#ffc93c" stroke-width="2"/><line x1="56" y1="69" x2="56" y2="91" stroke="#ffc93c" stroke-width="2"/>
+  <circle cx="56" cy="69" r="3.2" fill="#ff5f8a" stroke="#fff" stroke-width="1"/>
+  <path d="M41 70A17 17 0 0 1 64 62" stroke="#ffc93c" stroke-width="1.6" fill="none" stroke-dasharray="2 2" marker-end="url(#arr)"/>
+  <!-- 말랑이 -->
+  <use href="#m" x="14" y="66" width="38" height="30"/>
+  <path d="M44 80Q50 72 55 70" stroke="#ff6fae" stroke-width="4" fill="none" stroke-linecap="round"/>
+  <!-- 차례를 기다리는 친구들 -->
+  <rect x="117" y="56" width="26" height="11" rx="5.5" fill="#fff"/><text x="130" y="64" text-anchor="middle" font-size="7" fill="#7b3fe4" font-family="Jua, sans-serif">다음!</text>
+  <use href="#j" x="118" y="68" width="24" height="22" style="color:#4fb4ff"/>
+  <use href="#j" x="141" y="73" width="20" height="18" style="color:#6fd96a"/>
+  <use href="#j" x="159" y="74" width="18" height="17" style="color:#ffd23f"/>
+  <use href="#j" x="175" y="75" width="17" height="16" style="color:#a76bff"/>
+  <use href="#j" x="190" y="76" width="16" height="15" style="color:#ff9f7a"/>
+  <path d="M120 96H205" stroke="#ffc93c" stroke-width="1.2" stroke-dasharray="3 3" opacity=".7"/>
+</svg></div>
         <div class="notes"><dl>
-          <dt>화면</dt><dd>판 맨 위에 노놈, 위쪽에 노놈 체력 막대. 거품 판이 조금씩 내려와요.</dd>
+          <dt>화면</dt><dd>판 맨 위에 노놈, 위쪽에 체력 막대. 줄 선 친구들은 구한 친구 29명 중에서 차례로 나와요.</dd>
           <dt>규칙</dt><dd>노놈 바로 아래 거품을 터뜨리면 노놈이 맞아요. 노놈은 가끔 새 거품 줄을 쏟아내요.</dd>
-          <dt>연출</dt><dd>체력이 반이 되면 화를 내며 색이 붉어지고 판이 빨라져요.</dd>
-        </dl><p class="line">월드 1~4의 보스는 꼬마 놈놈 대장(제안).</p></div>
+          <dt>연출</dt><dd>체력이 반이 되면 노놈이 화를 내며 붉어지고 판이 빨라져요. 월드 1~4 보스(뭉치, 찐득이, 푸딩 골렘, 철컹이)도 같은 방식.</dd>
+        </dl></div>
       </article>
 
       <article class="shot">
-        <div class="shot-id"><span class="num">S12</span><h4>엔딩 · 다시 행복한 젤리마을</h4><span class="kind">컷신 · 6초</span></div>
+        <div class="shot-id"><span class="num">S14</span><h4>엔딩 · 다시 행복한 젤리마을</h4><span class="kind">컷신 · 6초</span></div>
         <div class="phone"><img class="bg" src="img/ref-ending.jpg" alt="모든 친구와 함께하는 젤리마을" style="object-position:40% 50%"><div class="dim"></div>
           <div class="bubble" style="left:10px;top:16px"><span class="nm">말랑이</span>모두가 다시 함께 웃을 수 있게 됐어!</div>
           <div class="bubble dark" style="right:10px;top:84px"><span class="nm">노놈</span>…나도 같이 놀면 안 될까?</div>
-          <div class="cap">HAPPY JELLY VILLAGE! 구한 친구 25명이 모두 모여 파티를 열어요.</div></div>
+          <div class="cap">HAPPY JELLY VILLAGE! 구한 친구 30명이 모두 모여 파티를 열어요.</div></div>
         <div class="notes"><dl>
-          <dt>화면</dt><dd>마을 광장에 모든 친구가 모여 춤을 춰요. 마지막에 노놈도 머쓱하게 끼어들어요.</dd>
-          <dt>연출</dt><dd>하트와 별이 떠오르고, 친구들이 한 명씩 인사하는 크레딧.</dd>
-          <dt>이후</dt><dd>엔딩 뒤에도 별 3개 모으기와 무한 모드(제안)로 계속 플레이.</dd>
+          <dt>화면</dt><dd>마을 광장에 친구 30명이 모여 춤을 춰요. 마지막에 노놈도 머쓱하게 끼어들어요.</dd>
+          <dt>연출</dt><dd>스티커 북이 펼쳐지며 30장이 한 장씩 반짝이고, 친구들이 인사하는 크레딧.</dd>
+          <dt>이후</dt><dd>별 3개 모으기, 스탬프 완성 보상으로 계속 플레이.</dd>
         </dl></div>
       </article>
     </div>
@@ -385,31 +562,62 @@ footer{margin-top:40px;color:var(--ink-soft);font-size:13px}
 <!-- 월드 -->
 <section class="section">
   <div class="band">
-    <h2><svg viewBox="0 0 24 24" aria-hidden="true"><path fill="#ffc93c" d="M12 2l2.9 6.6 7.1.6-5.4 4.7 1.6 7L12 17.3 5.8 21l1.6-7L2 9.2l7.1-.6z"/></svg>월드 구성</h2>
-    <p>월드마다 새 장치를 하나씩 더해서 같은 놀이가 지루하지 않게 해요. 장치는 제안이에요.</p>
+    <h2><svg viewBox="0 0 24 24" aria-hidden="true"><path fill="#ffc93c" d="M12 2l2.9 6.6 7.1.6-5.4 4.7 1.6 7L12 17.3 5.8 21l1.6-7L2 9.2l7.1-.6z"/></svg>30개 스테이지</h2>
+    <p>월드 5개 × 6스테이지. 스테이지마다 배경, 구할 친구(= 받을 스티커), 새 놀이 요소가 달라요. 이름과 장치는 제안이에요.</p>
   </div>
-  <div class="table-wrap"><table>
-    <thead><tr><th>월드</th><th>그림</th><th>분위기</th><th>새 장치</th><th>구할 친구</th></tr></thead>
-    <tbody>
-      <tr><td>1 젤리마을</td><td><img src="img/ref-w1.jpg" alt=""></td><td>모험이 시작되는 평화로운 마을</td><td>기본 규칙만 (튜토리얼)</td><td>몽실 외 4명</td></tr>
-      <tr><td>2 시럽 숲</td><td><img src="img/ref-w2.jpg" alt=""></td><td>달콤한 시럽이 흐르는 분홍 숲</td><td>끈적 시럽 거품: 두 번 맞혀야 터짐</td><td>곰찡 외 4명</td></tr>
-      <tr><td>3 푸딩 동굴</td><td><img src="img/ref-w3.jpg" alt=""></td><td>탱글탱글 푸딩이 가득한 동굴</td><td>흔들 푸딩: 맞으면 옆 거품 색이 바뀜</td><td>5명</td></tr>
-      <tr><td>4 디저트 공장</td><td><img src="img/ref-w4.jpg" alt=""></td><td>젤리를 가두는 거대한 공장</td><td>컨베이어: 거품 줄이 옆으로 움직임</td><td>5명</td></tr>
-      <tr><td>5 노놈의 성</td><td><img src="img/ref-w5.jpg" alt=""></td><td>모든 친구가 갇힌 어두운 성</td><td>보스 노놈 + 앞 월드 장치 모두</td><td>5명</td></tr>
-    </tbody>
-  </table></div>
+  <div class="worlds">
+    <article class="world">
+      <div class="world-head" style="background:linear-gradient(90deg,#bfe6ff,#fff 70%)"><img src="img/ref-w1.jpg" alt="젤리마을 배경">
+        <div><h3>월드 1 · 젤리마을</h3><p>맑은 낮에서 노을까지, 폭포와 젤리 집이 있는 마을</p><span class="mech">이 월드의 새 장치: 기본 규칙 익히기</span></div></div>
+      <ol class="stages"><li><span class="no">1</span><h4>마을 광장</h4><span class="bgd">배경 · 아침 햇살, 분수 앞 광장</span><span class="friend"><svg class="mj" viewBox="0 0 40 36" width="22" height="19" style="color:#ff5f8a"  aria-hidden="true"><use href="#j"/></svg><span><b>몽실</b> · 딸기 스티커</span></span><span class="mechs">튜토리얼: 조준과 발사</span></li><li><span class="no">2</span><h4>젤리 분수</h4><span class="bgd">배경 · 물보라가 튀는 분수대</span><span class="friend"><svg class="mj" viewBox="0 0 40 36" width="22" height="19" style="color:#4fb4ff"  aria-hidden="true"><use href="#j"/></svg><span><b>퐁당</b> · 소다 스티커</span></span><span class="mechs">벽에 튕겨 맞히기</span></li><li><span class="no">3</span><h4>꽃밭 언덕</h4><span class="bgd">배경 · 젤리 꽃이 핀 언덕</span><span class="friend"><svg class="mj" viewBox="0 0 40 36" width="22" height="19" style="color:#ff9f7a"  aria-hidden="true"><use href="#j"/></svg><span><b>꽃잎</b> · 복숭아 스티커</span></span><span class="mechs">떨어뜨리기 보너스</span></li><li><span class="no">4</span><h4>폭포 다리</h4><span class="bgd">배경 · 무지개가 걸린 폭포 다리</span><span class="friend"><svg class="mj" viewBox="0 0 40 36" width="22" height="19" style="color:#ffd23f"  aria-hidden="true"><use href="#j"/></svg><span><b>찰랑</b> · 레몬 스티커</span></span><span class="mechs">친구 2명 동시 구출</span></li><li><span class="no">5</span><h4>노을 지붕</h4><span class="bgd">배경 · 주황빛 노을과 지붕 위</span><span class="friend"><svg class="mj" viewBox="0 0 40 36" width="22" height="19" style="color:#a76bff"  aria-hidden="true"><use href="#j"/></svg><span><b>포도알</b> · 포도 스티커</span></span><span class="mechs">거품이 한 줄씩 내려옴</span></li><li class="boss"><span class="no">6</span><h4>마을 입구 (보스)</h4><span class="bgd">배경 · 해 질 녘 마을 문, 놈놈 깃발</span><span class="friend"><svg class="mj" viewBox="0 0 40 36" width="22" height="19" style="color:#ffb3e0"  aria-hidden="true"><use href="#j"/></svg><span><b>뭉게</b> · 솜사탕 스티커</span></span><span class="mechs">보스: 꼬마 놈놈 대장 뭉치</span></li></ol>
+    </article>
+    <article class="world">
+      <div class="world-head" style="background:linear-gradient(90deg,#ffd1ea,#fff 70%)"><img src="img/ref-w2.jpg" alt="시럽 숲 배경">
+        <div><h3>월드 2 · 시럽 숲</h3><p>분홍 나무와 시럽 시냇물이 흐르는 숲</p><span class="mech">이 월드의 새 장치: 끈적 시럽 거품: 두 번 맞혀야 터짐</span></div></div>
+      <ol class="stages"><li><span class="no">7</span><h4>시럽 오솔길</h4><span class="bgd">배경 · 나무 사이로 빛이 드는 오솔길</span><span class="friend"><svg class="mj" viewBox="0 0 40 36" width="22" height="19" style="color:#6fd96a"  aria-hidden="true"><use href="#j"/></svg><span><b>곰찡</b> · 라임 스티커</span></span><span class="mechs">끈적 거품 첫 등장</span></li><li><span class="no">8</span><h4>솜사탕 나무</h4><span class="bgd">배경 · 구름 같은 솜사탕 나무 아래</span><span class="friend"><svg class="mj" viewBox="0 0 40 36" width="22" height="19" style="color:#ffb3e0"  aria-hidden="true"><use href="#j"/></svg><span><b>솜솜</b> · 솜사탕 스티커</span></span><span class="mechs">높이 매달린 친구</span></li><li><span class="no">9</span><h4>메이플 시냇물</h4><span class="bgd">배경 · 반짝이는 시럽 시냇물</span><span class="friend"><svg class="mj" viewBox="0 0 40 36" width="22" height="19" style="color:#e0a050"  aria-hidden="true"><use href="#j"/></svg><span><b>메이</b> · 캐러멜 스티커</span></span><span class="mechs">시럽에 덮인 줄</span></li><li><span class="no">10</span><h4>버섯 젤리촌</h4><span class="bgd">배경 · 젤리 버섯 집들</span><span class="friend"><svg class="mj" viewBox="0 0 40 36" width="22" height="19" style="color:#4fdcc4"  aria-hidden="true"><use href="#j"/></svg><span><b>톡이</b> · 민트 스티커</span></span><span class="mechs">버섯 거품: 터지면 주변 색 변경</span></li><li><span class="no">11</span><h4>반딧불 밤숲</h4><span class="bgd">배경 · 반딧불이 날아다니는 밤</span><span class="friend"><svg class="mj" viewBox="0 0 40 36" width="22" height="19" style="color:#ffd23f"  aria-hidden="true"><use href="#j"/></svg><span><b>반짝</b> · 레몬 스티커</span></span><span class="mechs">어두운 판, 반딧불 주변만 밝음</span></li><li class="boss"><span class="no">12</span><h4>숲의 심장 (보스)</h4><span class="bgd">배경 · 거대한 시럽 나무</span><span class="friend"><svg class="mj" viewBox="0 0 40 36" width="22" height="19" style="color:#ff5f8a"  aria-hidden="true"><use href="#j"/></svg><span><b>달콩</b> · 딸기 스티커</span></span><span class="mechs">보스: 끈적 대장 찐득이</span></li></ol>
+    </article>
+    <article class="world">
+      <div class="world-head" style="background:linear-gradient(90deg,#ffe0a8,#fff 70%)"><img src="img/ref-w3.jpg" alt="푸딩 동굴 배경">
+        <div><h3>월드 3 · 푸딩 동굴</h3><p>탱글탱글 푸딩과 캐러멜 종유석이 가득한 동굴</p><span class="mech">이 월드의 새 장치: 흔들 푸딩: 맞으면 옆 거품 색이 바뀜</span></div></div>
+      <ol class="stages"><li><span class="no">13</span><h4>동굴 입구</h4><span class="bgd">배경 · 빛이 새어 드는 입구</span><span class="friend"><svg class="mj" viewBox="0 0 40 36" width="22" height="19" style="color:#fff0b8"  aria-hidden="true"><use href="#j"/></svg><span><b>탱글</b> · 바닐라 스티커</span></span><span class="mechs">흔들 푸딩 첫 등장</span></li><li><span class="no">14</span><h4>캐러멜 종유석</h4><span class="bgd">배경 · 천장에서 녹아내리는 캐러멜</span><span class="friend"><svg class="mj" viewBox="0 0 40 36" width="22" height="19" style="color:#e0a050"  aria-hidden="true"><use href="#j"/></svg><span><b>캬라</b> · 캐러멜 스티커</span></span><span class="mechs">위에서 떨어지는 캐러멜 방울</span></li><li><span class="no">15</span><h4>푸딩 호수</h4><span class="bgd">배경 · 출렁이는 지하 호수</span><span class="friend"><svg class="mj" viewBox="0 0 40 36" width="22" height="19" style="color:#4fb4ff"  aria-hidden="true"><use href="#j"/></svg><span><b>출렁</b> · 소다 스티커</span></span><span class="mechs">판이 좌우로 천천히 흔들림</span></li><li><span class="no">16</span><h4>수정 광산</h4><span class="bgd">배경 · 반짝이는 젤리 수정</span><span class="friend"><svg class="mj" viewBox="0 0 40 36" width="22" height="19" style="color:#6475ff"  aria-hidden="true"><use href="#j"/></svg><span><b>반들</b> · 블루베리 스티커</span></span><span class="mechs">수정 거품: 무지개 색(아무 색과 짝)</span></li><li><span class="no">17</span><h4>어둠 미로</h4><span class="bgd">배경 · 손전등 불빛만 보이는 미로</span><span class="friend"><svg class="mj" viewBox="0 0 40 36" width="22" height="19" style="color:#a76bff"  aria-hidden="true"><use href="#j"/></svg><span><b>깜빡</b> · 포도 스티커</span></span><span class="mechs">어두운 판</span></li><li class="boss"><span class="no">18</span><h4>동굴 깊은 곳 (보스)</h4><span class="bgd">배경 · 거대한 푸딩 산</span><span class="friend"><svg class="mj" viewBox="0 0 40 36" width="22" height="19" style="color:#ff9f7a"  aria-hidden="true"><use href="#j"/></svg><span><b>푸디</b> · 복숭아 스티커</span></span><span class="mechs">보스: 푸딩 골렘</span></li></ol>
+    </article>
+    <article class="world">
+      <div class="world-head" style="background:linear-gradient(90deg,#ffd0d8,#fff 70%)"><img src="img/ref-w4.jpg" alt="디저트 공장 배경">
+        <div><h3>월드 4 · 디저트 공장</h3><p>파이프와 컨베이어가 돌아가는 거대한 공장</p><span class="mech">이 월드의 새 장치: 컨베이어: 거품 줄이 옆으로 움직임</span></div></div>
+      <ol class="stages"><li><span class="no">19</span><h4>정문 컨베이어</h4><span class="bgd">배경 · 움직이는 벨트 위</span><span class="friend"><svg class="mj" viewBox="0 0 40 36" width="22" height="19" style="color:#4fdcc4"  aria-hidden="true"><use href="#j"/></svg><span><b>톡톡</b> · 민트 스티커</span></span><span class="mechs">컨베이어 첫 등장</span></li><li><span class="no">20</span><h4>쿠키 굽는 방</h4><span class="bgd">배경 · 오븐 불빛이 따뜻한 방</span><span class="friend"><svg class="mj" viewBox="0 0 40 36" width="22" height="19" style="color:#e0a050"  aria-hidden="true"><use href="#j"/></svg><span><b>쿠키</b> · 캐러멜 스티커</span></span><span class="mechs">쿠키 블록: 거품을 막음</span></li><li><span class="no">21</span><h4>아이스크림 냉동실</h4><span class="bgd">배경 · 하얀 서리와 얼음</span><span class="friend"><svg class="mj" viewBox="0 0 40 36" width="22" height="19" style="color:#fff0b8"  aria-hidden="true"><use href="#j"/></svg><span><b>얼음이</b> · 바닐라 스티커</span></span><span class="mechs">얼음 거품: 한 번 녹여야 터짐</span></li><li><span class="no">22</span><h4>초콜릿 강</h4><span class="bgd">배경 · 초콜릿이 흐르는 강</span><span class="friend"><svg class="mj" viewBox="0 0 40 36" width="22" height="19" style="color:#9a6a4a"  aria-hidden="true"><use href="#j"/></svg><span><b>초코</b> · 초코 스티커</span></span><span class="mechs">판이 아래로 빠르게 내려옴</span></li><li><span class="no">23</span><h4>포장 공장</h4><span class="bgd">배경 · 리본과 상자가 쌓인 곳</span><span class="friend"><svg class="mj" viewBox="0 0 40 36" width="22" height="19" style="color:#ff5f8a"  aria-hidden="true"><use href="#j"/></svg><span><b>리본</b> · 딸기 스티커</span></span><span class="mechs">선물 상자 거품: 터지면 아이템</span></li><li class="boss"><span class="no">24</span><h4>공장장실 (보스)</h4><span class="bgd">배경 · 경보등이 깜빡이는 조종실</span><span class="friend"><svg class="mj" viewBox="0 0 40 36" width="22" height="19" style="color:#6475ff"  aria-hidden="true"><use href="#j"/></svg><span><b>무지</b> · 블루베리 스티커</span></span><span class="mechs">보스: 공장장 로봇 철컹이</span></li></ol>
+    </article>
+    <article class="world">
+      <div class="world-head" style="background:linear-gradient(90deg,#d9c8ff,#fff 70%)"><img src="img/ref-w5.jpg" alt="노놈의 성 배경">
+        <div><h3>월드 5 · 노놈의 성</h3><p>보랏빛 마법이 감도는 노놈의 성</p><span class="mech">이 월드의 새 장치: 앞 월드 장치가 모두 섞여 나옴</span></div></div>
+      <ol class="stages"><li><span class="no">25</span><h4>성문 다리</h4><span class="bgd">배경 · 해자 위 늘어진 다리</span><span class="friend"><svg class="mj" viewBox="0 0 40 36" width="22" height="19" style="color:#ffd23f"  aria-hidden="true"><use href="#j"/></svg><span><b>별사탕</b> · 레몬 스티커</span></span><span class="mechs">시럽 + 푸딩 장치</span></li><li><span class="no">26</span><h4>거품 감옥</h4><span class="bgd">배경 · 거품에 갇힌 친구들이 가득</span><span class="friend"><svg class="mj" viewBox="0 0 40 36" width="22" height="19" style="color:#4fb4ff"  aria-hidden="true"><use href="#j"/></svg><span><b>방울</b> · 소다 스티커</span></span><span class="mechs">친구 3명 동시 구출</span></li><li><span class="no">27</span><h4>거울 복도</h4><span class="bgd">배경 · 거울에 비친 판이 둘</span><span class="friend"><svg class="mj" viewBox="0 0 40 36" width="22" height="19" style="color:#4fdcc4"  aria-hidden="true"><use href="#j"/></svg><span><b>똑딱</b> · 민트 스티커</span></span><span class="mechs">좌우 대칭으로 움직이는 판</span></li><li><span class="no">28</span><h4>왕관 탑</h4><span class="bgd">배경 · 높은 탑 꼭대기, 별이 가까운 밤</span><span class="friend"><svg class="mj" viewBox="0 0 40 36" width="22" height="19" style="color:#a76bff"  aria-hidden="true"><use href="#j"/></svg><span><b>왕관</b> · 포도 스티커</span></span><span class="mechs">컨베이어 + 얼음</span></li><li><span class="no">29</span><h4>노놈의 부엌</h4><span class="bgd">배경 · 거대한 냄비와 숟가락</span><span class="friend"><svg class="mj" viewBox="0 0 40 36" width="22" height="19" style="color:#ffb3e0"  aria-hidden="true"><use href="#j"/></svg><span><b>마카롱</b> · 솜사탕 스티커</span></span><span class="mechs">시간 제한 스테이지</span></li><li class="boss"><span class="no">30</span><h4>왕좌의 방 (최종 보스)</h4><span class="bgd">배경 · 붉은 달빛의 왕좌</span><span class="friend"><svg class="mj" viewBox="0 0 40 36" width="22" height="19" style="color:#6fd96a"  aria-hidden="true"><use href="#j"/></svg><span><b>촌장님</b> · 라임 스티커</span></span><span class="mechs">최종 보스: 노놈</span></li></ol>
+    </article>
+  </div>
+</section>
+
+<!-- 보상 -->
+<section class="section">
+  <div class="band">
+    <h2><svg viewBox="0 0 24 24" aria-hidden="true"><path fill="#ffc93c" d="M12 2l2.9 6.6 7.1.6-5.4 4.7 1.6 7L12 17.3 5.8 21l1.6-7L2 9.2l7.1-.6z"/></svg>스티커와 스탬프</h2>
+    <p>모으는 재미를 세 단계로 나눴어요.</p>
+  </div>
+  <div class="rules">
+    <div><h3>친구 스티커 30장</h3><p>스테이지를 처음 깨면 그 스테이지에서 구한 친구 스티커 1장. 다시 깨도 중복으로 주지 않아요.</p></div>
+    <div><h3>월드 스탬프 5개</h3><p>한 월드의 스티커 6장을 다 모으면 스티커 북 그 줄에 월드 스탬프가 찍혀요.</p></div>
+    <div><h3>별 90개</h3><p>스테이지마다 별 최대 3개. 별을 모으면 대포 꾸미기(색·무늬)가 열려요(제안).</p></div>
+    <div><h3>행렬</h3><p>구한 친구는 지도에서 말랑이 뒤를 따라 걷고, 플레이 중에는 대포 옆 줄에 서서 차례를 기다려요.</p></div>
+  </div>
 </section>
 
 <!-- 결정 -->
 <section class="section">
   <div class="band">
-    <h2><svg viewBox="0 0 24 24" aria-hidden="true"><path fill="#ffc93c" d="M12 2l2.9 6.6 7.1.6-5.4 4.7 1.6 7L12 17.3 5.8 21l1.6-7L2 9.2l7.1-.6z"/></svg>정해 주시면 좋은 것</h2>
-    <p>답이 없으면 아래 추천대로 진행해요.</p>
+    <h2><svg viewBox="0 0 24 24" aria-hidden="true"><path fill="#ffc93c" d="M12 2l2.9 6.6 7.1.6-5.4 4.7 1.6 7L12 17.3 5.8 21l1.6-7L2 9.2l7.1-.6z"/></svg>정해진 것 / 정해 주시면 좋은 것</h2>
+    <p>답이 없으면 추천대로 진행해요.</p>
   </div>
   <div class="decide">
-    <div><h3>주인공 이름</h3><p>말랑이 / 몽글이 / 직접 짓기</p><p class="rec">추천: 말랑이</p></div>
-    <div><h3>스테이지 수</h3><p>월드당 10개(총 50개) / 월드당 5개(총 25개)</p><p class="rec">추천: 첫 출시는 월드당 5개</p></div>
-    <div><h3>그림 방식</h3><p>레퍼런스 같은 고급 3D 그림은 이미지 파일로 넣어야 해요. 코드로 그린 젤리로 먼저 만들고 그림은 나중에 바꿔 끼울 수 있어요.</p><p class="rec">추천: 코드 그림으로 먼저, 그림은 나중에</p></div>
+    <div><h3>정해진 것</h3><p>주인공 말랑이 · 30스테이지 · 클리어마다 친구 구출 + 스티커 · 스탬프 모으기 · 스테이지별 배경 · 핸들 돌리는 말랑이 · 줄 서는 친구들</p></div>
+    <div><h3>그림 방식</h3><p>레퍼런스 같은 고급 3D 그림은 이미지 파일이 필요해요. 코드로 그린 젤리와 배경으로 먼저 만들고, 그림은 나중에 바꿔 끼울 수 있어요.</p><p class="rec">추천: 코드 그림으로 먼저</p></div>
+    <div><h3>첫 개발 범위</h3><p>30개를 한 번에 만들기보다 월드 1(6스테이지)을 먼저 완성해 손맛을 확인하고 나머지를 이어서 만들어요.</p><p class="rec">추천: 월드 1 먼저</p></div>
   </div>
 </section>
 
