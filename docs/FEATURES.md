@@ -10,7 +10,7 @@
 | 그림(거품·젤리·보스·대포·말랑이·줄 선 친구들) | `bubbleSprite()`, `drawJelly()`, `drawBoss()`, `drawCannonArea()` |
 | 스테이지 배경 6종 | `background(theme)` |
 | 프롤로그 4컷 | `SLIDES`, `slideArt()` |
-| 모험 지도·말랑이 이동 | `renderMap()`, `NODE_POS` |
+| 모험 지도(입체 마을 그림·길·구름)·말랑이와 친구들 걷기 | `villageSVG()`, `renderMap()`, `MAP_NODES` |
 | 결과 창·스티커 | `showResult()` |
 | 스티커 북(30칸·스탬프) | `renderBook()` |
 | 저장(별·스티커·프롤로그 본 적) | `P`, `saveP()` (localStorage `jellypop2.progress`) |
