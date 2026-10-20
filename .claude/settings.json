@@ -29,10 +29,13 @@
       "Bash(npx --no tsc*)",
       "Bash(pytest)",
       "Bash(pytest *)",
-      "Bash(python3 -m pytest *)"
+      "Bash(python3 -m pytest *)",
+      "Bash(git push)",
+      "Bash(git push *)",
+      "Bash(python3 *)",
+      "Bash(node *)"
     ],
     "ask": [
-      "Bash(git push *)",
       "Bash(git reset --hard*)",
       "Bash(git clean *)",
       "Bash(git branch -d*)",
