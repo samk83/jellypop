@@ -6,7 +6,7 @@ import path from 'node:path';
 import fs from 'node:fs';
 
 const root = path.dirname(path.dirname(fileURLToPath(import.meta.url)));
-const url = pathToFileURL(path.join(root, 'index.html')).href;
+const url = pathToFileURL(path.join(root, 'classic.html')).href;
 const shots = path.join(root, 'design', 'screens');
 fs.mkdirSync(shots, { recursive: true });
 
