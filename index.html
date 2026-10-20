@@ -86,9 +86,9 @@ button:focus-visible,canvas:focus-visible{outline:3px solid var(--star);outline-
 .map-title small{display:block;font-size:12px;color:var(--text-muted)}
 .map-title b{font-family:var(--font-display);font-weight:400;font-size:20px}
 .map-head .icon-btn{background:rgba(43,22,80,.82)}
-.map-field{position:relative;flex:1;min-height:0;overflow-x:hidden;overflow-y:auto;overscroll-behavior:contain;-webkit-overflow-scrolling:touch;
-  box-shadow:inset 0 10px 14px -8px rgba(43,22,80,.35),inset 0 -10px 14px -8px rgba(43,22,80,.35)}
-.map-world{position:relative;width:100%;aspect-ratio:360/1200}
+.map-field{position:relative;flex:1;min-height:0;overflow:hidden;display:grid;place-items:center;
+  background:linear-gradient(180deg,#1d0f3a 0%,#5a3290 22%,#f4a77e 36%,#bfe6c8 47%,#cdf2b4 66%,#b5eabd 100%)}
+.map-world{position:relative;border-radius:14px;overflow:hidden;box-shadow:0 8px 24px rgba(43,22,80,.3)}
 .map-world svg.village{position:absolute;inset:0;width:100%;height:100%;display:block}
 .village .drift{animation:drift 9s ease-in-out infinite alternate}
 .village .drift.slow{animation-duration:14s}
@@ -99,6 +99,12 @@ button:focus-visible,canvas:focus-visible{outline:3px solid var(--star);outline-
 @keyframes spin{to{transform:rotate(360deg)}}
 @keyframes flow{to{stroke-dashoffset:-16}}
 @keyframes twinkle{from{opacity:.25}to{opacity:1}}
+.village .puff{transform-box:fill-box;transform-origin:center;animation:puff 2.4s ease-out infinite;opacity:0}
+@keyframes puff{0%{opacity:.85;transform:translateY(0) scale(.6)}100%{opacity:0;transform:translateY(-18px) scale(1.7)}}
+.village .fly{animation:fly 18s linear infinite}
+@keyframes fly{from{transform:translateX(-30px)}to{transform:translateX(400px)}}
+.village .flap{transform-box:fill-box;transform-origin:center;animation:flap .5s ease-in-out infinite alternate}
+@keyframes flap{to{transform:scaleY(-.6)}}
 @keyframes ping{0%{transform:scale(.9);opacity:.9}100%{transform:scale(1.35);opacity:0}}
 .node{position:absolute;width:58px;height:58px;margin:-29px 0 0 -29px;border-radius:50%;display:grid;place-items:center;z-index:2;
   font-family:var(--font-display);font-size:24px;color:var(--brand);border:3px solid #fff;
@@ -112,9 +118,10 @@ button:focus-visible,canvas:focus-visible{outline:3px solid var(--star);outline-
 .node:disabled{filter:grayscale(.7) brightness(.95);opacity:.85;cursor:default}
 .node:disabled:active{transform:none}
 .node .st{position:absolute;top:-18px;font-size:13px;color:var(--star);text-shadow:0 1px 0 #8a3d00,0 0 4px #fff;letter-spacing:-1px;white-space:nowrap}
-.node .nm{position:absolute;top:58px;font-size:12px;white-space:nowrap;background:rgba(43,22,80,.8);color:#fff;border-radius:99px;padding:1px 8px}
+.node .nm{position:absolute;top:56px;font-size:12px;white-space:nowrap;background:rgba(43,22,80,.8);color:#fff;border-radius:99px;padding:1px 8px}
 .walker{position:absolute;width:64px;height:50px;transform:translate(-50%,-112%);pointer-events:none;z-index:4;filter:drop-shadow(0 7px 3px rgba(43,22,80,.35))}
-.walker svg,.follower svg{display:block}
+.walker svg,.follower svg{display:block;animation:hop 1.6s ease-in-out infinite}
+.follower:nth-of-type(2n) svg{animation-delay:.4s}.follower:nth-of-type(3n) svg{animation-delay:.8s}
 .walker.walking svg,.follower.walking svg{animation:hop .45s ease-in-out infinite}
 .follower{position:absolute;width:26px;height:24px;transform:translate(-50%,-95%);pointer-events:none;z-index:3;filter:drop-shadow(0 4px 2px rgba(43,22,80,.3))}
 .sign{position:absolute;transform:translate(-50%,-50%);font-family:var(--font-display);font-size:13px;color:#fff;background:rgba(43,22,80,.78);
@@ -175,7 +182,8 @@ button:focus-visible,canvas:focus-visible{outline:3px solid var(--star);outline-
 .stamp{position:absolute;right:8px;top:6px;font-family:var(--font-display);color:#ff4f8f;border:3px solid #ff4f8f;border-radius:10px;padding:0 8px;transform:rotate(10deg);font-size:15px;background:#fff}
 .book-foot{margin-top:auto;text-align:center;font-size:13px;color:var(--ink-soft)}
 
-@media (prefers-reduced-motion:reduce){.title-cast svg,.walker.walking svg,.follower.walking svg,.sticker,.village *,.node.next::after{animation:none!important}}
+@media (max-height:700px){.node{width:48px;height:48px;margin:-24px 0 0 -24px;font-size:20px}.node.boss{font-size:14px}.node .nm{top:46px;font-size:11px}.walker{width:52px;height:40px}.walker svg{width:52px;height:40px}}
+@media (prefers-reduced-motion:reduce){.title-cast svg,.walker svg,.follower svg,.sticker,.village *,.node.next::after{animation:none!important}}
 </style>
 </head>
 <body>
@@ -1102,9 +1110,9 @@ $('skipBtn').onclick = endIntro;
 
 // 지도: 아래(마을 광장)에서 위(마을 입구)로 올라가는 입체 마을 길
 // 좌표는 360×1200 그림 기준. 위쪽(먼 곳)에 있는 것부터 그려서 앞쪽 물건이 뒤쪽을 가리게 한다.
-const MAP_W = 360, MAP_H = 1200;
-const MAP_NODES = [[96, 1088], [262, 924], [98, 756], [254, 598], [112, 430], [186, 214]];
-const ROAD_PTS = [[178, 1196], ...MAP_NODES, [176, 40]];
+const MAP_W = 360, MAP_H = 620;
+const MAP_NODES = [[90, 558], [262, 470], [96, 381], [256, 294], [112, 204], [190, 102]];
+const ROAD_PTS = [[178, 614], ...MAP_NODES, [176, 16]];
 function smoothPath(pts) {
   const f = v => v.map(n => n.toFixed(1)).join(',');
   let d = `M${f(pts[0])}`;
@@ -1170,89 +1178,93 @@ function villageSVG(open) {
     for (const fx of [140, 232]) s += `<rect x="${fx - 2}" y="226" width="4" height="20" fill="#2a1450"/><path d="M${fx},214 q-6,8 0,13 q6,-5 0,-13z" fill="#ffb347" class="twinkle"/>`;
     return s;
   };
+  const wrap = (x, y, s, svg) => `<g transform="translate(${x} ${y}) scale(${s})">${svg}</g>`;
+  // 굴뚝 연기 (뭉게뭉게 올라감)
+  const smoke = (x, y) => [0, 1, 2].map(k => `<circle cx="${x}" cy="${y}" r="3.5" fill="#fff" class="puff" style="animation-delay:${k * .8}s"/>`).join('');
   const objs = [], add = (y, s) => objs.push([y, s]);
   // 1 마을 광장
-  add(1185, house(16, 1185, 48, '#ffc4dc', '#ff6fae'));
-  add(1196, house(262, 1196, 50, '#d9c8ff', '#a76bff'));
-  add(1084, house(286, 1084, 40, '#fff0b8', '#ffb347'));
-  add(1150, house(206, 1150, 36, '#c4ecff', '#3fa9ff'));
-  [[34, 1046, 1], [334, 1146, .9], [238, 1066, .8], [118, 1196, .7]].forEach(([x, y, s]) => add(y, tree(x, y, s)));
-  add(1082, lamp(52, 1082)); add(1130, lamp(150, 1130));
+  add(608, house(14, 608, 34, '#ffc4dc', '#ff6fae') + smoke(40, 566));
+  add(614, house(270, 614, 36, '#d9c8ff', '#a76bff') + smoke(298, 570));
+  add(548, house(296, 548, 28, '#fff0b8', '#ffb347'));
+  add(596, house(196, 596, 26, '#c4ecff', '#3fa9ff') + smoke(216, 564));
+  [[30, 532, .65], [338, 590, .6], [232, 548, .55], [128, 616, .5]].forEach(([x, y, s]) => add(y, tree(x, y, s)));
+  add(548, wrap(52, 548, .7, lamp(0, 0))); add(586, wrap(146, 586, .7, lamp(0, 0)));
   // 2 젤리 분수
-  add(935, fountain(112, 935));
-  add(1010, house(298, 1010, 38, '#e6fffa', '#2ec4b6'));
-  add(866, house(8, 866, 34, '#ffffff', '#4fb4ff'));
-  [[24, 994, .9], [338, 962, .8], [196, 1042, .7]].forEach(([x, y, s]) => add(y, tree(x, y, s)));
+  add(482, wrap(112, 482, .62, fountain(0, 0)));
+  add(512, house(300, 512, 28, '#e6fffa', '#2ec4b6'));
+  add(442, house(8, 442, 26, '#ffffff', '#4fb4ff'));
+  [[24, 508, .6], [340, 488, .55]].forEach(([x, y, s]) => add(y, tree(x, y, s)));
   // 3 꽃밭 언덕
-  add(748, windmill(300, 748));
-  add(826, house(14, 826, 36, '#fff4f9', '#ff8cc0'));
-  [[205, 792, .8], [336, 672, .75], [44, 704, .9], [168, 676, .7]].forEach(([x, y, s]) => add(y, tree(x, y, s, 'p')));
+  add(404, wrap(300, 404, .62, windmill(0, 0)));
+  add(424, house(12, 424, 26, '#fff4f9', '#ff8cc0'));
+  [[205, 414, .55], [336, 352, .5], [44, 360, .6]].forEach(([x, y, s]) => add(y, tree(x, y, s, 'p')));
   // 4 폭포 다리
-  [[28, 552, .9], [72, 520, .8], [24, 668, .8]].forEach(([x, y, s]) => add(y, tree(x, y, s)));
+  [[24, 268, .55], [62, 250, .5], [24, 336, .5]].forEach(([x, y, s]) => add(y, tree(x, y, s)));
   // 5 노을 지붕
-  add(470, house(18, 470, 44, '#ffd8b8', '#ff7a6a', '#ffd27a'));
-  add(486, house(236, 486, 44, '#ffe2b0', '#ff9f43', '#ffd27a'));
-  add(392, house(12, 392, 40, '#f9c7ff', '#a76bff', '#ffd27a'));
-  add(398, house(270, 398, 42, '#ffd1e6', '#ff5f8a', '#ffd27a'));
-  add(346, house(214, 346, 34, '#ffe9c7', '#c86bff', '#ffd27a'));
-  add(452, lamp(160, 452, '#ffd27a'));
-  add(436, `<path d="M64,404 Q160,446 272,376" stroke="#5a2f8a" stroke-width="1.5" fill="none"/>` +
-    [[90, 414], [120, 426], [150, 430], [180, 424], [210, 412], [240, 396]].map(([x, y], k) => `<circle cx="${x}" cy="${y + 5}" r="4" fill="${['#ffd27a', '#ff8cc0', '#8fe0ff'][k % 3]}" class="twinkle" style="animation-delay:${k * .3}s"/>`).join(''));
+  add(262, house(16, 262, 30, '#ffd8b8', '#ff7a6a', '#ffd27a'));
+  add(276, house(252, 276, 28, '#ffe2b0', '#ff9f43', '#ffd27a'));
+  add(206, house(10, 206, 28, '#f9c7ff', '#a76bff', '#ffd27a'));
+  add(212, house(272, 212, 28, '#ffd1e6', '#ff5f8a', '#ffd27a'));
+  add(174, house(214, 174, 24, '#ffe9c7', '#c86bff', '#ffd27a'));
+  const q = t => [(1 - t) ** 2 * 50 + 2 * (1 - t) * t * 150 + t * t * 262, (1 - t) ** 2 * 214 + 2 * (1 - t) * t * 240 + t * t * 198];
+  add(230, `<path d="M50,214 Q150,240 262,198" stroke="#5a2f8a" stroke-width="1.2" fill="none"/>` +
+    [.12, .26, .4, .54, .68, .82].map((t, k) => { const [x, y] = q(t); return `<circle cx="${x.toFixed(1)}" cy="${(y + 3).toFixed(1)}" r="3" fill="${['#ffd27a', '#ff8cc0', '#8fe0ff'][k % 3]}" class="twinkle" style="animation-delay:${k * .3}s"/>`; }).join(''));
   // 6 마을 입구 (노놈의 성문)
-  add(248, castle());
-  [[110, 292, .8], [264, 300, .8], [340, 290, .7]].forEach(([x, y, s]) => add(y, tree(x, y, s, 'n')));
+  add(126, wrap(78.4, -22.8, .6, `<use href="#nn" x="214" y="122" width="64" height="54"/>` + castle()));
+  [[40, 150, .5], [330, 150, .5]].forEach(([x, y, s]) => add(y, tree(x, y, s, 'n')));
 
   // 바닥에 깔리는 것들
   let low = '';
-  for (let i = 0; i < 34; i++) low += `<circle cx="${(rnd() * 360).toFixed(1)}" cy="${(rnd() * 150).toFixed(1)}" r="${(rnd() * 1.4 + .5).toFixed(1)}" fill="#fff" class="twinkle" style="animation-delay:${(rnd() * 2).toFixed(1)}s"/>`;
-  low += `<circle cx="300" cy="58" r="18" fill="#ffe9b0"/><circle cx="309" cy="52" r="15" fill="#2a1660"/>`;
+  for (let i = 0; i < 30; i++) low += `<circle cx="${(rnd() * 360).toFixed(1)}" cy="${(rnd() * 80).toFixed(1)}" r="${(rnd() * 1.2 + .4).toFixed(1)}" fill="#fff" class="twinkle" style="animation-delay:${(rnd() * 2).toFixed(1)}s"/>`;
+  low += `<circle cx="326" cy="30" r="12" fill="#ffe9b0"/><circle cx="332" cy="26" r="10" fill="#2a1660"/>`;
   // 계단식 언덕(층마다 밝은 띠 + 아래 그림자) → 위로 올라가는 느낌
-  for (const ty of [1010, 845, 672, 505, 318]) {
-    low += `<path d="M0,${ty} Q180,${ty - 24} 360,${ty} V${ty + 16} Q180,${ty - 8} 0,${ty + 16}z" fill="#2b1650" opacity=".1"/>` +
-      `<path d="M0,${ty - 4} Q180,${ty - 28} 360,${ty - 4}" stroke="#fff" stroke-width="3" opacity=".35" fill="none"/>`;
+  for (const ty of [522, 432, 342, 252, 154]) {
+    low += `<path d="M0,${ty} Q180,${ty - 18} 360,${ty} V${ty + 12} Q180,${ty - 6} 0,${ty + 12}z" fill="#2b1650" opacity=".1"/>` +
+      `<path d="M0,${ty - 3} Q180,${ty - 21} 360,${ty - 3}" stroke="#fff" stroke-width="2.5" opacity=".35" fill="none"/>`;
   }
-  low += `<ellipse cx="300" cy="800" rx="96" ry="38" fill="url(#gHill)"/><ellipse cx="36" cy="712" rx="84" ry="30" fill="url(#gHill)"/>`;
-  for (let i = 0; i < 70; i++) {
-    const x = rnd() * 360, y = 500 + rnd() * 690;
-    if (nearRoad(x, y, 30)) continue;
-    low += `<path d="M${x.toFixed(1)},${y.toFixed(1)} l-2,-5 m2,5 l0,-6 m0,6 l2,-5" stroke="#3f9a55" stroke-width="1.2" opacity=".45" fill="none"/>`;
+  low += `<ellipse cx="300" cy="416" rx="70" ry="26" fill="url(#gHill)"/><ellipse cx="36" cy="374" rx="60" ry="22" fill="url(#gHill)"/>`;
+  for (let i = 0; i < 60; i++) {
+    const x = rnd() * 360, y = 262 + rnd() * 352;
+    if (nearRoad(x, y, 28)) continue;
+    low += `<path d="M${x.toFixed(1)},${y.toFixed(1)} l-2,-4 m2,4 l0,-5 m0,5 l2,-4" stroke="#3f9a55" stroke-width="1.1" opacity=".45" fill="none"/>`;
   }
   const fcol = ['#ff8cc0', '#ffcf33', '#ffffff', '#a76bff', '#ff9f7a'];
-  for (let i = 0; i < 46; i++) {
-    const x = rnd() * 360, y = 668 + rnd() * 170;
-    if (nearRoad(x, y, 30)) continue;
+  for (let i = 0; i < 40; i++) {
+    const x = rnd() * 360, y = 342 + rnd() * 86;
+    if (nearRoad(x, y, 28)) continue;
     const c = fcol[i % fcol.length];
-    low += [0, 1, 2, 3, 4].map(k => `<circle cx="${(x + Math.cos(k * 1.26) * 3.4).toFixed(1)}" cy="${(y + Math.sin(k * 1.26) * 2.6).toFixed(1)}" r="2.4" fill="${c}"/>`).join('') + `<circle cx="${x.toFixed(1)}" cy="${y.toFixed(1)}" r="1.8" fill="#ffcf33"/>`;
+    low += [0, 1, 2, 3, 4].map(k => `<circle cx="${(x + Math.cos(k * 1.26) * 2.8).toFixed(1)}" cy="${(y + Math.sin(k * 1.26) * 2.2).toFixed(1)}" r="2" fill="${c}"/>`).join('') + `<circle cx="${x.toFixed(1)}" cy="${y.toFixed(1)}" r="1.5" fill="#ffcf33"/>`;
   }
   // 무지개 + 폭포 + 강
-  low += ['#ff7a9a', '#ffb347', '#ffe066', '#7fe08a', '#6fb8ff', '#a77bff'].map((c, k) => `<path d="M${236 + k * 6},566 A${84 - k * 6},${84 - k * 6} 0 0 1 ${404 - k * 6},566" stroke="${c}" stroke-width="6" fill="none" opacity=".45"/>`).join('');
-  low += `<path d="M0,575 C100,550 200,615 360,582 V632 C200,668 100,600 0,626Z" fill="url(#gWater)"/>` +
-    `<path d="M10,594 C100,574 200,632 350,600 M20,612 C110,592 210,650 340,618" stroke="#fff" stroke-width="2" fill="none" opacity=".7" class="flow"/>` +
-    `<path d="M286,596 Q278,552 290,508 Q306,478 334,484 Q360,478 360,488 V600Z" fill="#8f7fa8"/><path d="M290,508 Q306,478 334,484 L330,500 Q306,496 296,520Z" fill="#fff" opacity=".2"/>` +
-    `<rect x="306" y="490" width="42" height="100" fill="url(#gFall)"/><path d="M314,492 V588 M326,492 V588 M338,492 V588" stroke="#fff" stroke-width="2.5" class="flow"/>` +
-    `<ellipse cx="327" cy="592" rx="30" ry="8" fill="#fff" opacity=".85"/><circle cx="306" cy="586" r="6" fill="#fff" opacity=".7"/><circle cx="350" cy="588" r="7" fill="#fff" opacity=".7"/>`;
-  low += `<use href="#nn" x="214" y="122" width="64" height="54"/>`;
+  low += ['#ff7a9a', '#ffb347', '#ffe066', '#7fe08a', '#6fb8ff', '#a77bff'].map((c, k) => `<path d="M${262 + k * 5},284 A${58 - k * 5},${58 - k * 5} 0 0 1 ${378 - k * 5},284" stroke="${c}" stroke-width="5" fill="none" opacity=".45"/>`).join('');
+  low += `<path d="M0,286 C100,270 200,306 360,288 V318 C200,340 100,306 0,316Z" fill="url(#gWater)"/>` +
+    `<path d="M10,296 C100,282 200,318 350,300 M20,308 C110,294 210,328 340,312" stroke="#fff" stroke-width="1.6" fill="none" opacity=".7" class="flow"/>` +
+    wrap(162, -33, .55, `<path d="M286,596 Q278,552 290,508 Q306,478 334,484 Q360,478 360,488 V600Z" fill="#8f7fa8"/><path d="M290,508 Q306,478 334,484 L330,500 Q306,496 296,520Z" fill="#fff" opacity=".2"/>` +
+      `<rect x="306" y="490" width="42" height="100" fill="url(#gFall)"/><path d="M314,492 V588 M326,492 V588 M338,492 V588" stroke="#fff" stroke-width="2.5" class="flow"/>` +
+      `<ellipse cx="327" cy="592" rx="30" ry="8" fill="#fff" opacity=".85"/><circle cx="306" cy="586" r="6" fill="#fff" opacity=".7"/><circle cx="350" cy="588" r="7" fill="#fff" opacity=".7"/>`);
   // 길: 그림자 → 돌 테두리 → 길 바닥 → 가운데 빛 → 돌 무늬
   const d = smoothPath(ROAD_PTS);
-  const road = `<path d="${d}" stroke="#2b1650" stroke-width="52" fill="none" opacity=".22" transform="translate(0 7)" filter="url(#mBlur)" stroke-linecap="round"/>` +
-    `<path d="${d}" stroke="#c99a68" stroke-width="46" fill="none" stroke-linecap="round"/>` +
-    `<path d="${d}" stroke="#f6e3bf" stroke-width="38" fill="none" stroke-linecap="round"/>` +
-    `<path d="${d}" stroke="#fffaf0" stroke-width="12" fill="none" opacity=".7" stroke-linecap="round"/>` +
-    `<path id="roadLine" d="${d}" stroke="#d9b483" stroke-width="4" fill="none" stroke-dasharray="1 15" stroke-linecap="round"/>`;
-  const [bx, by] = MAP_NODES[3];
-  let bridge = sh(bx, by + 44, 42, 6, .35) + `<rect x="${bx - 30}" y="${by - 44}" width="60" height="88" rx="6" fill="#a86d3e"/>`;
-  for (let k = 0; k < 9; k++) bridge += `<rect x="${bx - 28}" y="${by - 42 + k * 9.6}" width="56" height="7.5" rx="2" fill="#d9a06a"/>`;
-  bridge += `<rect x="${bx - 35}" y="${by - 48}" width="7" height="96" rx="3.5" fill="#8a5a34"/><rect x="${bx + 28}" y="${by - 48}" width="7" height="96" rx="3.5" fill="#8a5a34"/>`;
+  const road = `<path d="${d}" stroke="#2b1650" stroke-width="44" fill="none" opacity=".22" transform="translate(0 6)" filter="url(#mBlur)" stroke-linecap="round"/>` +
+    `<path d="${d}" stroke="#c99a68" stroke-width="38" fill="none" stroke-linecap="round"/>` +
+    `<path d="${d}" stroke="#f6e3bf" stroke-width="31" fill="none" stroke-linecap="round"/>` +
+    `<path d="${d}" stroke="#fffaf0" stroke-width="10" fill="none" opacity=".7" stroke-linecap="round"/>` +
+    `<path id="roadLine" d="${d}" stroke="#d9b483" stroke-width="3.5" fill="none" stroke-dasharray="1 12" stroke-linecap="round"/>`;
+  let bridge = sh(0, 44, 42, 6, .35) + `<rect x="-30" y="-44" width="60" height="88" rx="6" fill="#a86d3e"/>`;
+  for (let k = 0; k < 9; k++) bridge += `<rect x="-28" y="${-42 + k * 9.6}" width="56" height="7.5" rx="2" fill="#d9a06a"/>`;
+  bridge += `<rect x="-35" y="-48" width="7" height="96" rx="3.5" fill="#8a5a34"/><rect x="28" y="-48" width="7" height="96" rx="3.5" fill="#8a5a34"/>`;
+  bridge = wrap(MAP_NODES[3][0], MAP_NODES[3][1], .62, bridge);
   // 아직 못 가는 곳은 구름이 덮고 있다
   let fog = '';
   for (let i = open; i < 6; i++) {
     const [x, y] = MAP_NODES[i];
-    fog += `<g opacity=".82" filter="url(#mBlur)">${[[-34, 8, 28], [0, -10, 36], [34, 6, 28], [-14, 22, 24], [18, 24, 24]].map(([dx, dy, r]) => `<circle cx="${x + dx}" cy="${y + dy}" r="${r}" fill="#fff"/>`).join('')}</g>`;
+    fog += `<g opacity=".82" filter="url(#mBlur)">${[[-26, 6, 21], [0, -8, 27], [26, 5, 21], [-10, 17, 18], [14, 18, 18]].map(([dx, dy, r]) => `<circle cx="${x + dx}" cy="${y + dy}" r="${r}" fill="#fff"/>`).join('')}</g>`;
   }
   const cloud = (x, y, s, cls) => `<g class="${cls}" opacity=".6">${[[0, 0, 16], [18, -7, 20], [38, 0, 15]].map(([dx, dy, r]) => `<circle cx="${x + dx * s}" cy="${y + dy * s}" r="${r * s}" fill="#fff"/>`).join('')}</g>`;
+  // 날아가는 새
+  const bird = (y, delay, s) => `<g class="fly" style="animation-delay:${delay}s"><g transform="translate(0 ${y}) scale(${s})"><path class="flap" d="M0,0 q5,-6 10,0 q5,-6 10,0" stroke="#5a3a8a" stroke-width="2" fill="none" stroke-linecap="round"/></g></g>`;
   return `<svg class="village" id="mapPath" viewBox="0 0 ${MAP_W} ${MAP_H}" preserveAspectRatio="none" aria-hidden="true"><defs>
     <filter id="mBlur" x="-50%" y="-50%" width="200%" height="200%"><feGaussianBlur stdDeviation="2.5"/></filter>
-    <linearGradient id="gGround" x1="0" y1="0" x2="0" y2="1">${[[0, '#1d0f3a'], [.07, '#3a2070'], [.19, '#5a3290'], [.27, '#c77fa0'], [.33, '#f4a77e'], [.4, '#f8c99c'], [.45, '#bfe6c8'], [.5, '#9fdcc0'], [.57, '#b8ecb0'], [.66, '#cdf2b4'], [.72, '#bdeee0'], [.8, '#a9e6dc'], [.86, '#c4f0c8'], [1, '#b5eabd']].map(([o, c]) => `<stop offset="${o}" stop-color="${c}"/>`).join('')}</linearGradient>
+    <linearGradient id="gGround" x1="0" y1="0" x2="0" y2="1">${[[0, '#1d0f3a'], [.1, '#3a2070'], [.22, '#5a3290'], [.29, '#c77fa0'], [.35, '#f4a77e'], [.41, '#f8c99c'], [.46, '#bfe6c8'], [.52, '#9fdcc0'], [.58, '#b8ecb0'], [.66, '#cdf2b4'], [.72, '#bdeee0'], [.8, '#a9e6dc'], [.86, '#c4f0c8'], [1, '#b5eabd']].map(([o, c]) => `<stop offset="${o}" stop-color="${c}"/>`).join('')}</linearGradient>
     <linearGradient id="gWall" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#fff" stop-opacity=".28"/><stop offset="1" stop-color="#2b1650" stop-opacity=".18"/></linearGradient>
     <linearGradient id="gCyl" x1="0" y1="0" x2="1" y2="0"><stop offset="0" stop-color="#fff" stop-opacity=".22"/><stop offset=".45" stop-color="#fff" stop-opacity="0"/><stop offset="1" stop-color="#000" stop-opacity=".35"/></linearGradient>
     <linearGradient id="gGloss" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#fff" stop-opacity=".5"/><stop offset=".6" stop-color="#fff" stop-opacity="0"/></linearGradient>
@@ -1265,7 +1277,7 @@ function villageSVG(open) {
   </defs>
   <rect width="${MAP_W}" height="${MAP_H}" fill="url(#gGround)"/>${low}${road}${bridge}
   ${objs.sort((a, b) => a[0] - b[0]).map(o => o[1]).join('')}
-  ${fog}${cloud(30, 880, 1, 'drift')}${cloud(250, 650, .8, 'drift slow')}${cloud(70, 330, .9, 'drift')}${cloud(260, 1040, .7, 'drift slow')}
+  ${fog}${cloud(30, 470, .7, 'drift')}${cloud(250, 336, .55, 'drift slow')}${cloud(70, 150, .6, 'drift')}${cloud(260, 560, .5, 'drift slow')}${bird(120, 0, 1)}${bird(380, 6, .8)}${bird(520, 11, .9)}
   </svg>`;
 }
 function unlockedCount() { let n = 1; for (let i = 0; i < 6; i++) if (P.stars[i] > 0) n = i + 2; return Math.min(n, 6); }
@@ -1275,7 +1287,9 @@ function renderMap() {
   const field = $('mapField'), world = $('mapWorld');
   $('mapStickers').textContent = totalStickers() + ' / 30';
   const open = unlockedCount(), at = open - 1;
-  world.innerHTML = villageSVG(open) + `<div class="sign" style="left:${176 / MAP_W * 100}%;top:${34 / MAP_H * 100}%">↑ 시럽 숲 (준비 중)</div>`;
+  const k = Math.min(field.clientWidth / MAP_W, field.clientHeight / MAP_H);
+  world.style.width = Math.floor(MAP_W * k) + 'px'; world.style.height = Math.floor(MAP_H * k) + 'px';
+  world.innerHTML = villageSVG(open) + `<div class="sign" style="left:${176 / MAP_W * 100}%;top:${14 / MAP_H * 100}%">↑ 시럽 숲 (준비 중)</div>`;
   const pct = (x, y, node) => { node.style.left = x / MAP_W * 100 + '%'; node.style.top = y / MAP_H * 100 + '%'; };
   STAGES.forEach((st, i) => {
     const btn = document.createElement('button');
@@ -1306,7 +1320,7 @@ function renderMap() {
   world.append(...fols, walker);
   const put = (node, l) => { const p = road.getPointAtLength(Math.max(0, Math.min(total, l))); pct(p.x, p.y, node); return p; };
   const place = len => { fols.forEach((f, k) => put(f, len - 40 * (k + 1))); return put(walker, len); };
-  const follow = p => { field.scrollTop = p.y / MAP_H * world.offsetHeight - field.clientHeight * .6; };
+  const follow = () => {};   // 마을 전체가 한 화면에 보이므로 따라 움직일 필요 없음
   const from = walkFrom !== null && walkFrom < at ? walkFrom : at;
   follow(place(nodeLen[from]));
   if (from !== at) {
