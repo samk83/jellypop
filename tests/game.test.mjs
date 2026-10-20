@@ -158,6 +158,45 @@ for (const [label, dev] of [['iPhone SE (320x568)', devices['iPhone SE']], ['Gal
   await page.keyboard.press('Enter');
   await settle(page);
   check('키보드(방향키+Enter)로도 플레이 가능', await page.evaluate(() => window.__jelly.state.moves) === before - 1);
+  check('게임 중 숨은 시작/결과 화면 버튼에는 Tab 포커스가 가지 않음',
+    await page.evaluate(() => [...document.querySelectorAll('.screen.hidden button')].every(b => getComputedStyle(b).visibility === 'hidden')));
+
+  // 7개 이상 → 폭탄 생성 (판을 한 색으로 바꾼 뒤 터치)
+  await page.evaluate(() => { const j = window.__jelly; j.startLevel(1); });
+  await settle(page);
+  const bomb = await page.evaluate(() => { const j = window.__jelly; j.grid.forEach(row => row.forEach(t => t.c = 0)); j.tap(8, 3); return j.grid[8][3].c === j.BOMB; });
+  check('7개 이상 터뜨리면 그 자리에 폭탄 젤리가 생김', bomb);
+  await settle(page);
+
+  // 터치를 다 쓰면 실패 화면
+  await page.evaluate(() => { const j = window.__jelly; j.startLevel(2); });
+  await settle(page);
+  await page.evaluate(() => { const j = window.__jelly; j.state.moves = 1;
+    for (let r = 0; r < j.ROWS; r++) for (let c = 0; c < j.COLS; c++) if (j.grid[r][c].c >= 0 && j.Logic.group(j.grid, r, c).length === 2) { j.tap(r, c); return; } });
+  await page.waitForSelector('#result:not(.hidden)', { timeout: 3000 });
+  const lose = await page.evaluate(() => ({ t: document.getElementById('resultTitle').textContent, next: getComputedStyle(document.getElementById('nextBtn')).display, focus: document.activeElement.id }));
+  check('터치를 다 쓰면 실패 화면 (다음 레벨 버튼 없음, 다시 도전에 포커스)', lose.t === '아쉬워요!' && lose.next === 'none' && lose.focus === 'retryBtn', JSON.stringify(lose));
+  await page.screenshot({ path: path.join(shots, '04-fail-desktop.png') });
+
+  // 결과가 뜨기 직전에 집 버튼 → 결과 화면이 나중에 덮이지 않음
+  await page.evaluate(() => { const j = window.__jelly; j.startLevel(1); });
+  await settle(page);
+  await page.evaluate(() => { const j = window.__jelly; j.state.moves = 1;
+    for (let r = 0; r < j.ROWS; r++) for (let c = 0; c < j.COLS; c++) if (j.grid[r][c].c >= 0 && j.Logic.group(j.grid, r, c).length >= 2) { j.tap(r, c); return; } });
+  await settle(page);
+  await page.click('#menuBtn', { force: true });
+  await page.waitForTimeout(700);
+  check('레벨 끝난 직후 집 버튼 → 결과 화면이 뒤늦게 덮이지 않음', await page.evaluate(() => document.getElementById('result').classList.contains('hidden')));
+
+  // 섞기: 움직일 수 없는 판이면 자동으로 섞음
+  await page.evaluate(() => { const j = window.__jelly; j.startLevel(1); });
+  await settle(page);
+  const shuffled = await page.evaluate(() => { const j = window.__jelly;
+    j.grid.forEach((row, r) => row.forEach((t, c) => t.c = (r + c) % 2 ? 2 : 3)); j.grid[0][0].c = 0; j.grid[0][1].c = 0;
+    j.tap(0, 0); return true; });
+  await settle(page);
+  await page.waitForTimeout(100);
+  check('묶음이 하나도 없으면 자동으로 섞어서 계속할 수 있음', shuffled && await page.evaluate(() => window.__jelly.Logic.hasMove(window.__jelly.grid)));
   await page.close();
 }
 

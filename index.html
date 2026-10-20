@@ -64,7 +64,7 @@ button:focus-visible{outline:3px solid var(--color-accent);outline-offset:3px}
 /* Screens */
 .screen{position:fixed;inset:0;display:flex;align-items:center;justify-content:center;z-index:10;padding:24px;
   background:rgba(26,10,46,.72);backdrop-filter:blur(6px);-webkit-backdrop-filter:blur(6px);transition:opacity .25s}
-.screen.hidden{opacity:0;pointer-events:none}
+.screen.hidden{opacity:0;pointer-events:none;visibility:hidden;transition:opacity .25s,visibility 0s .25s}
 #title{background:radial-gradient(130% 90% at 50% 0%,var(--color-bg-2),var(--color-bg) 70%)}
 .card{width:100%;max-width:360px;text-align:center}
 .logo{font-size:64px;font-weight:900;letter-spacing:-2px;margin:8px 0 0;line-height:1;
@@ -211,7 +211,7 @@ const Logic = {
 // ---------- 상태 ----------
 const $ = id => document.getElementById(id);
 const canvas = $('canvas'), ctx = canvas.getContext('2d');
-let grid = [], particles = [], floaters = [], cell = 48, dpr = 1, nextId = 1;
+let grid = [], particles = [], floaters = [], cell = 48, dpr = 1, nextId = 1, resultTimer = 0;
 const state = { mode: 'title', level: 1, score: 0, moves: 20, target: 1200, colors: 4, busy: false, sound: true, cleared: false };
 
 const store = {
@@ -238,6 +238,7 @@ function fillBoard() {
 function startLevel(lv) {
   const cfg = Logic.levelConfig(lv);
   Object.assign(state, { level: lv, score: 0, moves: cfg.moves, target: cfg.target, colors: cfg.colors, busy: true, mode: 'play', cleared: false });
+  clearTimeout(resultTimer);
   particles = []; floaters = [];
   fillBoard();
   hide('result'); hide('title');
@@ -295,6 +296,7 @@ function shuffle() {
       if (t.c !== BOMB) { t.c = randColor(); t.wob = 1; }
     }
   } while (!Logic.hasMove(grid) && ++tries < 50);
+  if (!Logic.hasMove(grid)) { fillBoard(); state.busy = true; } // 거의 없는 경우: 판을 새로 채움
 }
 
 function endLevel(win) {
@@ -317,7 +319,7 @@ function endLevel(win) {
   $('retryBtn').classList.toggle('secondary', win);
   sfx(win ? 'win' : 'lose');
   updateHud();
-  setTimeout(() => show('result'), 450);
+  resultTimer = setTimeout(() => { show('result'); ($('nextBtn').style.display === 'none' ? $('retryBtn') : $('nextBtn')).focus(); }, 450);
 }
 
 canvas.addEventListener('pointerdown', e => {
@@ -521,6 +523,7 @@ function updateSoundBtn() {
   $('soundBtn').setAttribute('aria-pressed', String(state.sound));
 }
 function showTitle() {
+  clearTimeout(resultTimer);
   state.mode = 'title';
   const best = store.get('best', { level: 0, score: 0 });
   $('bestText').textContent = best.score ? '최고 기록 · 레벨 ' + best.level + ' 클리어 · ' + best.score.toLocaleString() + '점' : '';
