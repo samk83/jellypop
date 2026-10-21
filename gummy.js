@@ -330,10 +330,13 @@ window.Gummy = (() => {
       ent.cv = cv; ent.box = box;
       if (onReady) onReady();
     };
+    im.onerror = () => { delete sprites[k]; console.warn('sprite 굽기 실패:', key); };
     im.src = dataURL(svg(body, box));
     return null;
   }
   function spriteBox(key, dpr) { const e = sprites[key + '@' + Math.round(dpr * 100)]; return e && e.box; }
+  // keepDpr 로 구운 것만 남기고 나머지는 버린다
+  function clearSprites(keepDpr) { const suf = '@' + Math.round(keepDpr * 100); for (const k of Object.keys(sprites)) if (!k.endsWith(suf)) delete sprites[k]; }
 
-  return { C, HILLS, mix, light, dark, defs, radial, linear, flushGrads, groundShadow, bigEyes, jelly, bubble, house, tree, cloud, starSvg, bigStar, coin, confetti, sparkle, flower, hill, fence, road, sampleCurve, tower, castle, fountain, lamp, windmill, starsSky, boss, cannonBase, cannonBarrel, cannonHousing, cannonWheel, svg, dataURL, img, sprite, spriteBox };
+  return { C, HILLS, mix, light, dark, defs, radial, linear, flushGrads, groundShadow, bigEyes, jelly, bubble, house, tree, cloud, starSvg, bigStar, coin, confetti, sparkle, flower, hill, fence, road, sampleCurve, tower, castle, fountain, lamp, windmill, starsSky, boss, cannonBase, cannonBarrel, cannonHousing, cannonWheel, svg, dataURL, img, sprite, spriteBox, clearSprites };
 })();
