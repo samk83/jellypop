@@ -4,6 +4,7 @@
 - Owner가 three.js 렌더 시안(`design/mockups/`)을 거절("너무 허접")하여 2.5D 스타일로 5장 재제작: `design/mockups-2.5d/png/`
 - SVG 라이팅 필터(feSpecularLighting/feDiffuseLighting)로 글로시 젤리·입체 집·성·3D 코인 버튼을 코드로 그림, Playwright로 1170×2532 캡처
 - 로드맵은 멀어질수록 길이 좁아지는 원근 구성, 실제 스테이지 6곳·친구 캐릭터·보스 뭉치 반영
+- 컨셉 비교 8장(`design/mockups-2.5d/png/{gummy,kawaii,clay,neon}-*.png`): 투명 구미·파스텔 카와이·클레이 푸딩·캔디 나이트 글로우, 각각 타이틀+로드맵
 
 ## 0.2.0 — 2026-10-20 · 젤리마을 대소동 월드 1 (버블 슈터)
 - 게임 방식을 버블 슈터로 변경: 끌어서 조준 → 떼면 발사, 벽 튕김, 같은 색 3개 이상 펑, 끊긴 거품 우르르

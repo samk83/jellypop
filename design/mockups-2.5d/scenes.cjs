@@ -1,4 +1,4 @@
-const L = require('./lib.js');
+const L = require('./lib.cjs');
 const { W,H,defs,radial,linear,flushGrads,jelly,bubble,house,tree,cloud,coin,button,panel,hudText,logo3d,confetti,sparkle,road,sampleCurve,flower,hill,fence,speech,groundShadow,starSvg,pillLabel,light,dark,mix } = L;
 
 function wrap(body){ return `<svg xmlns="http://www.w3.org/2000/svg" width="${W}" height="${H}" viewBox="0 0 ${W} ${H}">${defs()}${flushGrads()}${body}</svg>`; }
@@ -168,13 +168,14 @@ function bossJelly(x,y,r,{mood='angry',glow=true}={}){
   g+=`<path d="M${x-r*0.3} ${y-r*0.98} L${x-r*0.32} ${y-r*1.25} L${x-r*0.15} ${y-r*1.08} L${x} ${y-r*1.32} L${x+r*0.15} ${y-r*1.08} L${x+r*0.32} ${y-r*1.25} L${x+r*0.3} ${y-r*0.98} Z" fill="${linear([[0,'#fff0b3'],[1,'#e9a52a']],0,0,0,1)}" stroke="#b36b00" stroke-width="1.5" stroke-linejoin="round"/>`;
   return g;
 }
-function topHud({left='home',title='',sub='',right1='',right2='',night=false}){
+function topHud({left='home',title='',sub='',right1='',right2='',night=false,fill=null}){
   let g='';
-  g+=panel(14,46,46,46,{fill:night?'#2a1555':'#3b1f6e'});
-  g+=`<path d="M37 56 L24 68 L28 68 L28 82 L46 82 L46 68 L50 68 Z" fill="#fff"/><rect x="33" y="73" width="8" height="9" fill="${night?'#2a1555':'#3b1f6e'}"/>`;
-  g+=panel(68,46,196,46,{fill:night?'#2a1555':'#3b1f6e'});
+  const pf = fill || (night?'#2a1555':'#3b1f6e');
+  g+=panel(14,46,46,46,{fill:pf});
+  g+=`<path d="M37 56 L24 68 L28 68 L28 82 L46 82 L46 68 L50 68 Z" fill="#fff"/><rect x="33" y="73" width="8" height="9" fill="${pf}"/>`;
+  g+=panel(68,46,196,46,{fill:pf});
   g+=`<text x="82" y="63" font-family="Noto Sans KR" font-weight="700" font-size="10.5" fill="#d9c8ff">${sub}</text><text x="82" y="84" font-family="Noto Sans KR" font-weight="900" font-size="19" fill="#fff" filter="url(#textShadow)">${title}</text>`;
-  g+=panel(272,46,104,46,{fill:night?'#2a1555':'#3b1f6e'});
+  g+=panel(272,46,104,46,{fill:pf});
   g+=`<text x="324" y="63" text-anchor="middle" font-family="Noto Sans KR" font-weight="700" font-size="10.5" fill="#d9c8ff">${right1}</text><text x="324" y="84" text-anchor="middle" font-family="Noto Sans KR" font-weight="900" font-size="19" fill="#ffd54a" filter="url(#textShadow)">${right2}</text>`;
   return g;
 }
@@ -444,3 +445,4 @@ function boss(){
 }
 
 module.exports = { title, map, play, clear, boss };
+module.exports._parts = { castle, fountain, windmill, lamp, bossJelly, topHud, tower, cannon, hexBoard };
