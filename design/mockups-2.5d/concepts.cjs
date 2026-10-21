@@ -53,6 +53,9 @@ function bigEyes(x,y,s,mood,{iris='#3a1f5e',sparkle=true}={}){
   let mouth=`<path d="M${x-3*s} ${y+9*s} Q${x} ${y+12*s} ${x+3*s} ${y+9*s}" stroke="${iris}" stroke-width="${1.8*s}" fill="none" stroke-linecap="round"/>`;
   if(mood==='joy'){ eyes=`<path d="M${x-15*s} ${y+1*s} Q${x-10*s} ${y-6*s} ${x-5*s} ${y+1*s}" stroke="${iris}" stroke-width="${2.6*s}" fill="none" stroke-linecap="round"/><path d="M${x+5*s} ${y+1*s} Q${x+10*s} ${y-6*s} ${x+15*s} ${y+1*s}" stroke="${iris}" stroke-width="${2.6*s}" fill="none" stroke-linecap="round"/>`;
     mouth=`<path d="M${x-5*s} ${y+7*s} Q${x} ${y+15*s} ${x+5*s} ${y+7*s} Z" fill="${iris}"/><path d="M${x-2.5*s} ${y+11*s} Q${x} ${y+13.5*s} ${x+2.5*s} ${y+11*s} Z" fill="#ff7aa5"/>`; }
+  if(mood==='angry'){ eyes=e(-10)+e(10)+`<path d="M${x-17*s} ${y-9*s} L${x-5*s} ${y-4*s}" stroke="${iris}" stroke-width="${2.8*s}" stroke-linecap="round"/><path d="M${x+17*s} ${y-9*s} L${x+5*s} ${y-4*s}" stroke="${iris}" stroke-width="${2.8*s}" stroke-linecap="round"/>`;
+    mouth=`<path d="M${x-6*s} ${y+11*s} Q${x} ${y+6*s} ${x+6*s} ${y+11*s}" stroke="${iris}" stroke-width="${2*s}" fill="none" stroke-linecap="round"/>`; }
+  if(mood==='worried'){ mouth=`<path d="M${x-4*s} ${y+10*s} Q${x} ${y+7*s} ${x+4*s} ${y+10*s}" stroke="${iris}" stroke-width="${1.8*s}" fill="none" stroke-linecap="round"/>`; }
   const blush=`<ellipse cx="${x-17*s}" cy="${y+7*s}" rx="${5*s}" ry="${3*s}" fill="#ff6d9a" opacity="0.5"/><ellipse cx="${x+17*s}" cy="${y+7*s}" rx="${5*s}" ry="${3*s}" fill="#ff6d9a" opacity="0.5"/>`;
   const sp = sparkle ? `<path d="M${x-22*s} ${y+4*s} l1.2 2.2 2.2 1.2 -2.2 1.2 -1.2 2.2 -1.2 -2.2 -2.2 -1.2 2.2 -1.2z" fill="#fff" opacity="0.9"/>` : '';
   return blush+eyes+mouth+sp;
@@ -342,3 +345,4 @@ function buildMap(S){
 const out={};
 for(const k of Object.keys(STYLES)){ out[`${k}-title`]=()=>buildTitle(STYLES[k]); out[`${k}-map`]=()=>buildMap(STYLES[k]); }
 module.exports = out;
+Object.assign(module.exports, { STYLES, jellyS, houseS, treeS, cloudS, coinS, extraDefs, buildTitle, buildMap, bigEyes });

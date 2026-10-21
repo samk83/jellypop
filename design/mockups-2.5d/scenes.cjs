@@ -445,4 +445,4 @@ function boss(){
 }
 
 module.exports = { title, map, play, clear, boss };
-module.exports._parts = { castle, fountain, windmill, lamp, bossJelly, topHud, tower, cannon, hexBoard };
+module.exports._parts = { castle, fountain, windmill, lamp, bossJelly, topHud, tower, cannon, hexBoard, popBurst, aimDots, starsSky };
