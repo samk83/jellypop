@@ -648,7 +648,7 @@ function shoot() {
   return true;
 }
 function swapQueue() {
-  if (!G || G.state !== 'aim') return false;
+  if (!G || G.state !== 'aim' || G.paused) return false;
   if (nomActive('block')) {
     // 간지럼 공격: 대포를 막은 놈놈을 쫓아낸다
     const n = G.hz.nom; n.state = 'leave'; n.t = 0; n.hit = true;
@@ -754,6 +754,8 @@ function bossPhases() {
     if (ph.dropSec) { h.cfg.dropSec = ph.dropSec; h.dropT = ph.dropSec; }
     if (ph.aim) h.cfg.aim = ph.aim;
     if (ph.red) h.red = true;
+    // 마지막 단계는 방해를 바꿔 끼운다 (동시에 3개까지)
+    (ph.off || []).forEach(k => { h.cfg[k] = null; if (k === 'nom' && h.nom && h.nom.state !== 'gone') { h.nom.state = 'leave'; h.nom.t = 0; } if (k === 'cloud' && h.cloud) h.cloud.leaving = true; });
     G.texts.push({ x: 180, y: 150, text: ph.say || (bs.name + '이(가) 화났어요!'), life: 1.6, color: '#ffb3d4' });
     sfx('boss');
   });
@@ -775,7 +777,7 @@ function hazardsAfterShot() {
   if (h.nom && h.nom.shots !== undefined && (h.nom.state === 'hover' || h.nom.state === 'fly') && --h.nom.shots <= 0) { h.nom.state = 'leave'; h.nom.t = 0; }
   if (cfg.nom) {
     if (n === h.nomNext) { nomAct(cfg.nom.acts[h.nomIdx++ % cfg.nom.acts.length]); h.nomNext = n + cfg.nom.every; }
-    else if (n + 1 === h.nomNext && (!h.nom || h.nom.state === 'gone')) nomPeek(cfg.nom.acts[h.nomIdx % cfg.nom.acts.length]);
+    else if (n + 1 === h.nomNext && (!h.nom || h.nom.state === 'gone' || h.nom.state === 'leave')) nomPeek(cfg.nom.acts[h.nomIdx % cfg.nom.acts.length]);
   }
   // 캐러멜 방울
   if (cfg.caramel) {
@@ -841,9 +843,9 @@ function tickHazards(dt) {
     h.dropT -= dt;
     if (h.dropT <= 0) { h.dropT = cfg.dropSec; lowerCeiling(1); }
   }
-  if (cfg.shotTimer && G.state === 'aim' && !G.aiming) {
+  if (cfg.shotTimer && G.state === 'aim') {
     h.shotT -= dt;
-    if (h.shotT <= 0) { h.shotT = cfg.shotTimer; showToast('시간 초과! 자동 발사'); shoot(); }
+    if (h.shotT <= 0) { h.shotT = cfg.shotTimer; G.aiming = false; showToast('시간 초과! 자동 발사'); shoot(); }
   }
 }
 
@@ -1215,7 +1217,7 @@ function render(dt) {
     ctx.fillStyle = 'rgba(245,184,214,.95)'; for (let x = 0; x < W; x += 24) { ctx.beginPath(); ctx.arc(x + 12, b.y0 - 8, 12, 0, Math.PI); ctx.fill(); }
   }
   // 위쪽 사탕 막대 (거품이 매달린 천장). 곧 내려올 때는 떨리며 붉어진다
-  const h = G.hz, quake = h.ceilWarn || (h.cfg.dropSec && h.dropT < 2) ? Math.sin(t * 40) * 1.5 : 0;
+  const h = G.hz, quake = h.ceilWarn || (h.cfg.dropSec && h.dropT < 3) || (h.clock === 0 && !h.cfg.clock.hard && h.overtime < 3) ? Math.sin(t * 40) * 1.5 : 0;
   const by = (G.st.boss ? b.y0 + 2 : b.y0) + quake;
   const tg = ctx.createLinearGradient(0, by - 12, 0, by + 2); tg.addColorStop(0, '#fff6fa'); tg.addColorStop(1, '#f5b8d6');
   ctx.fillStyle = tg; roundRect(4, by - 12, W - 8, 14, 7); ctx.fill();
@@ -1344,8 +1346,9 @@ function drawClouds(t, dt) {
 let darkCv = null;
 function drawDark(t) {
   if (!darkCv) darkCv = document.createElement('canvas');
-  const s = dpr; darkCv.width = Math.ceil(W * s); darkCv.height = Math.ceil(DEADLINE * s);
-  const d = darkCv.getContext('2d'); d.setTransform(s, 0, 0, s, 0, 0);
+  const s = dpr, dw = Math.ceil(W * s), dh = Math.ceil(DEADLINE * s);
+  if (darkCv.width !== dw || darkCv.height !== dh) { darkCv.width = dw; darkCv.height = dh; }
+  const d = darkCv.getContext('2d'); d.setTransform(s, 0, 0, s, 0, 0); d.globalCompositeOperation = 'source-over'; d.clearRect(0, 0, W, DEADLINE);
   d.fillStyle = 'rgba(14,6,30,.9)'; d.fillRect(0, 0, W, DEADLINE);
   d.globalCompositeOperation = 'destination-out';
   const hole = (x, y, r) => { const g = d.createRadialGradient(x, y, r * .35, x, y, r); g.addColorStop(0, 'rgba(0,0,0,1)'); g.addColorStop(1, 'rgba(0,0,0,0)'); d.fillStyle = g; d.beginPath(); d.arc(x, y, r, 0, 7); d.fill(); };
@@ -1378,7 +1381,8 @@ function drawHazardHud(t) {
     ctx.fillStyle = hot ? 'rgba(255,79,139,.95)' : 'rgba(90,45,145,.85)'; roundRect(x, DEADLINE + 8, w, 22, 11); ctx.fill();
     ctx.fillStyle = '#fff'; ctx.font = '800 13px "Baloo 2", "Noto Sans KR", sans-serif'; ctx.textAlign = 'center'; ctx.fillText(text, x + w / 2, DEADLINE + 24);
   };
-  if (h.clock !== null) { const sec = Math.ceil(h.clock); pill(W - 76, 70, '⏱ ' + Math.floor(sec / 60) + ':' + String(sec % 60).padStart(2, '0'), h.clock <= 10 && Math.sin(t * 10) > 0); }
+  if (h.clock === 0 && !cfg.clock.hard) pill(W - 76, 70, '▼ ' + Math.ceil(Math.max(0, h.overtime)) + '초', h.overtime < 3);
+  else if (h.clock !== null) { const sec = Math.ceil(h.clock); pill(W - 76, 70, '⏱ ' + Math.floor(sec / 60) + ':' + String(sec % 60).padStart(2, '0'), h.clock <= 10 && Math.sin(t * 10) > 0); }
   else if (cfg.dropSec) pill(W - 76, 70, '▼ ' + Math.ceil(h.dropT) + '초', h.dropT < 3);
   if (cfg.miss) pill(6, 86, '헛방 ' + '●'.repeat(h.misses) + '○'.repeat(Math.max(0, cfg.miss - h.misses)), h.misses === cfg.miss - 1);
   if (cfg.shotTimer && G.state === 'aim') {
