@@ -239,7 +239,7 @@ for (const [label, dev] of [['iPhone SE (320x568)', devices['iPhone SE']], ['Gal
   }
   check('자동 플레이로 스테이지 1~6 모두 클리어', results.every(r => r.win), results.map(r => r.win ? 'O' : 'X' + r.reason).join(' '));
 
-  const themes = await page.evaluate(() => new Set(window.__jp.STAGES.map(s => s.theme)).size);
+  const themes = await page.evaluate(() => new Set(window.__jp.STAGES.slice(0, 6).map(s => s.theme)).size);
   check('스테이지 6개 배경 테마가 모두 다름', themes === 6, themes);
 
   // 5스테이지 천장 내려옴
@@ -283,6 +283,7 @@ for (const [label, dev] of [['iPhone SE (320x568)', devices['iPhone SE']], ['Gal
 
   // 키보드로도 조준·발사
   await page.click('#startBtn');
+  await page.click('#mapPrev');   // 월드 1을 다 깨면 지도는 월드 2를 보여 줌 → ◀ 로 월드 1
   await page.click('.node[data-stage="1"]');
   await page.waitForTimeout(200);
   const a0 = await page.evaluate(() => window.__jp.G.angle);

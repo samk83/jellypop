@@ -273,14 +273,155 @@ window.Gummy = (() => {
     for (let i = 0; i < n; i++) { const x = area[0] + rnd() * area[2], y = area[1] + rnd() * area[3], s = 0.6 + rnd() * 1.6; g += `<circle cx="${x}" cy="${y}" r="${s}" fill="#fff" opacity="${op * (0.4 + rnd() * 0.6)}"/>`; }
     return g;
   }
-  // 보스 뭉치: 보라 젤리 + 뿔 + 왕관 + 보랏빛 발광
-  function boss(x, y, r, { mood = 'angry' } = {}) {
-    let g = `<ellipse cx="${x}" cy="${y}" rx="${r * 1.3}" ry="${r * 1.15}" fill="#c89cff" opacity="0.45" filter="url(#soft12)"/>`;
-    const horn = sx => `<path d="M${x + sx * r * 0.55} ${y - r * 0.75} Q${x + sx * r * 0.9} ${y - r * 1.05} ${x + sx * r * 0.75} ${y - r * 1.45} Q${x + sx * r * 0.95} ${y - r * 1.1} ${x + sx * r * 1.0} ${y - r * 0.6} Z" fill="${linear([[0, '#8a5cf0'], [1, '#4a1d7a']], 0, 0, 0, 1)}" opacity="0.9"/>`;
-    g += horn(-1) + horn(1);
-    g += jelly(x, y, r, '#8a5cf0', { mood, faceScale: 1.05 });
+  // 보스: 젤리 + 뿔 + 왕관 + 발광. kind: mungchi(뭉치) / syrup(찐득이) / pudding(푸딩 골렘) / robot(철컹이)
+  const BOSS_COLOR = { mungchi: '#8a5cf0', syrup: '#e8912f', pudding: '#ffc94a', robot: '#7f9bd1' };
+  function boss(x, y, r, { mood = 'angry', kind = 'mungchi' } = {}) {
+    const col = BOSS_COLOR[kind] || BOSS_COLOR.mungchi;
+    let g = `<ellipse cx="${x}" cy="${y}" rx="${r * 1.3}" ry="${r * 1.15}" fill="${light(col, 0.4)}" opacity="0.45" filter="url(#soft12)"/>`;
+    const horn = sx => `<path d="M${x + sx * r * 0.55} ${y - r * 0.75} Q${x + sx * r * 0.9} ${y - r * 1.05} ${x + sx * r * 0.75} ${y - r * 1.45} Q${x + sx * r * 0.95} ${y - r * 1.1} ${x + sx * r * 1.0} ${y - r * 0.6} Z" fill="${linear([[0, col], [1, dark(col, 0.45)]], 0, 0, 0, 1)}" opacity="0.9"/>`;
+    if (kind === 'mungchi' || kind === 'syrup') g += horn(-1) + horn(1);
+    if (kind === 'robot') {
+      // 안테나 + 귀 볼트
+      g += `<line x1="${x}" y1="${y - r * 0.9}" x2="${x}" y2="${y - r * 1.5}" stroke="#5a6f9e" stroke-width="${r * 0.08}" stroke-linecap="round"/><circle cx="${x}" cy="${y - r * 1.55}" r="${r * 0.13}" fill="#ff5f8a"/><circle cx="${x}" cy="${y - r * 1.55}" r="${r * 0.25}" fill="#ff5f8a" opacity="0.5" filter="url(#soft6)"/>`;
+      g += [-1, 1].map(sx => `<rect x="${x + sx * r * 1.02 - r * 0.14}" y="${y - r * 0.2}" width="${r * 0.28}" height="${r * 0.4}" rx="${r * 0.08}" fill="${linear([[0, '#e6ecf7'], [1, '#8a9bc0']], 0, 0, 1, 0)}"/>`).join('');
+    }
+    g += jelly(x, y, r, col, { mood, faceScale: 1.05 });
+    if (kind === 'syrup') {
+      // 머리 위 시럽이 흘러내림
+      g += `<path d="M${x - r * 0.8} ${y - r * 0.45} Q${x - r * 0.7} ${y - r * 0.95} ${x} ${y - r * 0.95} Q${x + r * 0.7} ${y - r * 0.95} ${x + r * 0.8} ${y - r * 0.45} Q${x + r * 0.62} ${y - r * 0.2} ${x + r * 0.55} ${y - r * 0.45} Q${x + r * 0.45} ${y + r * 0.05} ${x + r * 0.35} ${y - r * 0.42} Q${x - r * 0.1} ${y - r * 0.3} ${x - r * 0.3} ${y - r * 0.45} Q${x - r * 0.42} ${y - r * 0.1} ${x - r * 0.52} ${y - r * 0.45} Q${x - r * 0.68} ${y - r * 0.25} ${x - r * 0.8} ${y - r * 0.45} Z" fill="${linear([[0, '#ffb347'], [1, '#c8661a']], 0, 0, 0, 1)}" opacity="0.85"/>`;
+      g += `<ellipse cx="${x - r * 0.3}" cy="${y - r * 0.78}" rx="${r * 0.2}" ry="${r * 0.07}" fill="#fff" opacity="0.8"/>`;
+    }
+    if (kind === 'pudding') {
+      // 캐러멜 모자 + 체리
+      g += `<path d="M${x - r * 0.78} ${y - r * 0.5} Q${x - r * 0.7} ${y - r * 0.98} ${x} ${y - r * 0.98} Q${x + r * 0.7} ${y - r * 0.98} ${x + r * 0.78} ${y - r * 0.5} Q${x + r * 0.5} ${y - r * 0.32} ${x + r * 0.3} ${y - r * 0.5} Q${x} ${y - r * 0.3} ${x - r * 0.3} ${y - r * 0.5} Q${x - r * 0.5} ${y - r * 0.32} ${x - r * 0.78} ${y - r * 0.5} Z" fill="${linear([[0, '#b8651e'], [1, '#7a3a0e']], 0, 0, 0, 1)}" opacity="0.92"/>`;
+      g += `<circle cx="${x}" cy="${y - r * 1.12}" r="${r * 0.2}" fill="${radial('#ffb0c0', '#ff3b5c', '#b3002a', 0.35, 0.3, 0.8)}"/><path d="M${x} ${y - r * 1.3} Q${x + r * 0.1} ${y - r * 1.55} ${x + r * 0.3} ${y - r * 1.55}" stroke="#3f8f3a" stroke-width="${r * 0.05}" fill="none"/>`;
+      return g;
+    }
+    if (kind === 'robot') {
+      g += `<rect x="${x - r * 0.62}" y="${y - r * 0.28}" width="${r * 1.24}" height="${r * 0.42}" rx="${r * 0.2}" fill="#1f2a4a" opacity="0.18"/>`;
+      return g;
+    }
     g += `<path d="M${x - r * 0.3} ${y - r * 0.98} L${x - r * 0.32} ${y - r * 1.25} L${x - r * 0.15} ${y - r * 1.08} L${x} ${y - r * 1.32} L${x + r * 0.15} ${y - r * 1.08} L${x + r * 0.32} ${y - r * 1.25} L${x + r * 0.3} ${y - r * 0.98} Z" fill="${linear([[0, '#fff0b3'], [1, '#e9a52a']], 0, 0, 0, 1)}" stroke="#b36b00" stroke-width="1.5" stroke-linejoin="round"/>`;
     return g;
+  }
+  // 노놈 / 꼬마 놈놈: 짙은 남보라 젤리, 둥근 귀, 어두운 가면 얼굴에 빛나는 분홍 눈
+  function nomnom(x, y, r, { mood = 'angry', mini = false, red = 0 } = {}) {
+    const body = mix('#3b2a7a', '#8a1f4a', red), rim = mix('#7b5cd6', '#ff5f8a', red);
+    let g = `<ellipse cx="${x}" cy="${y}" rx="${r * 1.35}" ry="${r * 1.2}" fill="${rim}" opacity="0.4" filter="url(#soft12)"/>`;
+    const ear = sx => `<g filter="url(#glass)"><circle cx="${x + sx * r * 0.62}" cy="${y - r * 0.82}" r="${r * (mini ? 0.3 : 0.34)}" fill="${radial(light(body, 0.25), body, dark(body, 0.3), 0.4, 0.3, 0.8)}"/></g>`;
+    g += ear(-1) + ear(1);
+    const path = blobPath(x, y, r, r * 0.95);
+    g += groundShadow(x, y + r * 0.95, r * 0.9, r * 0.2, 0.25);
+    g += `<g filter="url(#glass)"><path d="${path}" fill="${radial(light(body, 0.3), body, dark(body, 0.35), 0.45, 0.35, 0.8)}" opacity="0.96"/></g>`;
+    g += `<path d="${path}" fill="none" stroke="${rim}" stroke-width="${r * 0.06}" opacity="0.7"/>`;
+    // 가면 얼굴
+    g += `<path d="M${x - r * 0.62} ${y - r * 0.1} Q${x - r * 0.7} ${y - r * 0.55} ${x - r * 0.3} ${y - r * 0.5} L${x - r * 0.15} ${y - r * 0.62} L${x} ${y - r * 0.5} L${x + r * 0.15} ${y - r * 0.62} L${x + r * 0.3} ${y - r * 0.5} Q${x + r * 0.7} ${y - r * 0.55} ${x + r * 0.62} ${y - r * 0.1} Q${x + r * 0.6} ${y + r * 0.55} ${x} ${y + r * 0.55} Q${x - r * 0.6} ${y + r * 0.55} ${x - r * 0.62} ${y - r * 0.1} Z" fill="#160b33" opacity="0.85"/>`;
+    const eye = sx => {
+      const ex = x + sx * r * 0.28, ey = y - r * 0.08;
+      if (mood === 'happy' || mood === 'joy') return `<path d="M${ex - r * 0.15} ${ey + r * 0.03} Q${ex} ${ey - r * 0.12} ${ex + r * 0.15} ${ey + r * 0.03}" stroke="#ff8ac0" stroke-width="${r * 0.07}" fill="none" stroke-linecap="round"/>`;
+      return `<ellipse cx="${ex}" cy="${ey}" rx="${r * 0.17}" ry="${r * 0.11}" fill="#ff8ac0" opacity="0.6" filter="url(#soft6)"/><path d="M${ex - r * 0.16} ${ey - sx * 0 - r * 0.02} Q${ex} ${ey - r * 0.16 + (mood === 'worried' ? r * 0.06 : 0)} ${ex + r * 0.16} ${ey + (sx < 0 ? r * 0.04 : -r * 0.04) * (mood === 'worried' ? -1 : 1)} Q${ex} ${ey + r * 0.12} ${ex - r * 0.16} ${ey - r * 0.02} Z" fill="#ffd1ea"/><circle cx="${ex}" cy="${ey}" r="${r * 0.05}" fill="#fff"/>`;
+    };
+    g += eye(-1) + eye(1);
+    g += mood === 'worried'
+      ? `<path d="M${x - r * 0.12} ${y + r * 0.3} Q${x} ${y + r * 0.22} ${x + r * 0.12} ${y + r * 0.3}" stroke="#ff8ac0" stroke-width="${r * 0.05}" fill="none" stroke-linecap="round"/>`
+      : `<path d="M${x - r * 0.16} ${y + r * 0.26} Q${x} ${y + r * 0.18} ${x + r * 0.16} ${y + r * 0.26} L${x + r * 0.08} ${y + r * 0.32} L${x} ${y + r * 0.26} L${x - r * 0.08} ${y + r * 0.32} Z" fill="#ff8ac0"/>`;
+    g += `<ellipse cx="${x - r * 0.42}" cy="${y - r * 0.62}" rx="${r * 0.2}" ry="${r * 0.08}" fill="#fff" opacity="0.6" transform="rotate(-28 ${x - r * 0.42} ${y - r * 0.62})"/>`;
+    if (!mini) g += `<path d="M${x - r * 0.34} ${y - r * 0.9} L${x - r * 0.36} ${y - r * 1.2} L${x - r * 0.17} ${y - r * 1.04} L${x} ${y - r * 1.3} L${x + r * 0.17} ${y - r * 1.04} L${x + r * 0.36} ${y - r * 1.2} L${x + r * 0.34} ${y - r * 0.9} Z" fill="${linear([[0, '#fff0b3'], [1, '#e9a52a']], 0, 0, 0, 1)}" stroke="#b36b00" stroke-width="1.5" stroke-linejoin="round"/>`;
+    return g;
+  }
+
+  // ---------- 특수 거품 (bubble() 위에 얹는 덧그림) ----------
+  // kind: s 끈적 시럽 / i 얼음 / m 버섯 / u 흔들 푸딩 / g 선물 / f 반딧불
+  function bubbleExtra(x, y, r, kind) {
+    if (kind === 's') return `<path d="M${x - r * 0.95} ${y - r * 0.05} Q${x - r * 0.9} ${y - r} ${x} ${y - r} Q${x + r * 0.9} ${y - r} ${x + r * 0.95} ${y - r * 0.05} Q${x + r * 0.8} ${y + r * 0.2} ${x + r * 0.68} ${y} Q${x + r * 0.6} ${y + r * 0.55} ${x + r * 0.45} ${y + r * 0.05} Q${x + r * 0.1} ${y + r * 0.2} ${x - r * 0.15} ${y - r * 0.02} Q${x - r * 0.3} ${y + r * 0.45} ${x - r * 0.45} ${y} Q${x - r * 0.75} ${y + r * 0.25} ${x - r * 0.95} ${y - r * 0.05} Z" fill="${linear([[0, '#ffcf7a'], [1, '#d9781f']], 0, 0, 0, 1)}" opacity="0.88"/><ellipse cx="${x - r * 0.35}" cy="${y - r * 0.7}" rx="${r * 0.25}" ry="${r * 0.09}" fill="#fff" opacity="0.85" transform="rotate(-15 ${x - r * 0.35} ${y - r * 0.7})"/>`;
+    if (kind === 'i') return `<circle cx="${x}" cy="${y}" r="${r * 1.02}" fill="${radial('#ffffff', '#dff4ff', '#9fd8ff', 0.35, 0.3, 0.8)}" opacity="0.72"/><path d="M${x - r * 0.5} ${y - r * 0.2} L${x - r * 0.1} ${y + r * 0.1} L${x + r * 0.15} ${y - r * 0.3} M${x - r * 0.1} ${y + r * 0.1} L${x} ${y + r * 0.55} M${x + r * 0.15} ${y - r * 0.3} L${x + r * 0.55} ${y - r * 0.1}" stroke="#fff" stroke-width="${r * 0.08}" fill="none" stroke-linecap="round" opacity="0.95"/><circle cx="${x}" cy="${y}" r="${r * 0.98}" fill="none" stroke="#bfe9ff" stroke-width="${r * 0.12}"/>${sparkle(x + r * 0.5, y - r * 0.55, r * 0.25)}`;
+    if (kind === 'm') return `<path d="M${x - r * 0.75} ${y - r * 0.35} Q${x - r * 0.7} ${y - r * 1.15} ${x} ${y - r * 1.15} Q${x + r * 0.7} ${y - r * 1.15} ${x + r * 0.75} ${y - r * 0.35} Q${x} ${y - r * 0.15} ${x - r * 0.75} ${y - r * 0.35} Z" fill="${radial('#ffd1dc', '#ff5f7a', '#c8244a', 0.4, 0.3, 0.8)}"/><circle cx="${x - r * 0.35}" cy="${y - r * 0.7}" r="${r * 0.13}" fill="#fff"/><circle cx="${x + r * 0.2}" cy="${y - r * 0.85}" r="${r * 0.1}" fill="#fff"/><circle cx="${x + r * 0.45}" cy="${y - r * 0.5}" r="${r * 0.09}" fill="#fff"/>`;
+    if (kind === 'u') return `<path d="M${x - r * 0.9} ${y - r * 0.3} Q${x - r * 0.8} ${y - r * 0.95} ${x} ${y - r * 0.95} Q${x + r * 0.8} ${y - r * 0.95} ${x + r * 0.9} ${y - r * 0.3} Q${x + r * 0.55} ${y - r * 0.05} ${x + r * 0.35} ${y - r * 0.32} Q${x} ${y - r * 0.05} ${x - r * 0.35} ${y - r * 0.32} Q${x - r * 0.55} ${y - r * 0.05} ${x - r * 0.9} ${y - r * 0.3} Z" fill="${linear([[0, '#c9752a'], [1, '#8a4512']], 0, 0, 0, 1)}" opacity="0.9"/><ellipse cx="${x - r * 0.3}" cy="${y - r * 0.72}" rx="${r * 0.22}" ry="${r * 0.08}" fill="#fff" opacity="0.7"/>`;
+    if (kind === 'g') return `<rect x="${x - r * 0.12}" y="${y - r * 0.98}" width="${r * 0.24}" height="${r * 1.96}" fill="#ff4f8b" opacity="0.9"/><rect x="${x - r * 0.98}" y="${y - r * 0.12}" width="${r * 1.96}" height="${r * 0.24}" fill="#ff4f8b" opacity="0.9"/><path d="M${x} ${y - r * 0.85} Q${x - r * 0.6} ${y - r * 1.35} ${x - r * 0.55} ${y - r * 0.8} Q${x - r * 0.3} ${y - r * 0.7} ${x} ${y - r * 0.85} Q${x + r * 0.6} ${y - r * 1.35} ${x + r * 0.55} ${y - r * 0.8} Q${x + r * 0.3} ${y - r * 0.7} ${x} ${y - r * 0.85} Z" fill="#ff7fae" stroke="#c2457a" stroke-width="1"/>`;
+    if (kind === 'f') return `<circle cx="${x}" cy="${y + r * 0.1}" r="${r * 0.55}" fill="#fff6a8" opacity="0.8" filter="url(#soft6)"/><circle cx="${x}" cy="${y + r * 0.1}" r="${r * 0.22}" fill="#fffbe0"/><ellipse cx="${x - r * 0.3}" cy="${y - r * 0.2}" rx="${r * 0.22}" ry="${r * 0.12}" fill="#fff" opacity="0.8" transform="rotate(30 ${x - r * 0.3} ${y - r * 0.2})"/><ellipse cx="${x + r * 0.3}" cy="${y - r * 0.2}" rx="${r * 0.22}" ry="${r * 0.12}" fill="#fff" opacity="0.8" transform="rotate(-30 ${x + r * 0.3} ${y - r * 0.2})"/>`;
+    return '';
+  }
+  // 수정(무지개) 거품: 아무 색과 짝이 된다
+  function crystalBubble(x, y, r) {
+    let s = `<circle cx="${x}" cy="${y + r * 0.15}" r="${r * 0.95}" fill="#7a2d5e" opacity="0.18" filter="url(#soft)"/>`;
+    s += `<g filter="url(#glass)"><circle cx="${x}" cy="${y}" r="${r}" fill="${linear([[0, '#ff7aa5'], [0.25, '#ffd23f'], [0.5, '#5ed46a'], [0.75, '#4fb4ff'], [1, '#a76bff']], 0, 0, 1, 1)}" opacity="0.85"/></g>`;
+    s += `<path d="M${x} ${y - r * 0.7} L${x + r * 0.5} ${y - r * 0.1} L${x} ${y + r * 0.65} L${x - r * 0.5} ${y - r * 0.1} Z" fill="#fff" opacity="0.55"/><path d="M${x - r * 0.5} ${y - r * 0.1} L${x + r * 0.5} ${y - r * 0.1}" stroke="#fff" stroke-width="1" opacity="0.8"/>`;
+    s += `<ellipse cx="${x - r * 0.38}" cy="${y - r * 0.42}" rx="${r * 0.26}" ry="${r * 0.14}" fill="#fff" opacity="0.95" transform="rotate(-35 ${x - r * 0.38} ${y - r * 0.42})"/>`;
+    return s + sparkle(x + r * 0.45, y - r * 0.5, r * 0.3);
+  }
+  // 쿠키 블록 (색 없음, 터지지 않고 떨어뜨려야 없어짐)
+  function cookie(x, y, r) {
+    let s = `<circle cx="${x}" cy="${y + r * 0.15}" r="${r * 0.95}" fill="#5a2d1e" opacity="0.2" filter="url(#soft)"/>`;
+    s += `<g filter="url(#gelSmall)"><circle cx="${x}" cy="${y}" r="${r * 0.98}" fill="${radial('#ffe0a8', '#e8b26a', '#b97a35', 0.4, 0.35, 0.8)}"/></g>`;
+    [[-0.4, -0.3], [0.3, -0.45], [0.45, 0.25], [-0.2, 0.4], [0.05, -0.02], [-0.55, 0.15]].forEach(([dx, dy], i) => { s += `<ellipse cx="${x + dx * r}" cy="${y + dy * r}" rx="${r * (i % 2 ? 0.12 : 0.15)}" ry="${r * 0.11}" fill="#5a2d1e"/>`; });
+    return s + `<ellipse cx="${x - r * 0.35}" cy="${y - r * 0.55}" rx="${r * 0.25}" ry="${r * 0.09}" fill="#fff" opacity="0.6" transform="rotate(-25 ${x - r * 0.35} ${y - r * 0.55})"/>`;
+  }
+  // 놈놈이 던진 회색 방해 거품
+  function junkBubble(x, y, r) { return bubble(x, y, r, '#8e84a8', { mood: 'angry' }) + `<path d="M${x - r * 0.75} ${y + r * 0.55} Q${x} ${y + r * 0.9} ${x + r * 0.75} ${y + r * 0.55}" stroke="#5c5272" stroke-width="${r * 0.08}" fill="none" opacity="0.6"/>`; }
+
+  // ---------- 월드 2~5 배경 소품 ----------
+  function mushroom(x, y, s = 1, cap = '#ff5f7a') {
+    let g = groundShadow(x + 2 * s, y + 2, 16 * s, 4 * s, 0.25);
+    g += `<path d="M${x - 6 * s} ${y} Q${x - 7 * s} ${y - 16 * s} ${x - 4 * s} ${y - 20 * s} L${x + 4 * s} ${y - 20 * s} Q${x + 7 * s} ${y - 16 * s} ${x + 6 * s} ${y} Z" fill="${linear([[0, '#fff8ee'], [1, '#e8d6c0']], 0, 0, 1, 0)}"/>`;
+    g += `<g filter="url(#glass)"><path d="M${x - 20 * s} ${y - 16 * s} Q${x - 18 * s} ${y - 38 * s} ${x} ${y - 38 * s} Q${x + 18 * s} ${y - 38 * s} ${x + 20 * s} ${y - 16 * s} Q${x} ${y - 11 * s} ${x - 20 * s} ${y - 16 * s} Z" fill="${radial(light(cap, 0.35), cap, dark(cap, 0.15), 0.4, 0.3, 0.8)}" opacity="0.95"/></g>`;
+    return g + `<circle cx="${x - 8 * s}" cy="${y - 28 * s}" r="${3 * s}" fill="#fff"/><circle cx="${x + 6 * s}" cy="${y - 31 * s}" r="${2.4 * s}" fill="#fff"/><circle cx="${x + 12 * s}" cy="${y - 22 * s}" r="${2 * s}" fill="#fff"/>`;
+  }
+  function cottonTree(x, y, s = 1, c = '#ffb3e0') {
+    let g = groundShadow(x + 4 * s, y + 2, 20 * s, 5 * s, 0.25);
+    g += `<rect x="${x - 2.5 * s}" y="${y - 30 * s}" width="${5 * s}" height="${30 * s}" rx="${2.5 * s}" fill="#f6e6d2"/>`;
+    return g + cloud(x, y - 44 * s, 0.75 * s, 0.98, light(c, 0.3), c);
+  }
+  function stalactite(x, y, len, c = '#d08a3a') {
+    return `<path d="M${x - len * 0.22} ${y} Q${x - len * 0.08} ${y + len * 0.6} ${x} ${y + len} Q${x + len * 0.08} ${y + len * 0.6} ${x + len * 0.22} ${y} Z" fill="${linear([[0, dark(c, 0.15)], [0.5, c], [1, light(c, 0.35)]], 0, 0, 1, 0)}"/><circle cx="${x}" cy="${y + len + 4}" r="${len * 0.07}" fill="${light(c, 0.3)}"/>`;
+  }
+  function crystalRock(x, y, s = 1, c = '#9fd8ff') {
+    let g = groundShadow(x, y + 2, 22 * s, 5 * s, 0.3);
+    [[-10, 26, -12], [0, 40, 0], [11, 30, 14]].forEach(([dx, h, rot]) => {
+      g += `<g transform="rotate(${rot} ${x + dx * s} ${y})"><path d="M${x + dx * s - 6 * s} ${y} L${x + dx * s - 6 * s} ${y - h * s * 0.7} L${x + dx * s} ${y - h * s} L${x + dx * s + 6 * s} ${y - h * s * 0.7} L${x + dx * s + 6 * s} ${y} Z" fill="${linear([[0, light(c, 0.5)], [0.5, c], [1, dark(c, 0.25)]], 0, 0, 1, 0)}" opacity="0.92"/><path d="M${x + dx * s - 2 * s} ${y - 4 * s} L${x + dx * s - 2 * s} ${y - h * s * 0.65}" stroke="#fff" stroke-width="${1.5 * s}" opacity="0.8"/></g>`;
+    });
+    return g + `<circle cx="${x}" cy="${y - 20 * s}" r="${18 * s}" fill="${c}" opacity="0.35" filter="url(#soft12)"/>`;
+  }
+  function puddingHill(x, y, s = 1, c = '#ffd36a') {
+    let g = groundShadow(x, y + 2, 60 * s, 10 * s, 0.3);
+    g += `<g filter="url(#glass)"><path d="M${x - 58 * s} ${y} L${x - 44 * s} ${y - 70 * s} Q${x} ${y - 82 * s} ${x + 44 * s} ${y - 70 * s} L${x + 58 * s} ${y} Z" fill="${radial(light(c, 0.35), c, dark(c, 0.12), 0.4, 0.3, 0.85)}" opacity="0.95"/></g>`;
+    g += `<path d="M${x - 46 * s} ${y - 62 * s} L${x - 44 * s} ${y - 70 * s} Q${x} ${y - 82 * s} ${x + 44 * s} ${y - 70 * s} L${x + 46 * s} ${y - 62 * s} Q${x + 36 * s} ${y - 52 * s} ${x + 30 * s} ${y - 60 * s} Q${x + 22 * s} ${y - 40 * s} ${x + 12 * s} ${y - 58 * s} Q${x} ${y - 52 * s} ${x - 14 * s} ${y - 58 * s} Q${x - 26 * s} ${y - 44 * s} ${x - 32 * s} ${y - 60 * s} Q${x - 40 * s} ${y - 54 * s} ${x - 46 * s} ${y - 62 * s} Z" fill="${linear([[0, '#b8651e'], [1, '#7a3a0e']], 0, 0, 0, 1)}" opacity="0.92"/>`;
+    return g + `<ellipse cx="${x - 22 * s}" cy="${y - 70 * s}" rx="${12 * s}" ry="${3 * s}" fill="#fff" opacity="0.6"/>`;
+  }
+  function gear(x, y, r, c = '#c9d3ea') {
+    let teeth = ''; for (let i = 0; i < 8; i++) teeth += `<rect x="${x - r * 0.16}" y="${y - r * 1.18}" width="${r * 0.32}" height="${r * 0.4}" rx="${r * 0.06}" fill="${dark(c, 0.15)}" transform="rotate(${i * 45} ${x} ${y})"/>`;
+    return teeth + `<g filter="url(#gelSmall)"><circle cx="${x}" cy="${y}" r="${r}" fill="${radial(light(c, 0.4), c, dark(c, 0.2), 0.4, 0.3, 0.8)}"/></g><circle cx="${x}" cy="${y}" r="${r * 0.32}" fill="${dark(c, 0.35)}"/>`;
+  }
+  function pipe(x, y, w, h, c = '#ff9fc0') {
+    return `<rect x="${x}" y="${y}" width="${w}" height="${h}" rx="${Math.min(w, h) * 0.3}" fill="${w > h ? linear([[0, light(c, 0.45)], [0.5, c], [1, dark(c, 0.25)]], 0, 0, 0, 1) : linear([[0, light(c, 0.45)], [0.5, c], [1, dark(c, 0.25)]], 0, 0, 1, 0)}"/>`;
+  }
+  function factory(x, y, s = 1, wall = '#ffe1f0', roof = '#ff8fb1') {
+    let g = groundShadow(x, y + 3, 80 * s, 10 * s, 0.3);
+    g += pipe(x - 50 * s, y - 120 * s, 16 * s, 70 * s, '#c9d3ea') + pipe(x + 30 * s, y - 110 * s, 14 * s, 60 * s, '#c9d3ea');
+    g += `<circle cx="${x - 42 * s}" cy="${y - 130 * s}" r="${10 * s}" fill="#fff" opacity="0.8" filter="url(#soft6)"/><circle cx="${x + 37 * s}" cy="${y - 122 * s}" r="${8 * s}" fill="#fff" opacity="0.8" filter="url(#soft6)"/>`;
+    g += `<g filter="url(#glass)"><rect x="${x - 70 * s}" y="${y - 60 * s}" width="${140 * s}" height="${60 * s}" rx="${10 * s}" fill="${radial(light(wall, 0.3), wall, dark(wall, 0.1), 0.4, 0.3, 0.9)}"/></g>`;
+    for (let i = 0; i < 4; i++) g += `<path d="M${x - 70 * s + i * 35 * s} ${y - 60 * s} L${x - 52 * s + i * 35 * s} ${y - 82 * s} L${x - 35 * s + i * 35 * s} ${y - 60 * s} Z" fill="${radial(light(roof, 0.35), roof, dark(roof, 0.2), 0.4, 0.4, 0.8)}"/>`;
+    for (let i = 0; i < 4; i++) g += `<rect x="${x - 58 * s + i * 32 * s}" y="${y - 44 * s}" width="${18 * s}" height="${16 * s}" rx="${4 * s}" fill="#fff6c8"/>`;
+    return g + `<rect x="${x - 14 * s}" y="${y - 26 * s}" width="${28 * s}" height="${26 * s}" rx="${6 * s}" fill="${dark(roof, 0.15)}"/>`;
+  }
+  function belt(x, y, w, s = 1) {
+    let g = `<rect x="${x}" y="${y}" width="${w}" height="${12 * s}" rx="${6 * s}" fill="${linear([[0, '#8f99b5'], [1, '#4f5873']], 0, 0, 0, 1)}"/>`;
+    for (let i = 0; i < w / (14 * s); i++) g += `<rect x="${x + 4 * s + i * 14 * s}" y="${y + 2 * s}" width="${6 * s}" height="${3 * s}" rx="${1.5 * s}" fill="#c9d3ea" opacity="0.8"/>`;
+    return g + `<circle cx="${x + 6 * s}" cy="${y + 6 * s}" r="${7 * s}" fill="#c9d3ea"/><circle cx="${x + w - 6 * s}" cy="${y + 6 * s}" r="${7 * s}" fill="#c9d3ea"/>`;
+  }
+  function giftBox(x, y, s = 1, c = '#4fb4ff') {
+    let g = groundShadow(x + 3 * s, y + 2, 18 * s, 4 * s, 0.25);
+    g += `<g filter="url(#gelSmall)"><rect x="${x - 15 * s}" y="${y - 26 * s}" width="${30 * s}" height="${26 * s}" rx="${4 * s}" fill="${radial(light(c, 0.35), c, dark(c, 0.15), 0.4, 0.3, 0.8)}"/></g>`;
+    return g + `<rect x="${x - 3 * s}" y="${y - 26 * s}" width="${6 * s}" height="${26 * s}" fill="#fff" opacity="0.85"/><path d="M${x} ${y - 26 * s} Q${x - 12 * s} ${y - 38 * s} ${x - 10 * s} ${y - 26 * s} Z M${x} ${y - 26 * s} Q${x + 12 * s} ${y - 38 * s} ${x + 10 * s} ${y - 26 * s} Z" fill="#fff" opacity="0.9"/>`;
+  }
+  function pot(x, y, s = 1) {
+    let g = groundShadow(x, y + 3, 60 * s, 10 * s, 0.35);
+    g += `<path d="M${x - 56 * s} ${y - 70 * s} Q${x - 60 * s} ${y} ${x} ${y} Q${x + 60 * s} ${y} ${x + 56 * s} ${y - 70 * s} Z" fill="${linear([[0, '#9aa3c0'], [0.4, '#5d6688'], [1, '#2f3552']], 0, 0, 1, 0)}"/>`;
+    g += `<ellipse cx="${x}" cy="${y - 70 * s}" rx="${58 * s}" ry="${12 * s}" fill="#c9d3ea"/><ellipse cx="${x}" cy="${y - 70 * s}" rx="${50 * s}" ry="${9 * s}" fill="${radial('#ffb3e0', '#ff5f8a', '#a8245a', 0.5, 0.5, 0.8)}"/>`;
+    for (let i = 0; i < 4; i++) g += `<circle cx="${x - 30 * s + i * 20 * s}" cy="${y - 74 * s - (i % 2) * 6 * s}" r="${(5 + (i % 2) * 3) * s}" fill="#ffd1e8" opacity="0.85"/>`;
+    return g + `<path d="M${x + 40 * s} ${y - 80 * s} L${x + 70 * s} ${y - 140 * s}" stroke="#e8d6c0" stroke-width="${8 * s}" stroke-linecap="round"/><ellipse cx="${x + 72 * s}" cy="${y - 146 * s}" rx="${10 * s}" ry="${14 * s}" fill="#e8d6c0"/>`;
+  }
+  function mirror(x, y, s = 1) {
+    return `<ellipse cx="${x}" cy="${y - 40 * s}" rx="${24 * s}" ry="${38 * s}" fill="${linear([[0, '#ffe08a'], [1, '#c9861f']], 0, 0, 1, 1)}"/><ellipse cx="${x}" cy="${y - 40 * s}" rx="${19 * s}" ry="${32 * s}" fill="${linear([[0, '#e8f6ff'], [0.5, '#b8c8ff'], [1, '#d8c8ff']], 0, 0, 1, 1)}"/><path d="M${x - 10 * s} ${y - 60 * s} L${x + 2 * s} ${y - 66 * s} M${x - 12 * s} ${y - 48 * s} L${x + 8 * s} ${y - 58 * s}" stroke="#fff" stroke-width="${2.5 * s}" stroke-linecap="round" opacity="0.9"/><rect x="${x - 4 * s}" y="${y - 4 * s}" width="${8 * s}" height="${6 * s}" fill="#c9861f"/>`;
   }
   // 분홍 사탕 대포 (조각별). x,y = 받침 가운데. 포신은 따로 돌려 그리므로 분리.
   const wheel = (wx, wy, r) => `<g filter="url(#gelSmall)"><circle cx="${wx}" cy="${wy}" r="${r}" fill="${radial('#ffe9a8', '#ffc84a', '#d98a00', 0.4, 0.3, 0.8)}"/></g><circle cx="${wx}" cy="${wy}" r="${r * 0.62}" fill="${dark('#ffc84a', 0.35)}"/><circle cx="${wx}" cy="${wy}" r="${r * 0.5}" fill="${radial('#fff2c8', '#ffd56a', '#e9a52a', 0.4, 0.3, 0.8)}"/>${[0, 45, 90, 135].map(a => `<rect x="${wx - r * 0.07}" y="${wy - r * 0.5}" width="${r * 0.14}" height="${r}" rx="${r * 0.07}" fill="#d98a00" transform="rotate(${a} ${wx} ${wy})"/>`).join('')}<circle cx="${wx}" cy="${wy}" r="${r * 0.16}" fill="#e66a8f"/>`;
@@ -338,5 +479,5 @@ window.Gummy = (() => {
   // keepDpr 로 구운 것만 남기고 나머지는 버린다
   function clearSprites(keepDpr) { const suf = '@' + Math.round(keepDpr * 100); for (const k of Object.keys(sprites)) if (!k.endsWith(suf)) delete sprites[k]; }
 
-  return { C, HILLS, mix, light, dark, defs, radial, linear, flushGrads, groundShadow, bigEyes, jelly, bubble, house, tree, cloud, starSvg, bigStar, coin, confetti, sparkle, flower, hill, fence, road, sampleCurve, tower, castle, fountain, lamp, windmill, starsSky, boss, cannonBase, cannonBarrel, cannonHousing, cannonWheel, svg, dataURL, img, sprite, spriteBox, clearSprites };
+  return { C, HILLS, mix, light, dark, defs, radial, linear, flushGrads, groundShadow, bigEyes, jelly, bubble, house, tree, cloud, starSvg, bigStar, coin, confetti, sparkle, flower, hill, fence, road, sampleCurve, tower, castle, fountain, lamp, windmill, starsSky, boss, nomnom, bubbleExtra, crystalBubble, cookie, junkBubble, mushroom, cottonTree, stalactite, crystalRock, puddingHill, gear, pipe, factory, belt, giftBox, pot, mirror, cannonBase, cannonBarrel, cannonHousing, cannonWheel, svg, dataURL, img, sprite, spriteBox, clearSprites };
 })();
