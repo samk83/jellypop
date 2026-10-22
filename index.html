@@ -606,6 +606,8 @@ function newGame(stageNo) {
   };
   fillQueue();
 }
+// 조준선 길이(px): 1~6 끝까지 → 7번 700 → 30번 150
+function aimLimit(st) { return st.id <= 6 ? Infinity : Math.max(150, 700 - (st.id - 7) * 24); }
 // 방해 요소 상태 (설정 cfg 는 보스 단계가 바뀌면 늘어난다)
 function makeHz(st) {
   const cfg = { ...st.hz };
@@ -698,7 +700,7 @@ function land(m) {
     G.score += n * 10 + d * 20 + u * 10;
     res.popped.forEach((p, i) => { const q = Board.pos(b, p.r, p.c); G.pops.push({ x: q.x, y: q.y, c: p.cell.c, t: -i * .03 }); burst(q.x, q.y, p.cell.c, 6); punchCloud(q.x, q.y); });
     res.dropped.forEach(p => { const q = Board.pos(b, p.r, p.c); G.falls.push({ x: q.x, y: q.y, vy: -60 - rand() * 80, vx: (rand() - .5) * 60, c: p.cell.c, friend: p.cell.friend }); punchCloud(q.x, q.y); });
-    res.unstuck.forEach(p => { const q = Board.pos(b, p.r, p.c); burst(q.x, q.y, '#ffb347', 5); });
+    res.unstuck.forEach((p, i) => { const q = Board.pos(b, p.r, p.c); burst(q.x, q.y, '#ffb347', 8); if (i < 2) G.texts.push({ x: q.x, y: q.y - 6, text: '시럽 벗김!', life: 1, color: '#ffc24a' }); });
     res.thawed.forEach(p => { const q = Board.pos(b, p.r, p.c); burst(q.x, q.y, '#dff4ff', 6); });
     res.recolored.forEach(p => { const q = Board.pos(b, p.r, p.c); burst(q.x, q.y, '#fff', 3); });
     [...res.popped, ...res.dropped].forEach(p => { if (p.cell.friend !== undefined) rescue(p.cell.friend, Board.pos(b, p.r, p.c)); });
@@ -783,6 +785,7 @@ function hazardsAfterShot() {
   if (cfg.caramel) {
     if (n % cfg.caramel === 0 && h.caramelX !== null) {
       const at = Board.stickFrom(b, h.caramelX, Board.cell(randomColor(), '.'));
+      h.caramelLast = at;
       if (at) { const q = Board.pos(b, at[0], at[1]); burst(q.x, q.y, '#e8912f', 6); showToast('캐러멜 방울이 떨어졌어요!'); }
       h.caramelX = null;
     } else if ((n + 1) % cfg.caramel === 0) { h.caramelX = 40 + rand() * 280; warn('캐러멜 방울이 떨어지려 해요!'); }
@@ -851,14 +854,15 @@ function tickHazards(dt) {
 
 // ---------- 구름 ----------
 function spawnCloud(cfg) {
-  const rows = cfg.rows || 3, puffs = [];
-  for (let y = -6; y <= R * 2 + (rows - 1) * ROW_H + 4; y += 16) for (let x = 6; x <= W - 6; x += 22) puffs.push({ dx: x + (rand() - .5) * 10, dy: y + (rand() - .5) * 6, r: 18 + rand() * 9, alive: true, ph: rand() * 6 });
-  G.hz.cloud = { puffs, left: cfg.last, leaving: false, off: -W, look: cfg.look || 'cotton', rows };
+  const rows = cfg.rows || 3, wisps = [];
+  for (let i = 0; i < 9; i++) wisps.push({ x: rand() * W, w: 70 + rand() * 60, ph: rand() * 6, sp: (rand() < .5 ? -1 : 1) * (6 + rand() * 8) });
+  // a: 짙기(0→1로 스며들고, 떠날 때 1→0으로 걷힘). depth: 거품 몇 줄 아래까지 덮는지
+  G.hz.cloud = { holes: [], wisps, left: cfg.last, leaving: false, a: 0, look: cfg.look || 'cotton', rows, depth: R * 2 + rows * ROW_H + 40 };
   showToast(cfg.look === 'frost' ? '서리가 꼈어요!' : '구름이 덮였어요!');
 }
 function punchCloud(x, y) {
   const cl = G.hz.cloud; if (!cl || cl.leaving) return;
-  cl.puffs.forEach(p => { if ((p.dx + cl.off - x) ** 2 + (G.b.y0 + p.dy - y) ** 2 < 38 * 38) p.alive = false; });
+  if (y - G.b.y0 < cl.depth) cl.holes.push({ dx: x, dy: y - G.b.y0, r: 0, to: 40 });
 }
 
 // ---------- 꼬마 놈놈 ----------
@@ -1256,6 +1260,9 @@ function render(dt) {
     let pts = tr.pts, ring = G.aiming;
     if (mode === 'short' && tr.bounceAt >= 0) { pts = pts.slice(0, tr.bounceAt); ring = false; }
     if (mode === 'blink' && t % 2.4 > 1.5) { pts = []; ring = false; }
+    // 스테이지가 올라갈수록 조준선이 짧아진다 (월드 1은 끝까지)
+    const lim = h.aimBoost > 0 ? Infinity : aimLimit(G.st);
+    if (pts.length > lim / 15) { pts = pts.slice(0, Math.ceil(lim / 15)); ring = false; }
     if (mode === 'none') { pts = []; ring = false; for (let i = 0; i < 4; i++) pts.push({ x: PIVOT.x + Math.cos(G.angle) * (66 + i * 12), y: PIVOT.y + Math.sin(G.angle) * (66 + i * 12) }); }
     ctx.save(); ctx.shadowColor = dusk() ? '#fff' : '#ff8fb1'; ctx.shadowBlur = 6;
     pts.forEach((p, i) => { ctx.globalAlpha = Math.max(.15, 1 - i / 60); ctx.fillStyle = h.aimBoost > 0 ? '#fff38a' : dusk() ? '#ffd1e8' : '#ff8fb1'; ctx.beginPath(); ctx.arc(p.x, p.y, 2.8, 0, 7); ctx.fill(); });
@@ -1327,19 +1334,37 @@ function friendSparkles(t) {
     ctx.beginPath(); for (let i = 0; i < 8; i++) { const a = -Math.PI / 2 + i * Math.PI / 4, rr = (i % 2 ? 2.5 : 8) * (0.8 + tw * .3); ctx.lineTo(p.x + Math.cos(a) * rr, p.y + Math.sin(a) * rr); } ctx.fill();
   }));
 }
-const CLOUD_LOOK = { cotton: ['#ffffff', '#ffe1f0', '#f5b8d6'], frost: ['#ffffff', '#e6f6ff', '#a8d8f0'], night: ['#f3eeff', '#c9bff0', '#8f7fc8'] };
+// 안개 색 [짙은 곳, 옅은 끝]
+const CLOUD_LOOK = { cotton: ['255,240,247', '255,214,232'], frost: ['240,250,255', '200,232,250'], night: ['226,218,250', '170,155,225'] };
+let mistCv = null;
 function drawClouds(t, dt) {
   const cl = G.hz.cloud; if (!cl) return;
-  cl.off += (cl.leaving ? W - cl.off : -cl.off) * Math.min(1, dt * (cl.leaving ? 1.6 : 4));
-  if (cl.leaving && cl.off > W - 2) { G.hz.cloud = null; return; }
-  const [c1, c2, c3] = CLOUD_LOOK[cl.look] || CLOUD_LOOK.cotton, y0 = G.b.y0;
-  for (const p of cl.puffs) {
-    if (!p.alive) continue;
-    const x = p.dx + cl.off + Math.sin(t * .8 + p.ph) * 2, y = y0 + p.dy;
-    const g = ctx.createRadialGradient(x - p.r * .3, y - p.r * .4, p.r * .1, x, y, p.r);
-    g.addColorStop(0, c1); g.addColorStop(.6, c2); g.addColorStop(1, c3);
-    ctx.fillStyle = g; ctx.beginPath(); ctx.arc(x, y, p.r, 0, 7); ctx.fill();
+  cl.a += ((cl.leaving ? 0 : 1) - cl.a) * Math.min(1, dt * (cl.leaving ? 1.8 : 3));
+  if (cl.leaving && cl.a < .02) { G.hz.cloud = null; return; }
+  const [c1, c2] = CLOUD_LOOK[cl.look] || CLOUD_LOOK.cotton, top = G.b.y0 - 14, bot = G.b.y0 + cl.depth;
+  if (!mistCv) mistCv = document.createElement('canvas');
+  const s = dpr, mw = Math.ceil(W * s), mh = Math.ceil(DEADLINE * s);
+  if (mistCv.width !== mw || mistCv.height !== mh) { mistCv.width = mw; mistCv.height = mh; }
+  const d = mistCv.getContext('2d'); d.setTransform(s, 0, 0, s, 0, 0);
+  d.globalCompositeOperation = 'source-over'; d.clearRect(0, 0, W, DEADLINE);
+  // 위쪽은 거의 안 보이고, 아래로 갈수록 옅어지는 안개
+  const g = d.createLinearGradient(0, top, 0, bot);
+  g.addColorStop(0, `rgba(${c1},1)`); g.addColorStop(.5, `rgba(${c1},1)`); g.addColorStop(.8, `rgba(${c2},.55)`); g.addColorStop(1, `rgba(${c2},0)`);
+  d.fillStyle = g; d.fillRect(0, 0, W, bot);
+  // 아래 가장자리에서 천천히 흐르는 안개 자락
+  for (const w of cl.wisps) {
+    const x = ((w.x + t * w.sp) % (W + 160) + W + 160) % (W + 160) - 80, y = bot - 34 + Math.sin(t * .7 + w.ph) * 8;
+    const wg = d.createRadialGradient(x, y, 4, x, y, w.w * .6); wg.addColorStop(0, `rgba(${c1},.55)`); wg.addColorStop(1, `rgba(${c1},0)`);
+    d.fillStyle = wg; d.beginPath(); d.ellipse(x, y, w.w * .6, w.w * .28, 0, 0, 7); d.fill();
   }
+  // 터진 자리는 안개가 걷힌다
+  d.globalCompositeOperation = 'destination-out';
+  for (const h of cl.holes) {
+    h.r += (h.to - h.r) * Math.min(1, dt * 6);
+    const y = G.b.y0 + h.dy, hg = d.createRadialGradient(h.dx, y, h.r * .3, h.dx, y, h.r);
+    hg.addColorStop(0, 'rgba(0,0,0,1)'); hg.addColorStop(1, 'rgba(0,0,0,0)'); d.fillStyle = hg; d.beginPath(); d.arc(h.dx, y, h.r, 0, 7); d.fill();
+  }
+  ctx.save(); ctx.globalAlpha = cl.a; ctx.drawImage(mistCv, 0, 0, W, DEADLINE); ctx.restore();
   friendSparkles(t);
 }
 // 캄캄한 동굴: 조준 끝·날아가는 거품 주변만 밝다
@@ -2010,7 +2035,7 @@ requestAnimationFrame(frame);
 // 테스트용 손잡이 (화면에는 영향 없음)
 window.__jp = {
   get G() { return G; }, P, STAGES, Board, R, ROW_H, W, H, PIVOT, DEADLINE,
-  startStage, shoot, swapQueue, setAngle, go, seedRandom,
+  startStage, aimLimit, shoot, swapQueue, setAngle, go, seedRandom,
   reset() { Object.assign(P, { stars: new Array(NST).fill(0), stickers: {}, seenIntro: false, at: 0, seenHz: {} }); saveP(); },
   // 설명 카드 닫기 · 생각하는 시간 흘려보내기(조준 중 시계가 흐름) · 놈놈이 대포를 막았는지
   closeCard() { if (!$('hzCard').hidden) $('hzOk').click(); },

@@ -166,7 +166,8 @@ function botPlay(stageNo) {
     miss(-0.25); miss(-2.9); miss(-0.25);
     out.caramelWarn = j.G.hz.caramelX !== null;
     const c0 = j.Board.count(j.G.b); miss(-2.9);
-    out.caramel = j.G.hz.caramelX === null && j.Board.count(j.G.b) >= c0;
+    const at = j.G.hz.caramelLast;
+    out.caramel = j.G.hz.caramelX === null && !!at && (!!(j.G.b.rows[at[0]] && j.G.b.rows[at[0]][at[1]]) || j.Board.count(j.G.b) < c0);   // 붙은 자리 확인(붙자마자 터졌을 수도 있음)
     // 컨베이어 (19): 3발 뒤 예고, 4발 뒤 움직임
     j.startStage(19); j.closeCard();
     miss(-0.25); miss(-2.9); miss(-0.25);
@@ -181,6 +182,26 @@ function botPlay(stageNo) {
     return out;
   });
   check('구름: 1발 전에 "구름이 몰려와요" 예고 → 다음 발에 덮임', warn.cloudWarn && warn.cloud, JSON.stringify(warn));
+  const mist = await page.evaluate(async () => {
+    const j = window.__jp, out = {};
+    // 안개: 위는 짙고 아래로 옅어짐 (캔버스 픽셀로 확인), 터진 자리는 걷힘
+    j.startStage(8); j.closeCard();
+    j.G.hz.cloud = null; j.G.hz.cfg.cloud = { first: 0, every: 99, last: 9 }; j.G.hz.cloudNext = j.G.shotCount + 1;
+    const popAim = () => { for (const c of 'rybgp') for (let a = -2.9; a < -0.2; a += 0.02) { const r = j.evalShot(a, c); if (r && r.popped && r.cell[0] <= 3) { j.G.queue[0] = c; j.setAngle(a); return true; } } return false; };
+    j.setAngle(-0.25); j.shoot(); j.advance();
+    await new Promise(r => setTimeout(r, 1500));
+    const cv = document.getElementById('canvas'), c = cv.getContext('2d'), k = cv.width / j.W;
+    const lum = y => { const d = c.getImageData(Math.round(40 * k), Math.round(y * k), 1, 1).data; return d[0] + d[1] + d[2]; };
+    const y0 = j.G.b.y0, cl = j.G.hz.cloud;
+    out.on = !!cl && cl.a > .9;
+    out.top = lum(y0 + 20); out.depth = cl && cl.depth;
+    j.G.b.rows = j.G.b.rows.slice(0, 3); out.holes0 = cl.holes.length; out.aimed = popAim(); if (out.aimed) { j.shoot(); j.advance(); } out.holes1 = j.G.hz.cloud && j.G.hz.cloud.holes.length;
+    return out;
+  });
+  check('안개: 덮이면 맨 위는 하얗게 가려짐(밝기 높음)', mist.on && mist.top > 700, JSON.stringify(mist));
+  check('안개: 안개 속 거품을 터뜨리면 그 자리가 걷힘', mist.holes1 > mist.holes0, JSON.stringify(mist));
+  const aimL = await page.evaluate(() => { const j = window.__jp; return j.STAGES.map(s => j.aimLimit(s)); });
+  check('조준선: 월드 1은 끝까지, 7번부터 스테이지가 오를수록 짧아짐(30번 150px)', aimL.slice(0, 6).every(v => v === null || v > 1e9) && aimL.slice(6).every((v, i, a) => i === 0 || v <= a[i - 1]) && aimL[29] === 150 && aimL[6] === 700, JSON.stringify(aimL));
   check('꼬마 놈놈: 1발 전에 빼꼼 예고 → 거품 1개를 훔쳐 감', warn.peek === 'peek' && warn.steal, JSON.stringify(warn));
   check('캐러멜 방울: 1발 전에 천장에 맺힘(예고) → 떨어져 붙음', warn.caramelWarn && warn.caramel, JSON.stringify(warn));
   check('컨베이어: 움직이기 1발 전에 줄이 깜빡임(예고)', warn.convWarn === true, JSON.stringify(warn));

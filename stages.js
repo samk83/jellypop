@@ -40,12 +40,12 @@ window.JellyStages = (() => {
     // ---------------- 월드 2 · 시럽 숲 ----------------
     { id: 7, name: '시럽 오솔길', theme: 'w2-path', shots: 26, colors: 'rybgp',
       friends: [{ name: '곰찡', color: '#a8e05f' }],
-      tip: '<b>끈적 거품</b>은 두 번 맞혀야 터져요',
+      tip: '노란 <b>시럽 거품</b>은 처음엔 시럽만 벗겨져요. 한 번 더 터뜨려요!',
       rows: ['bgrryypprr', 'ygppbbrbp', 'rbbggyybpy', 'prrpBggrb', 'rbypyybbrb', 'bpgbrryyp', 'yypgbpprpr'],
       kinds: ['.....s..s.', '.s...s...', '...s.....s', '.....s...', '.s........', '.........', '..........'] },
     { id: 8, name: '솜사탕 나무', theme: 'w2-cotton', shots: 26, colors: 'rybgp', hz: { cloud: { first: 2, every: 7, last: 4 } },
       friends: [{ name: '솜솜', color: '#ffc4ea' }],
-      tip: '<b>솜사탕 구름</b>이 위쪽을 가려요. 구름 속 거품을 터뜨리면 구멍이 뚫려요',
+      tip: '<b>솜사탕 안개</b>가 위쪽을 가려요. 안개 속 거품을 터뜨리면 그 자리가 걷혀요',
       rows: ['yyppggbggb', 'pgyybYppb', 'pgrrgbyrrp', 'ybpgppgbb', 'brpbbgrgrp', 'ryygygrbr', 'bbpgrrbggy'] },
     { id: 9, name: '메이플 시냇물', theme: 'w2-stream', shots: 28, colors: 'rybgp', hz: { miss: 3 },
       friends: [{ name: '메이', color: '#e0a050' }],
@@ -166,9 +166,9 @@ window.JellyStages = (() => {
 
   // 새 방해 요소가 처음 나올 때 보여 주는 설명 카드 (art: 카드 그림 종류)
   const INFO = {
-    s: { title: '끈적 시럽 거품', text: '시럽에 덮인 거품은 한 번 맞으면 시럽만 벗겨져요.', how: '두 번 터뜨리기!', art: 's' },
+    s: { title: '끈적 시럽 거품', text: '노란 시럽에 싸인 거품(숫자 2)은 같은 색으로 터뜨려도 처음엔 시럽만 벗겨지고 그대로 남아요.', how: '시럽이 벗겨지면 보통 거품! 한 번 더 터뜨려요.', art: 's' },
     m: { title: '버섯 거품', text: '버섯 거품이 터지면 옆 거품들이 버섯과 같은 색이 돼요.', how: '색을 모아 한꺼번에!', art: 'm' },
-    cloud: { title: '솜사탕 구름', text: '구름이 위쪽 거품을 가려요. 몇 발 지나면 바람에 날아가요.', how: '구름 속 거품을 터뜨리면 구멍이 뚫려요. 친구는 반짝여서 보여요.', art: 'cloud' },
+    cloud: { title: '솜사탕 안개', text: '안개가 위쪽을 덮어요. 맨 위는 안 보이고 아래로 갈수록 살짝 보여요. 몇 발 지나면 걷혀요.', how: '안개 속 거품을 터뜨리면 그 자리가 걷혀요. 친구는 반짝여서 보여요.', art: 'cloud' },
     miss: { title: '헛방 천장', text: '아무것도 못 터뜨린 발사가 3번 쌓이면 천장이 한 칸 내려와요.', how: '왼쪽 아래 ●●● 표시를 보세요.', art: 'miss' },
     'aim-short': { title: '짧은 조준선', text: '조준선이 첫 벽에 닿는 곳까지만 보여요.', how: '반딧불 거품을 터뜨리면 3발 동안 길게!', art: 'aim' },
     f: { title: '반딧불 거품', text: '터뜨리거나 떨어뜨리면 3발 동안 조준선이 끝까지 보여요.', how: '어두울 땐 반딧불부터!', art: 'f' },
