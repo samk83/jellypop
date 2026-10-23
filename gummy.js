@@ -7,6 +7,10 @@ window.Gummy = (() => {
   const uid = p => p + (++_id);
   const C = { pink: '#ff5f8a', blue: '#4fb4ff', yellow: '#ffd23f', green: '#5ed46a', purple: '#a76bff', peach: '#ff9f7a', mint: '#4fdcc4', lilac: '#ffb3e0', mal: '#ff7fae' };
   const HILLS = ['#b9efc9', '#9be8b3', '#7fdc9a', '#6ad28b'];
+  // 3D 그림(jelly3d.js)이 켜져 있으면 그 그림을 <image>로 넣는다. 꺼져 있으면 null → 아래 SVG 그림을 그대로 쓴다
+  const tex3d = (kind, opt, px) => (window.Jelly3D ? window.Jelly3D.bake(kind, opt, px) : null);
+  const image3d = (href, x, y, w, h, extra = '') => `<image href="${href}" x="${x}" y="${y}" width="${w}" height="${h}" preserveAspectRatio="none" ${extra}/>`;
+  const PX = 3;   // 3D 그림 해상도 기준 (화면 배율 3배 휴대폰)
 
   // ---------- 색 ----------
   function hex2rgb(h) { h = h.replace('#', ''); if (h.length === 3) h = h.split('').map(c => c + c).join(''); return [parseInt(h.slice(0, 2), 16), parseInt(h.slice(2, 4), 16), parseInt(h.slice(4, 6), 16)]; }
@@ -94,6 +98,8 @@ window.Gummy = (() => {
     const rx = r, ry = r * 0.92, path = blobPath(x, y, rx, ry), fs = r / 38 * faceScale;
     let s = '';
     if (shadow) s += groundShadow(x, y + ry * 0.98, rx * 0.95, ry * 0.22, 0.25);
+    const t3 = tex3d('jelly', { color, mood, ears }, r * 2.4 * PX);
+    if (t3) return s + image3d(t3, x - r * 1.2, y - r * 1.2, r * 2.4, r * 2.4);
     const body = radial(light(color, 0.25), color, dark(color, 0.15), 0.5, 0.55, 0.75);
     if (ears) s += `<g transform="translate(${x} ${y}) scale(0.8 0.86) translate(${-x} ${-y})" filter="url(#glass)"><path d="${earsPath(x, y, rx, ry, -1)}" fill="${color}" opacity="0.85"/><path d="${earsPath(x, y, rx, ry, 1)}" fill="${color}" opacity="0.85"/></g>`;
     s += `<g filter="url(#glass)"><path d="${path}" fill="${body}" opacity="0.88"/></g>`;
@@ -108,6 +114,16 @@ window.Gummy = (() => {
   // 유리 거품 (거품 판). trapped: 안에 갇힌 친구 색
   function bubble(x, y, r, color, { trapped = null, mood = 'happy' } = {}) {
     let s = `<circle cx="${x}" cy="${y + r * 0.15}" r="${r * 0.95}" fill="#7a2d5e" opacity="0.18" filter="url(#soft)"/>`;
+    // 3D 거품 얼굴은 기본 표정뿐 → 다른 표정(고철 거품의 화난 얼굴 등)은 SVG 그림 그대로
+    const t3 = (trapped || mood === 'happy') ? tex3d('bubble', { color: trapped ? '#e6f2ff' : color, mood: trapped ? 'none' : 'happy' }, r * 2.4 * PX) : null;
+    if (t3 && trapped) {
+      // 갇힌 친구: 걱정하는 3D 젤리 + 반투명 거품 (바깥 테두리는 거품 색)
+      return s + jelly(x, y + r * 0.12, r * 0.56, trapped, { shadow: false, mood: 'worried' }) +
+        `<g opacity="0.55">${image3d(t3, x - r * 1.2, y - r * 1.2, r * 2.4, r * 2.4)}</g>` +
+        `<circle cx="${x}" cy="${y}" r="${r * 0.94}" fill="none" stroke="${color}" stroke-width="${r * 0.12}" opacity="0.85"/>` +
+        `<ellipse cx="${x - r * 0.38}" cy="${y - r * 0.45}" rx="${r * 0.25}" ry="${r * 0.12}" fill="#fff" opacity="0.9" transform="rotate(-35 ${x - r * 0.38} ${y - r * 0.45})"/>`;
+    }
+    if (t3) return s + image3d(t3, x - r * 1.2, y - r * 1.2, r * 2.4, r * 2.4);
     s += `<g filter="url(#glass)"><circle cx="${x}" cy="${y}" r="${r}" fill="${radial(light(color, 0.35), color, dark(color, 0.1), 0.5, 0.55, 0.75)}" opacity="0.88"/></g>`;
     s += `<circle cx="${x}" cy="${y}" r="${r}" fill="${radial('#fff', light(color, 0.2), color, 0.5, 0.6, 0.55)}" opacity="0.35"/>`;
     s += `<circle cx="${x}" cy="${y}" r="${r}" fill="${linear([[0, '#fff', 0], [0.6, '#fff', 0], [0.82, '#fff', 0.45], [1, light(color, 0.4), 0.15]], 0, 0, 0, 1)}"/>`;
@@ -436,6 +452,8 @@ window.Gummy = (() => {
   const wheel = (wx, wy, r) => `<g filter="url(#gelSmall)"><circle cx="${wx}" cy="${wy}" r="${r}" fill="${radial('#ffe9a8', '#ffc84a', '#d98a00', 0.4, 0.3, 0.8)}"/></g><circle cx="${wx}" cy="${wy}" r="${r * 0.62}" fill="${dark('#ffc84a', 0.35)}"/><circle cx="${wx}" cy="${wy}" r="${r * 0.5}" fill="${radial('#fff2c8', '#ffd56a', '#e9a52a', 0.4, 0.3, 0.8)}"/>${[0, 45, 90, 135].map(a => `<rect x="${wx - r * 0.07}" y="${wy - r * 0.5}" width="${r * 0.14}" height="${r}" rx="${r * 0.07}" fill="#d98a00" transform="rotate(${a} ${wx} ${wy})"/>`).join('')}<circle cx="${wx}" cy="${wy}" r="${r * 0.16}" fill="#e66a8f"/>`;
   function cannonBase(x, y, s = 1) {
     let g = groundShadow(x, y + 6 * s, 46 * s, 10 * s, 0.35);
+    const u = 12.2 * s, t3 = tex3d('base', { color: '#ff8cb8' }, 7.2 * u * PX);
+    if (t3) return g + image3d(t3, x - 3.6 * u, y - 3.6 * u, 7.2 * u, 7.2 * u);
     g += `<path d="M${x - 40 * s} ${y} L${x - 32 * s} ${y - 12 * s} L${x + 32 * s} ${y - 12 * s} L${x + 40 * s} ${y} Z" fill="${linear([[0, '#ffb8d0'], [1, '#e66a8f']], 0, 0, 0, 1)}"/>`;
     g += `<rect x="${x - 40 * s}" y="${y}" width="${80 * s}" height="${7 * s}" fill="#c2457a"/>`;
     return g;
@@ -443,6 +461,8 @@ window.Gummy = (() => {
   // 포신: 회전 중심 (px,py), 위쪽(-y)을 향한 상태로 그림
   function cannonBarrel(px, py, s = 1) {
     const bl = 62 * s, bw = 30 * s;
+    const u = 11.54 * s, t3 = tex3d('barrel', { color: '#ff8cb8' }, 7.2 * u * PX);
+    if (t3) return image3d(t3, px - 3.6 * u, py - 6.3 * u, 7.2 * u, 7.2 * u);
     return `<rect x="${px - bw / 2}" y="${py - bl}" width="${bw}" height="${bl}" rx="${bw * 0.18}" fill="${linear([[0, '#fff0f6'], [0.3, '#ffffff'], [0.65, '#ffd6e6'], [1, '#e08fb0']], 0, 0, 1, 0)}"/>
     <rect x="${px - bw / 2 - 3 * s}" y="${py - bl - 4 * s}" width="${bw + 6 * s}" height="${12 * s}" rx="${4 * s}" fill="${linear([[0, '#ffd1e3'], [0.5, '#ff7fae'], [1, '#c2457a']], 0, 0, 1, 0)}"/>
     <ellipse cx="${px}" cy="${py - bl - 4 * s}" rx="${bw / 2 + 3 * s}" ry="${5 * s}" fill="#7a2d5e"/>
@@ -450,9 +470,11 @@ window.Gummy = (() => {
     <rect x="${px - bw / 2 - 2 * s}" y="${py - bl * 0.45}" width="${bw + 4 * s}" height="${9 * s}" rx="${3 * s}" fill="${linear([[0, '#ffd1e3'], [0.5, '#ff7fae'], [1, '#c2457a']], 0, 0, 1, 0)}"/>`;
   }
   function cannonHousing(px, py, s = 1) {
+    const t3 = tex3d('housing', { color: '#ff9fc0' }, 17 * s * 2.4 * PX);
+    if (t3) return image3d(t3, px - 17 * s * 1.2, py - 17 * s * 1.2, 17 * s * 2.4, 17 * s * 2.4) + starSvg(px, py, 8 * s, '#ffd54a', '#d98a00');
     return `<g filter="url(#gelSmall)"><circle cx="${px}" cy="${py}" r="${17 * s}" fill="${radial('#ffe6f0', '#ff9fc0', '#c2457a', 0.4, 0.3, 0.8)}"/></g>` + starSvg(px, py, 8 * s, '#ffd54a', '#d98a00');
   }
-  const cannonWheel = (wx, wy, r) => wheel(wx, wy, r);
+  const cannonWheel = (wx, wy, r) => { const t3 = tex3d('wheel', { color: '#ff9fc0' }, r * 2.4 * PX); return t3 ? image3d(t3, wx - r * 1.2, wy - r * 1.2, r * 2.4, r * 2.4) : wheel(wx, wy, r); };
 
   // ---------- 출력 ----------
   function svg(body, box, extra = '') {

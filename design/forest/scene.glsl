@@ -9,13 +9,46 @@ uniform int uPass;
 uniform vec3 uCol;     // sprite color
 uniform float uMood;   // sprite face: 0 happy, 1 joy (closed eyes), 2 worried
 uniform float uEars;   // sprite: 1 = mascot ears
+uniform int uWorld;    // plate palette: 0 sunny forest, 1 syrup (golden hour), 2 cave night, 3 candy, 4 castle dusk
+uniform int uNoChar;   // 1 = plate without characters (game draws them)
 out vec4 o;
 
 #define PI 3.14159265
-const vec3 SUN = normalize(vec3(-0.12, 0.70, -0.70));   // toward sun (back light)
+vec3 SUN = normalize(vec3(-0.12, 0.70, -0.70));   // toward sun (back light)
 const vec3 KEY = normalize(vec3(0.55, 0.55, 0.65));     // warm front key
-const vec3 SUNC = vec3(1.0, 0.86, 0.58);
-const vec3 SKYC = vec3(0.62, 0.80, 0.62);
+vec3 SUNC = vec3(1.0, 0.86, 0.58);
+vec3 SKYC = vec3(0.62, 0.80, 0.62);
+vec3 KEYC = vec3(1.0, 0.93, 0.82);
+vec3 FOGA = vec3(0.30,0.46,0.26), FOGB = vec3(1.0,0.88,0.58);
+vec3 SKYLO = vec3(0.55,0.72,0.50), SKYHI = vec3(1.0,0.95,0.78);
+vec3 MOSSA = vec3(0.16,0.32,0.07), MOSSB = vec3(0.42,0.62,0.12);
+vec3 LEAFA = vec3(0.08,0.22,0.05), LEAFB = vec3(0.30,0.55,0.10);
+vec3 BARKA = vec3(0.20,0.14,0.10), BARKB = vec3(0.40,0.31,0.22);
+float CAPGLOW = 0.0, RAYS = 1.0;
+void palette(){
+  if(uWorld==1){ SUN=normalize(vec3(0.30,0.42,-0.85)); SUNC=vec3(1.0,0.62,0.30); SKYC=vec3(0.85,0.62,0.42); KEYC=vec3(1.0,0.82,0.62);
+    FOGA=vec3(0.42,0.26,0.14); FOGB=vec3(1.0,0.70,0.36); SKYLO=vec3(0.80,0.48,0.30); SKYHI=vec3(1.0,0.84,0.52);
+    MOSSA=vec3(0.28,0.28,0.06); MOSSB=vec3(0.62,0.55,0.14); LEAFA=vec3(0.40,0.10,0.03); LEAFB=vec3(0.95,0.48,0.10); RAYS=1.2; }
+  else if(uWorld==2){ SUN=normalize(vec3(0.15,0.85,-0.50)); SUNC=vec3(0.30,0.42,0.85); SKYC=vec3(0.16,0.20,0.45); KEYC=vec3(0.45,0.50,0.85);
+    FOGA=vec3(0.03,0.05,0.14); FOGB=vec3(0.22,0.28,0.62); SKYLO=vec3(0.04,0.06,0.18); SKYHI=vec3(0.16,0.22,0.50);
+    MOSSA=vec3(0.04,0.13,0.11); MOSSB=vec3(0.12,0.32,0.28); LEAFA=vec3(0.03,0.06,0.14); LEAFB=vec3(0.08,0.18,0.30);
+    BARKA=vec3(0.10,0.10,0.16); BARKB=vec3(0.22,0.22,0.32); CAPGLOW=1.0; RAYS=0.45; }
+  else if(uWorld==3){ SUN=normalize(vec3(-0.10,0.75,-0.65)); SUNC=vec3(1.0,0.86,0.92); SKYC=vec3(1.0,0.76,0.90); KEYC=vec3(1.0,0.92,0.96);
+    FOGA=vec3(0.72,0.50,0.72); FOGB=vec3(1.0,0.90,0.95); SKYLO=vec3(0.95,0.70,0.88); SKYHI=vec3(1.0,0.93,0.97);
+    MOSSA=vec3(0.36,0.72,0.58); MOSSB=vec3(0.70,0.95,0.80); LEAFA=vec3(0.80,0.40,0.66); LEAFB=vec3(1.0,0.76,0.90);
+    BARKA=vec3(1.0,0.95,0.95); BARKB=vec3(1.0,1.0,1.0); RAYS=0.9; }
+  else if(uWorld==4){ SUN=normalize(vec3(-0.30,0.28,-0.90)); SUNC=vec3(1.0,0.52,0.52); SKYC=vec3(0.45,0.34,0.70); KEYC=vec3(0.85,0.70,0.95);
+    FOGA=vec3(0.14,0.09,0.24); FOGB=vec3(0.95,0.48,0.52); SKYLO=vec3(0.40,0.22,0.48); SKYHI=vec3(1.0,0.62,0.58);
+    MOSSA=vec3(0.10,0.17,0.12); MOSSB=vec3(0.26,0.36,0.20); LEAFA=vec3(0.10,0.05,0.18); LEAFB=vec3(0.34,0.18,0.45);
+    BARKA=vec3(0.16,0.11,0.14); BARKB=vec3(0.32,0.24,0.28); CAPGLOW=0.35; RAYS=1.0; }
+}
+vec3 capTint(vec3 c, float t){
+  if(uWorld==2){ float k = fract(t*0.37); return k<0.33 ? vec3(0.25,0.90,1.0) : k<0.66 ? vec3(0.70,0.40,1.0) : vec3(1.0,0.40,0.80); }
+  if(uWorld==3){ float k = fract(t*0.37); return k<0.33 ? vec3(0.55,0.92,0.80) : k<0.66 ? vec3(0.78,0.65,1.0) : vec3(1.0,0.90,0.45); }
+  if(uWorld==4){ float k = fract(t*0.37); return k<0.5 ? vec3(0.75,0.18,0.28) : vec3(0.55,0.25,0.80); }
+  if(uWorld==1){ float k = fract(t*0.37); return k<0.5 ? vec3(0.95,0.40,0.12) : vec3(0.85,0.22,0.15); }
+  return c;
+}
 
 // ---------- noise ----------
 float hash3(vec3 p){ p = fract(p*0.3183099 + 0.1); p *= 17.0; return fract(p.x*p.y*p.z*(p.x+p.y+p.z)); }
@@ -56,6 +89,7 @@ bool skipJelly = false;
 float groundLift = 0.0;
 
 void setup(){
+  palette();
   for(int i=0;i<NJ;i++){ J[i]=vec4(0,0,0,-1); JE[i]=0.0; JM[i]=0.0; JC[i]=vec3(1); }
   for(int i=0;i<NM;i++){ M[i]=vec4(0,0,0,-1); MH[i]=1.0; MT[i]=0.0; MC[i]=vec3(1); }
   for(int i=0;i<NF;i++){ F[i]=vec4(0,0,0,-1); FH[i]=1.0; FC[i]=vec3(1); }
@@ -81,6 +115,7 @@ void setup(){
     F[2]=vec4(-0.38,0.0,-2.6,0.17); FH[2]=0.45; FC[2]=vec3(0.75,0.55,1.0);
     T[0]=vec4(-3.3,0.0,-6.5,0.75); T[1]=vec4(3.0,0.0,-7.5,0.95); T[2]=vec4(-0.9,0.0,-11.0,0.85);
     T[3]=vec4(1.6,0.0,-13.5,1.1); T[4]=vec4(-4.6,0.0,-12.0,1.2); T[5]=vec4(4.6,0.0,-12.5,1.0);
+    if(uNoChar==1){ for(int i=0;i<NJ;i++) J[i].w = -1.0; }
     L[0]=vec4(-3.6,8.6,-7.0,3.2); L[1]=vec4(3.4,9.2,-8.0,3.4); L[2]=vec4(-0.5,11.5,-12.0,3.6);
     L[3]=vec4(5.5,7.5,-12.0,3.0); L[4]=vec4(-5.8,7.2,-11.0,3.0); L[5]=vec4(1.8,12.0,-15.0,3.5); L[6]=vec4(-2.5,6.4,-3.0,1.4);
     L[7]=vec4(-1.7,0.1,-4.6,0.85); L[8]=vec4(2.0,0.1,-5.4,1.0); L[9]=vec4(0.3,0.0,-8.0,1.2);
@@ -268,11 +303,11 @@ float dapple(vec3 p){ vec2 q = p.xz - SUN.xz/SUN.y*p.y; float n = fbm3(vec3(q*0.
 
 vec3 skyCol(vec3 rd){
   float s = max(dot(rd, SUN), 0.0);
-  vec3 c = mix(vec3(0.55,0.72,0.50), vec3(1.0,0.95,0.78), smoothstep(-0.1, 0.6, rd.y));
+  vec3 c = mix(SKYLO, SKYHI, smoothstep(-0.1, 0.6, rd.y));
   c += SUNC*pow(s, 6.0)*0.9 + vec3(1.0,0.97,0.85)*pow(s, 60.0)*1.5;
   return c;
 }
-vec3 fogCol(vec3 rd){ float s = max(dot(rd, SUN),0.0); return mix(vec3(0.30,0.46,0.26), vec3(1.0,0.88,0.58), 0.15 + 0.85*pow(s,2.0)); }
+vec3 fogCol(vec3 rd){ float s = max(dot(rd, SUN),0.0); return mix(FOGA, FOGB, 0.15 + 0.85*pow(s,2.0)); }
 
 // ---------- materials ----------
 vec3 shadeOpaque(vec3 p, vec3 n, vec3 rd, float id, float t){
@@ -280,7 +315,7 @@ vec3 shadeOpaque(vec3 p, vec3 n, vec3 rd, float id, float t){
   vec3 extra = vec3(0);
   if(id < 1.5){ // ground moss
     float f = fbm5(vec3(p.xz*3.0,0.0)); float fine = noise(vec3(p.xz*40.0,1.0));
-    alb = mix(vec3(0.16,0.32,0.07), vec3(0.42,0.62,0.12), f);
+    alb = mix(MOSSA, MOSSB, f);
     alb *= 0.75 + 0.5*fine;
     float clearing = exp(-dot(p.xz-vec2(0.0,0.3), p.xz-vec2(0.0,0.3))*0.18);
     alb = mix(alb, alb*vec3(1.15,1.1,0.8), clearing);
@@ -298,9 +333,10 @@ vec3 shadeOpaque(vec3 p, vec3 n, vec3 rd, float id, float t){
     alb *= 0.9 + 0.1*noise(p*vec3(30,4,30));
     alb = mix(vec3(0.35,0.5,0.15), alb, smoothstep(0.0, 0.25*MH[i], q.y + 0.1*noise(p*8.0)));
     sss = 0.35; spec = 0.15; rough = 16.0;
+    if(uWorld==2) { alb *= vec3(0.45,0.5,0.7); sss = 0.15; }
   } else if(id >= 40.0 && id < 50.0){ // cap
     int i = int(id-40.0); vec3 q = p - M[i].xyz - vec3(0, MH[i], 0); float r = M[i].w;
-    vec3 base = MC[i];
+    vec3 base = capTint(MC[i], MT[i]);
     alb = mix(base*0.75, mix(base, vec3(1.0,0.9,0.7), 0.25), smoothstep(-0.1*r, 0.6*r, q.y));
     vec3 dir = normalize(q/vec3(r,0.62*r,r));
     vec2 v = voro(dir*3.4 + MT[i]);
@@ -311,6 +347,7 @@ vec3 shadeOpaque(vec3 p, vec3 n, vec3 rd, float id, float t){
       alb = mix(vec3(0.98,0.86,0.70), vec3(0.85,0.65,0.50), gl*0.5) * (0.7+0.3*rr);
     }
     spec = 0.55; rough = 40.0; sss = 0.45;
+    emi = CAPGLOW * (1.0 - spot*0.5) * (n.y < -0.25 ? 0.5 : 1.0); extra = base;
   } else if(id >= 50.0 && id < 55.0){ // flower face
     int i = int(id-50.0); vec3 c = F[i].xyz + vec3(0,FH[i],0); float r = F[i].w;
     vec3 fw = normalize(camPos - c); fw = normalize(fw + vec3(0,0.25,0));
@@ -333,12 +370,13 @@ vec3 shadeOpaque(vec3 p, vec3 n, vec3 rd, float id, float t){
   } else if(id >= 60.0 && id < 70.0){ alb = vec3(0.25,0.55,0.15); sss = 0.6; }
   else if(id < 75.0){ // trunk
     float b = fbm5(vec3(atan(p.z,p.x)*4.0, p.y*1.5, 0.0));
-    alb = mix(vec3(0.20,0.14,0.10), vec3(0.40,0.31,0.22), b);
+    alb = mix(BARKA, BARKB, b);
+    if(uWorld==3){ float st = sin(atan(p.z,p.x)*3.0 + p.y*1.4); alb = st > 0.3 ? vec3(1.0,0.45,0.55) : vec3(1.0,0.97,0.97); }
     float moss = smoothstep(0.55, 0.75, fbm3(p*1.3) + 0.3*n.y - 0.15*p.y);
     alb = mix(alb, vec3(0.30,0.48,0.12), moss);
     rough = 6.0; spec = 0.03;
   } else if(id < 85.0){ // foliage
-    alb = mix(vec3(0.08,0.22,0.05), vec3(0.30,0.55,0.10), fbm3(p*2.0));
+    alb = mix(LEAFA, LEAFB, fbm3(p*2.0));
     sss = 2.2; rough = 6.0;
   } else if(id < 94.0){ alb = mix(vec3(0.45,0.45,0.40), vec3(0.32,0.50,0.15), smoothstep(0.0,0.6,n.y)*0.8); spec=0.1; }
   else if(id < 95.5){ alb = mix(uCol, vec3(1.0), 0.15*smoothstep(-2.0,2.0,p.y)); if(sin(atan(p.z,p.x)*2.0 + p.y*1.6) > 0.55) alb = mix(alb, vec3(1.0,0.97,0.95), 0.85); if(length(p.xz) < 0.9 && p.y > 1.9) alb = uCol*0.35; spec = 1.0; rough = 70.0; sss = 0.2; }
@@ -351,7 +389,7 @@ vec3 shadeOpaque(vec3 p, vec3 n, vec3 rd, float id, float t){
   float ksh = softShadow(p + n*0.02, KEY, 8.0);
   float occ = ao(p, n);
   float dS = max(dot(n, SUN), 0.0), dK = max(dot(n, KEY), 0.0);
-  vec3 col = alb * (SUNC*1.5*dS*sh + vec3(1.0,0.93,0.82)*0.85*dK*ksh + SKYC*0.55*(0.5+0.5*n.y)*occ + vec3(0.30,0.36,0.18)*0.35*(0.5-0.5*n.y)*occ);
+  vec3 col = alb * (SUNC*1.5*dS*sh + KEYC*0.85*dK*ksh + SKYC*0.55*(0.5+0.5*n.y)*occ + MOSSA*1.6*0.35*(0.5-0.5*n.y)*occ);
   // translucency (backlit leaves/petals/caps)
   col += alb * sss * SUNC * pow(max(dot(rd, SUN), 0.0), 2.0) * 0.9 * (0.4+0.6*sh);
   col += alb * sss * 0.12;
@@ -359,6 +397,7 @@ vec3 shadeOpaque(vec3 p, vec3 n, vec3 rd, float id, float t){
   vec3 hs = normalize(SUN - rd); col += spec * 0.8 * pow(max(dot(n,hs),0.0), rough) * sh * SUNC;
   // rim
   col += alb * 0.35 * pow(1.0 - max(dot(n,-rd),0.0), 3.0) * SUNC * sh;
+  col += pow(extra, vec3(2.2)) * emi * 1.4;
   return col;
 }
 
@@ -495,7 +534,7 @@ vec3 render(vec3 ro, vec3 rd, out float depth){
     float fogAmt = 1.0 - exp(-max(h.x - 6.0, 0.0)*0.032);
     col = mix(col, fogCol(rd), fogAmt);
     // height haze (low mist in the distance)
-    col = mix(col, vec3(0.85,0.92,0.70), 0.25*fogAmt*exp(-max(p.y,0.0)*0.6));
+    col = mix(col, mix(FOGA, FOGB, 0.6), 0.25*fogAmt*exp(-max(p.y,0.0)*0.6));
   }
   return col;
 }
@@ -510,7 +549,7 @@ vec3 godRays(vec3 ro, vec3 rd, float tEnd){
   }
   acc *= te / float(N);
   float phase = 0.06 + 1.8*pow(max(dot(rd, SUN), 0.0), 5.0);
-  return SUNC * acc * phase * 0.05;
+  return SUNC * acc * phase * 0.05 * RAYS;
 }
 
 void main(){

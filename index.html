@@ -94,6 +94,7 @@ img{-webkit-user-drag:none}
 .title-actions .row .btn{padding:0 10px;font-size:16px;min-height:48px}
 .title-actions .btn.big{min-height:60px;font-size:24px}
 .title-note{position:relative;font-size:13px;color:var(--ink-soft);margin-top:4px;font-weight:700}
+#title.f3d .title-note{color:#fff;text-shadow:0 1px 3px rgba(0,0,0,.6)}
 
 /* 프롤로그 */
 #intro{padding:0}
@@ -162,6 +163,9 @@ img{-webkit-user-drag:none}
 
 /* 플레이 */
 #play{padding-bottom:calc(env(safe-area-inset-bottom) + 6px)}
+#play.f3d{isolation:isolate;background:#16300f}
+#play.f3d::before{content:"";position:absolute;inset:-24px;z-index:-1;background:var(--bg3d) center 30%/cover;filter:blur(10px) brightness(.72) saturate(1.1)}
+#play.f3d #canvas{box-shadow:0 0 0 1.5px rgba(255,255,255,.25),0 10px 30px rgba(0,0,0,.35)}
 .hud{display:flex;align-items:center;gap:8px}
 .chip{position:relative;background:rgba(217,84,138,.88);border:1.5px solid rgba(255,255,255,.35);border-radius:14px;padding:4px 10px;min-height:48px;display:flex;flex-direction:column;justify-content:center;line-height:1.1;min-width:0;color:#fff;
   box-shadow:0 3px 6px rgba(26,10,58,.22)}
@@ -347,6 +351,7 @@ img{-webkit-user-drag:none}
   </div>
 </div>
 
+<script src="jelly3d.js"></script>
 <script src="gummy.js"></script>
 <script src="stages.js"></script>
 <script>
@@ -398,7 +403,7 @@ let soundOn = store.get('sound', true);
 // ============================================================
 // HTML 쪽 그림 도우미 (img 태그로 굽는 구미 젤리 그림)
 // ============================================================
-const jellyBox = r => ({ x: -1.6 * r, y: -1.15 * r, w: 3.2 * r, h: 2.4 * r });
+const jellyBox = r => ({ x: -1.6 * r, y: -1.25 * r, w: 3.2 * r, h: 2.5 * r });   // 3D 그림(±1.2r)의 귀가 잘리지 않게 위로 여유
 function jellyImg(color, r, opt = {}, attrs = '') { return Art.img(Art.jelly(0, 0, r, color, opt), jellyBox(r), attrs); }
 const artCache = {};
 function cachedArt(key, make) { return artCache[key] || (artCache[key] = make()); }
@@ -1161,7 +1166,18 @@ function worldArt(theme) {
   }
   return b;
 }
+// 3D 렌더 숲 배경 (월드별 1장, design/forest 에서 미리 구운 그림). 못 불러오면 예전 SVG 풍경
+const BG3D = {};   // 월드 번호 → Image (3D가 켜졌을 때 필요한 월드만 불러온다)
+function bgImage(world, onload) {
+  if (!BG3D[world]) { const im = BG3D[world] = new Image(); im.onerror = () => { im.failed = true; }; im.src = 'assets/bg/w' + world + '.webp'; }
+  const im = BG3D[world];
+  if (onload && !im.complete) im.addEventListener('load', onload, { once: true });
+  return im;
+}
+const bg3d = () => { const im = G && window.Jelly3D && Jelly3D.ok() && bgImage(G.st.world || 1); return im && im.complete && !im.failed && im.naturalWidth ? im : null; };
 function drawBackground(theme) {
+  const im = bg3d();
+  if (im) { ctx.drawImage(im, 0, 0, W, H); return; }
   if (!spr('bg-' + theme, () => SPR.bg(theme), 0, 0)) {
     const g = ctx.createLinearGradient(0, 0, 0, H); g.addColorStop(0, '#ffd1e8'); g.addColorStop(.8, '#fff6e8'); g.addColorStop(.82, '#c9f3d6'); g.addColorStop(1, '#7fdc9a');
     ctx.fillStyle = g; ctx.fillRect(0, 0, W, H);
@@ -1170,6 +1186,7 @@ function drawBackground(theme) {
 // 스테이지 시작 때 필요한 스프라이트를 미리 굽는다
 const bossKey = (mood, red) => 'boss-' + G.st.boss.kind + '-' + mood + (red ? '-red' : '');
 function warmSprites(st) {
+  if (window.Jelly3D && Jelly3D.ok()) bgImage(st.world || 1, () => spriteReady());
   Art.sprite('bg-' + st.theme, () => SPR.bg(st.theme), dpr, spriteReady);
   for (const c of st.colors) { Art.sprite('bub-' + c, () => SPR.bubble(c), dpr, spriteReady); Art.sprite('jel-' + COLORS[c].base + '-10-happy', () => SPR.jelly(COLORS[c].base, 10, {}), dpr, spriteReady); }
   for (const c of 'wkn') Art.sprite('bub-' + c, () => SPR.bubble(c), dpr, spriteReady);
@@ -1205,7 +1222,7 @@ function burst(x, y, c, n) {
   }
 }
 const DUSK = ['gate', 'sunset', 'w2-night', 'w3-gate', 'w3-stalactite', 'w3-lake', 'w3-crystal', 'w3-dark', 'w3-heart', 'w4-boss'];
-const dusk = () => DUSK.includes(G.st.theme) || G.st.world === 5;
+const dusk = () => !!bg3d() || DUSK.includes(G.st.theme) || G.st.world === 5;   // 3D 숲 배경 위에서는 밝은 선이 잘 보인다
 
 function render(dt) {
   const t = G.time;
@@ -1503,7 +1520,7 @@ function drawCannonArea(t, dt) {
   }
   const extra = G.shotsLeft - G.queue.length;
   G.lineShown = { cannon: G.queue.length ? 1 : 0, line: Math.max(0, show), extra: Math.max(0, extra) };   // 화면에 그린 것 (테스트 확인용)
-  if (extra > 0) { const p = queuePos(Math.max(1, show)); ctx.fillStyle = '#7a2d5e'; ctx.font = '800 15px "Baloo 2", sans-serif'; ctx.textAlign = 'left'; ctx.fillText('+' + extra, p.x + 10, p.y + 6); }
+  if (extra > 0) { const p = queuePos(Math.max(1, show)); ctx.fillStyle = dusk() ? '#fff' : '#7a2d5e'; ctx.font = '800 15px "Baloo 2", sans-serif'; ctx.textAlign = 'left'; ctx.fillText('+' + extra, p.x + 10, p.y + 6); }
   // 점수 · 남은 발사 수
   ctx.fillStyle = 'rgba(217,84,138,.9)'; roundRect(W / 2 - 92, H - 28, 184, 24, 12); ctx.fill();
   ctx.strokeStyle = 'rgba(255,255,255,.35)'; ctx.lineWidth = 1.5; roundRect(W / 2 - 92, H - 28, 184, 24, 12); ctx.stroke();
@@ -1784,6 +1801,10 @@ function startStage(n) {
   $('result').hidden = true;
   newGame(n);
   Music.setWorld(G.st.world - 1);
+  // 3D 숲 배경일 때는 게임 판 바깥(화면 위아래 여백)도 같은 숲 그림을 흐리게 깔아 한 장면처럼 보이게 한다
+  const p3 = window.Jelly3D && Jelly3D.ok();
+  $('play').classList.toggle('f3d', !!p3);
+  if (p3) $('play').style.setProperty('--bg3d', `url(assets/bg/w${G.st.world}.webp)`);
   go('play');
   warmSprites(G.st);
   updateHud();
@@ -1821,7 +1842,11 @@ function showHzCard(keys) {
 // ============================================================
 // 타이틀: 젤리마을 풍경 그림 + 통통 뛰는 말랑이와 친구들
 // ============================================================
-function titleArt() {
+function titleArt() { return window.Jelly3D && Jelly3D.ok() ? titleArt3d() : titleArtSvg(); }
+function titleArt3d() {
+  return '<img class="cover" alt="" draggable="false" src="assets/bg/title.webp" onerror="titleBgFailed()">';
+}
+function titleArtSvg() {
   const A = Art, HL = A.HILLS;
   let b = `<rect width="390" height="844" fill="${A.linear([[0, '#ffd1e8'], [0.3, '#ffe6f1'], [0.55, '#fff6e8'], [0.62, '#c9f3d6'], [1, '#7fdc9a']])}"/>`;
   b += `<circle cx="300" cy="500" r="150" fill="#fff" opacity="0.5" filter="url(#soft24)"/>`;
@@ -1837,11 +1862,14 @@ function titleArt() {
   b += A.jelly(345, 170, 13, AC.blue, { shadow: false }) + A.jelly(45, 195, 11, AC.green, { shadow: false }) + A.jelly(325, 60, 9, AC.purple, { shadow: false });
   return A.img(b, { x: 0, y: 0, w: 390, h: 844, lx: 100, ly: -120 }, 'class="cover"');
 }
+// 타이틀 숲 그림을 못 불러오면 예전 구미 풍경으로
+window.titleBgFailed = function () { $('title').classList.remove('f3d'); artCache.title = titleArtSvg(); $('titleArt').innerHTML = artCache.title; };
 function totalStickers() { return Object.keys(P.stickers).length; }
 function renderTitle() {
   const n = totalStickers();
   $('titleNote').textContent = n ? '모은 스티커 ' + n + ' / 30 · 별 ' + P.stars.reduce((a, b) => a + b, 0) : '사라진 젤리 친구들을 구하러 가요!';
   if (!$('titleArt').firstChild) {
+    $('title').classList.toggle('f3d', !!(window.Jelly3D && Jelly3D.ok()));
     $('titleArt').innerHTML = cachedArt('title', titleArt);
     $('titleCast').innerHTML = jellyImg(AC.blue, 42, { mood: 'joy' }, 'class="f1"') + jellyImg(AC.yellow, 44, {}, 'class="f2"') +
       jellyImg(AC.mint, 30, {}, 'class="f3"') + jellyImg(AC.purple, 32, { mood: 'joy' }, 'class="f4"') + jellyImg(MAL, 84, { ears: true, faceScale: 1.05 }, 'class="mal"');

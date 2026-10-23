@@ -12,7 +12,7 @@ const page = await browser.newPage();
 page.on('console', m => console.log('[page]', m.text()));
 await page.setContent('<canvas id=c></canvas>');
 const t0 = Date.now();
-const url = await page.evaluate(async ({ frag, mode, w, h, pass, col, mood, ears }) => {
+const url = await page.evaluate(async ({ frag, mode, w, h, pass, col, mood, ears, world, nochar }) => {
   const c = document.getElementById('c'); c.width = w; c.height = h;
   const gl = c.getContext('webgl2', { preserveDrawingBuffer: true, premultipliedAlpha: false, alpha: true });
   const sh = (t, s) => { const o = gl.createShader(t); gl.shaderSource(o, s); gl.compileShader(o); if (!gl.getShaderParameter(o, gl.COMPILE_STATUS)) throw new Error(gl.getShaderInfoLog(o)); return o; };
@@ -30,6 +30,8 @@ const url = await page.evaluate(async ({ frag, mode, w, h, pass, col, mood, ears
   gl.uniform3f(gl.getUniformLocation(pr, 'uCol'), ...col);
   gl.uniform1f(gl.getUniformLocation(pr, 'uMood'), mood);
   gl.uniform1f(gl.getUniformLocation(pr, 'uEars'), ears);
+  gl.uniform1i(gl.getUniformLocation(pr, 'uWorld'), world);
+  gl.uniform1i(gl.getUniformLocation(pr, 'uNoChar'), nochar);
   gl.viewport(0, 0, w, h); gl.clearColor(0, 0, 0, 0); gl.clear(gl.COLOR_BUFFER_BIT);
   gl.enable(gl.SCISSOR_TEST);
   const strip = 16;
@@ -38,7 +40,7 @@ const url = await page.evaluate(async ({ frag, mode, w, h, pass, col, mood, ears
     if ((y / strip) % 20 === 0) { console.log('row', y); await new Promise(r => setTimeout(r, 0)); }
   }
   return c.toDataURL('image/png');
-}, { frag, mode: +mode, w: +w, h: +h, pass: +pass, col: col.split(',').map(Number), mood: +mood, ears: +ears });
+}, { world: +(process.env.WORLD || 0), nochar: +(process.env.NOCHAR || 0), frag, mode: +mode, w: +w, h: +h, pass: +pass, col: col.split(',').map(Number), mood: +mood, ears: +ears });
 fs.writeFileSync(out, Buffer.from(url.split(',')[1], 'base64'));
 console.log('done', out, ((Date.now() - t0) / 1000).toFixed(1) + 's');
 await browser.close();
