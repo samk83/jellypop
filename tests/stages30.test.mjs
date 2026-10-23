@@ -371,6 +371,29 @@ for (const [label, dev] of [['iPhone SE (320x568)', devices['iPhone SE']], ['Gal
   await ctx.close();
 }
 
+// 3-1) 소리 · 큰 대포 (Owner 피드백 2)
+{
+  console.log('소리 · 대포');
+  const page = await browser.newPage({ viewport: { width: 390, height: 844 }, hasTouch: true });
+  await page.goto(url + '?seed=11');
+  await page.evaluate(() => { window.__jp.reset(); window.__jp.startStage(1); });
+  await page.waitForTimeout(300);
+  // 대포 근처를 한 번 누르면 소리가 켜지고 배경 음악이 흐름
+  const box = await page.evaluate(() => { const r = document.getElementById('canvas').getBoundingClientRect(); return [r.left + 60 * r.width / 360, r.top + 600 * r.height / 620]; });
+  await page.mouse.move(box[0], box[1]); await page.mouse.down(); await page.mouse.up();
+  await page.waitForTimeout(900);
+  const m1 = await page.evaluate(() => window.__jp.music());
+  check('배경 음악: 화면을 누르면 시작되고 음표가 계속 예약됨', m1.running && m1.scheduled > 20, JSON.stringify(m1));
+  const v = await page.evaluate(() => { const j = window.__jp, a = j.voices(); j.sfx('pop', 8); const b = j.voices(); return { a, b }; });
+  check('크게 터지면 젤리 추임새 소리', v.b === v.a + 1, JSON.stringify(v));
+  const modes = [];
+  for (let i = 0; i < 3; i++) { await page.tap('#soundBtn'); await page.waitForTimeout(300); modes.push(await page.evaluate(() => [window.__jp.soundMode(), window.__jp.music().running])); }
+  check('소리 버튼: 음악+효과음 → 효과음만(음악 멈춤) → 끔 → 다시 모두', JSON.stringify(modes) === JSON.stringify([['sfx', false], ['off', false], ['all', true]]), JSON.stringify(modes));
+  check('대포가 커짐 (그림 배율 1.05, 전 0.8)', await page.evaluate(() => window.__jp.CS) >= 1);
+  await page.screenshot({ path: path.join(shots, 'v4-cannon-390.png') });
+  await page.close();
+}
+
 // 4) 월드 전환 · 완주
 {
   console.log('월드 전환 · 완주');

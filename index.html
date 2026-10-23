@@ -305,7 +305,7 @@ img{-webkit-user-drag:none}
       <button class="icon-btn" id="soundBtn" aria-label="소리 켜기/끄기"></button>
     </div>
     <div id="stageWrap">
-      <canvas id="canvas" tabindex="0" aria-label="게임 판. 끌어서 조준하고 떼면 발사. 키보드는 왼쪽·오른쪽 화살표로 조준, 스페이스로 발사, X로 순서 바꾸기"></canvas>
+      <canvas id="canvas" tabindex="0" aria-label="게임 판. 대포 근처를 좌우로 끌어 대포를 돌리고, 떼면 발사. 키보드는 왼쪽·오른쪽 화살표로 조준, 스페이스로 발사, X로 순서 바꾸기"></canvas>
       <div class="toast" id="toast" role="status" aria-live="polite"></div>
       <div class="tip hide" id="tip"></div>
     </div>
@@ -714,7 +714,7 @@ function land(m) {
     else if (d >= 4) showToast('우르르 쿵!'); else if (n >= 6) showToast('굉장해요!');
     if (res.gifts && G.queue.length) { G.queue[0] = 'w'; showToast('선물 상자! 무지개 거품'); }
     if (res.fireflies) { G.hz.aimBoost = 3; showToast('반딧불! 3발 동안 조준선이 길어요'); }
-    sfx('pop', n); if (d) setTimeout(() => sfx('drop'), 120);
+    sfx('pop', n); if (d) setTimeout(() => sfx('drop', d), 120);
     try { navigator.vibrate && navigator.vibrate(n >= 5 ? 30 : 12); } catch (e) {}
   } else {
     G.hz.misses++;
@@ -946,7 +946,8 @@ function finish(win, reason) {
 // ============================================================
 const canvas = $('canvas'), ctx = canvas.getContext('2d');
 let scale = 1, dpr = 1;
-const CS = 0.8;                                                // 대포 그림 배율
+const CS = 1.05;                                               // 대포 그림 배율 (0.8 → 1.05 크게)
+const CK = CS / 0.8;                                           // 그림 상자 배율
 const CANNON = { bx: PIVOT.x - 6 * CS, by: PIVOT.y + 22 * CS };  // 대포 받침 가운데
 CANNON.wheel = { x: CANNON.bx - 30 * CS, y: CANNON.by - 14 * CS, r: 18 * CS };   // 뒷바퀴 = 말랑이가 돌리는 핸들
 CANNON.front = { x: CANNON.bx + 34 * CS, y: CANNON.by - 12 * CS, r: 15 * CS };
@@ -960,9 +961,9 @@ const SPR = {
   friend: (c, fc) => ({ body: Art.bubble(0, 0, R, COLORS[c].base, { trapped: fc }), box: { x: -R * 1.3, y: -R * 1.3, w: R * 2.6, h: R * 2.6 } }),
   jelly: (color, r, opt) => ({ body: Art.jelly(0, 0, r, color, opt), box: jellyBox(r) }),
   boss: (kind, mood, red) => ({ body: kind === 'nomnom' ? Art.nomnom(0, 0, 30, { mood, red: red ? .7 : 0 }) : Art.boss(0, 0, 28, { mood, kind }), box: { x: -56, y: -54, w: 112, h: 96 } }),
-  cannonBase: () => ({ body: Art.cannonBase(0, 0, CS), box: { x: -42, y: -16, w: 84, h: 30 } }),
-  barrel: () => ({ body: Art.cannonBarrel(0, 0, CS), box: { x: -18, y: -62, w: 36, h: 70 } }),
-  housing: () => ({ body: Art.cannonHousing(0, 0, CS), box: { x: -18, y: -18, w: 36, h: 36 } }),
+  cannonBase: () => ({ body: Art.cannonBase(0, 0, CS), box: { x: -42 * CK, y: -16 * CK, w: 84 * CK, h: 30 * CK } }),
+  barrel: () => ({ body: Art.cannonBarrel(0, 0, CS), box: { x: -18 * CK, y: -62 * CK, w: 36 * CK, h: 70 * CK } }),
+  housing: () => ({ body: Art.cannonHousing(0, 0, CS), box: { x: -18 * CK, y: -18 * CK, w: 36 * CK, h: 36 * CK } }),
   wheel: r => ({ body: Art.cannonWheel(0, 0, r), box: { x: -r * 1.3, y: -r * 1.3, w: r * 2.6, h: r * 2.6 } }),
   bg: theme => ({ body: stageArt(theme), box: { x: 0, y: 0, w: W, h: H, lx: 100, ly: -120 } }),
 };
@@ -1250,8 +1251,8 @@ function render(dt) {
   drawClouds(t, dt);
   // 조준선
   if (G.state === 'aim' && G.queue.length && G.cancelAim) {
-    ctx.fillStyle = 'rgba(255,255,255,.95)'; roundRect(W / 2 - 86, 440, 172, 28, 14); ctx.fill();
-    ctx.fillStyle = '#5a2d91'; ctx.font = '700 14px "Noto Sans KR", sans-serif'; ctx.textAlign = 'center'; ctx.fillText('여기서 떼면 발사 취소', W / 2, 459);
+    ctx.fillStyle = 'rgba(255,255,255,.95)'; roundRect(W / 2 - 86, 350, 172, 28, 14); ctx.fill();
+    ctx.fillStyle = '#5a2d91'; ctx.font = '700 14px "Noto Sans KR", sans-serif'; ctx.textAlign = 'center'; ctx.fillText('여기서 떼면 발사 취소', W / 2, 369);
   } else if (G.state === 'aim' && G.queue.length) {
     const tr = Board.trace(b, G.angle, G.aiming ? 2400 : 260);
     G.aimEnd = { x: tr.x, y: tr.y };
@@ -1464,7 +1465,7 @@ function drawCannonArea(t, dt) {
   }
   // 대포 속 친구 (지금 쏠 색) — 포구 쪽에 보인다
   if (G.queue.length && G.state !== 'done') {
-    const mx = PIVOT.x + Math.cos(G.angle) * 44, my = PIVOT.y + Math.sin(G.angle) * 44;
+    const mx = PIVOT.x + Math.cos(G.angle) * 44 * CK, my = PIVOT.y + Math.sin(G.angle) * 44 * CK;
     if (!(G.state === 'flying' && G.queueShift > .6)) drawBubble(mx, my, G.queue[0], .9 + G.swapT * .2);
   }
   // 회전축 + 별, 앞바퀴
@@ -1483,6 +1484,7 @@ function drawCannonArea(t, dt) {
   ctx.fillStyle = '#ff9fc0'; ctx.beginPath(); ctx.arc(kx, ky, 4.5, 0, 7); ctx.fill();
   ctx.fillStyle = 'rgba(255,255,255,.8)'; ctx.beginPath(); ctx.arc(kx - 1.5, ky - 1.5, 1.6, 0, 7); ctx.fill();
   if (turning > .3) { ctx.fillStyle = '#bfe6ff'; ctx.beginPath(); ctx.ellipse(mx + 22, my - 22, 3, 5, .3, 0, 7); ctx.fill(); }
+  drawTurnHint(t, dt);
   // 줄 선 친구들 (다음에 쏠 친구들)
   G.queueShift = Math.max(0, G.queueShift - dt * 3.2);
   G.swapT = Math.max(0, G.swapT - dt * 4);
@@ -1501,7 +1503,7 @@ function drawCannonArea(t, dt) {
   }
   const extra = G.shotsLeft - G.queue.length;
   G.lineShown = { cannon: G.queue.length ? 1 : 0, line: Math.max(0, show), extra: Math.max(0, extra) };   // 화면에 그린 것 (테스트 확인용)
-  if (extra > 0) { const p = queuePos(Math.max(1, show)); ctx.fillStyle = '#7a2d5e'; ctx.font = '800 17px "Baloo 2", sans-serif'; ctx.textAlign = 'left'; ctx.fillText('+' + extra, p.x + 12, p.y + 6); }
+  if (extra > 0) { const p = queuePos(Math.max(1, show)); ctx.fillStyle = '#7a2d5e'; ctx.font = '800 15px "Baloo 2", sans-serif'; ctx.textAlign = 'left'; ctx.fillText('+' + extra, p.x + 10, p.y + 6); }
   // 점수 · 남은 발사 수
   ctx.fillStyle = 'rgba(217,84,138,.9)'; roundRect(W / 2 - 92, H - 28, 184, 24, 12); ctx.fill();
   ctx.strokeStyle = 'rgba(255,255,255,.35)'; ctx.lineWidth = 1.5; roundRect(W / 2 - 92, H - 28, 184, 24, 12); ctx.stroke();
@@ -1509,7 +1511,26 @@ function drawCannonArea(t, dt) {
   const label = '점수 ' + G.score + '  ·  남은 발사 ' + G.shotsLeft;
   ctx.fillStyle = '#fff'; ctx.fillText(label, W / 2, H - 11);
 }
-function queuePos(i) { return { x: i <= 1 ? 214 + i * 22 : 236 + (i - 1) * 18, y: 584 + (i > 1 ? 4 : 0) }; }
+// 대포 돌리기 안내: 좌우 화살표, 위쪽을 눌렀을 때 터치 구역 알려 주기
+function drawTurnHint(t, dt) {
+  if (G.state !== 'aim' && !G.aiming) return;
+  const a = G.aiming ? .9 : .45 + Math.sin(t * 3) * .15, rr = 58 * CK;
+  ctx.save(); ctx.globalAlpha = a; ctx.strokeStyle = '#fff'; ctx.fillStyle = '#fff'; ctx.lineWidth = 4; ctx.lineCap = 'round';
+  for (const sgn of [-1, 1]) {
+    const a0 = -Math.PI / 2 + sgn * 0.9, a1 = -Math.PI / 2 + sgn * 1.35;
+    ctx.beginPath(); ctx.arc(PIVOT.x, PIVOT.y, rr, Math.min(a0, a1), Math.max(a0, a1)); ctx.stroke();
+    const hx = PIVOT.x + Math.cos(a1) * rr, hy = PIVOT.y + Math.sin(a1) * rr, tg = a1 + sgn * Math.PI / 2;
+    ctx.beginPath(); ctx.moveTo(hx + Math.cos(tg) * 9, hy + Math.sin(tg) * 9); ctx.lineTo(hx + Math.cos(tg + 2.4) * 8, hy + Math.sin(tg + 2.4) * 8); ctx.lineTo(hx + Math.cos(tg - 2.4) * 8, hy + Math.sin(tg - 2.4) * 8); ctx.fill();
+  }
+  ctx.restore();
+  if (G.zoneHint > 0) {
+    G.zoneHint -= dt; const k = Math.min(1, G.zoneHint * 2);
+    ctx.globalAlpha = k * .35; ctx.fillStyle = '#fff'; roundRect(6, DEADLINE - 4, W - 12, H - DEADLINE - 32, 16); ctx.fill();
+    ctx.globalAlpha = k; ctx.fillStyle = 'rgba(255,255,255,.96)'; roundRect(W / 2 - 112, DEADLINE - 44, 224, 30, 15); ctx.fill();
+    ctx.fillStyle = '#5a2d91'; ctx.font = '800 14px "Noto Sans KR", sans-serif'; ctx.textAlign = 'center'; ctx.fillText('대포 근처를 좌우로 끌어 돌려요', W / 2, DEADLINE - 24); ctx.globalAlpha = 1;
+  }
+}
+function queuePos(i) { return { x: i <= 1 ? 234 + i * 22 : 256 + (i - 1) * 16, y: 584 + (i > 1 ? 4 : 0) }; }
 function roundRect(x, y, w, h, r) { ctx.beginPath(); ctx.moveTo(x + r, y); ctx.arcTo(x + w, y, x + w, y + h, r); ctx.arcTo(x + w, y + h, x, y + h, r); ctx.arcTo(x, y + h, x, y, r); ctx.arcTo(x, y, x + w, y, r); ctx.closePath(); }
 
 // ============================================================
@@ -1536,30 +1557,37 @@ function frame(now) {
 // 입력
 // ============================================================
 function toLogical(e) { const r = canvas.getBoundingClientRect(); return { x: (e.clientX - r.left) * W / r.width, y: (e.clientY - r.top) * H / r.height }; }
-// 대포보다 아래로 끌면 조준 취소 (그 자리에서 떼면 발사하지 않음)
+// 조작: 바닥 선 아래(대포 근처)만 터치된다. 좌우로 끌면 대포가 돌고, 손을 떼면 발사.
+// 위로 멀리 끌어 올리면 발사 취소. 위쪽 판을 직접 눌러 조준하는 것은 막는다(너무 쉬워서)
+const TOUCH_TOP = DEADLINE - 6, TURN = 0.009;   // 터치 가능한 맨 위 y, 1px 당 도는 각도
+let grab = null;
 function aimAt(p) {
-  G.cancelAim = p.y > PIVOT.y - 12;
+  if (!grab) return;
+  G.cancelAim = p.y < TOUCH_TOP - 70;
   if (G.cancelAim) return;
-  setAngle(Math.atan2(p.y - PIVOT.y, p.x - PIVOT.x));
+  if (Math.abs(p.x - grab.x) > 3) grab.moved = true;
+  setAngle(grab.a + (p.x - grab.x) * TURN);
 }
-let kbUsed = false;
+let kbUsed = false, zoneHintT = 0;
 canvas.addEventListener('pointerdown', e => {
   e.preventDefault(); unlockAudio(); kbUsed = false;
   canvas.focus({ preventScroll: true });
   if (!G || G.state === 'done') return;
   const p = toLogical(e), q = queuePos(1);
-  if (G.state === 'aim' && (Math.hypot(p.x - q.x, p.y - q.y) < 22 || Math.hypot(p.x - PIVOT.x, p.y - PIVOT.y) < 26)) { swapQueue(); return; }
-  G.aiming = true; aimAt(p);   // 거품이 날아가는 중에도 다음 조준은 미리 할 수 있음
+  if (p.y < TOUCH_TOP) { if (G.time - zoneHintT > 2) { zoneHintT = G.time; G.zoneHint = 1.6; } return; }   // 위쪽은 안 눌림
+  if (G.state === 'aim' && Math.hypot(p.x - q.x, p.y - q.y) < 22) { swapQueue(); return; }
+  grab = { x: p.x, a: G.angle, moved: false };
+  G.aiming = true; G.cancelAim = false;   // 거품이 날아가는 중에도 다음 조준은 미리 할 수 있음
   try { canvas.setPointerCapture(e.pointerId); } catch (err) {}
 });
 canvas.addEventListener('pointermove', e => { if (G && G.aiming) aimAt(toLogical(e)); });
 canvas.addEventListener('pointerup', e => {
   if (!G || !G.aiming) return;
-  G.aiming = false; aimAt(toLogical(e));
+  aimAt(toLogical(e)); G.aiming = false; grab = null;
   if (!G.cancelAim) shoot();
   G.cancelAim = false;
 });
-canvas.addEventListener('pointercancel', () => { if (G) G.aiming = false; });
+canvas.addEventListener('pointercancel', () => { if (G) G.aiming = false; grab = null; });
 canvas.addEventListener('keydown', e => {
   if (!G) return;
   if (e.key === 'ArrowLeft') { kbUsed = true; setAngle(G.angle - .05); e.preventDefault(); }
@@ -1571,13 +1599,25 @@ canvas.addEventListener('keydown', e => {
 // ============================================================
 // 소리
 // ============================================================
-let audio = null;
-function unlockAudio() { if (audio || !soundOn) return; try { audio = new (window.AudioContext || window.webkitAudioContext)(); } catch (e) { audio = null; } }
-function tone(f, to, dur, type, vol, delay = 0) {
+let audio = null, master = null, musicBus = null, sfxBus = null;
+// 소리 설정: 'all' 모두 켬 / 'sfx' 효과음만(음악 끔) / 'off' 모두 끔. 옛 저장값(true/false)도 읽는다
+let soundMode = soundOn === false ? 'off' : soundOn === true ? 'all' : soundOn;
+soundOn = soundMode !== 'off';
+function unlockAudio() {
+  if (audio || !soundOn) return;
+  try {
+    audio = new (window.AudioContext || window.webkitAudioContext)();
+    master = audio.createGain(); master.gain.value = .9; master.connect(audio.destination);
+    sfxBus = audio.createGain(); sfxBus.connect(master);
+    musicBus = audio.createGain(); musicBus.gain.value = .32; musicBus.connect(master);
+    Music.start();
+  } catch (e) { audio = null; }
+}
+function tone(f, to, dur, type, vol, delay = 0, bus = sfxBus) {
   const t0 = audio.currentTime + delay, o = audio.createOscillator(), g = audio.createGain();
   o.type = type; o.frequency.setValueAtTime(f, t0); o.frequency.exponentialRampToValueAtTime(to, t0 + dur);
   g.gain.setValueAtTime(vol, t0); g.gain.exponentialRampToValueAtTime(.001, t0 + dur);
-  o.connect(g).connect(audio.destination); o.start(t0); o.stop(t0 + dur);
+  o.connect(g).connect(bus); o.start(t0); o.stop(t0 + dur);
 }
 function sfx(k, n = 0) {
   if (!soundOn || !audio) return;
@@ -1594,14 +1634,125 @@ function sfx(k, n = 0) {
     else if (k === 'win') [523, 659, 784, 1047].forEach((f, i) => tone(f, f * 1.01, .22, 'triangle', .2, i * .11));
     else if (k === 'lose') [392, 330, 262].forEach((f, i) => tone(f, f * .98, .3, 'triangle', .18, i * .16));
   } catch (e) {}
+  // 젤리 추임새 (사람 말이 아닌 말랑한 젤리 소리)
+  if (k === 'pop') { if (n >= 6) jellyVoice('yay'); else if (Math.random() < .3) jellyVoice(Math.random() < .5 ? 'pu' : 'po'); }
+  else if (k === 'drop' && n >= 4) jellyVoice('wow');
+  else if (k === 'rescue') jellyVoice('yay', .15);
+  else if (k === 'win') jellyVoice('cheer', .5);
+  else if (k === 'lose') jellyVoice('aww', .3);
+  else if (k === 'boss') jellyVoice('hmph', .1);
 }
+
+// ---------- 젤리 목소리: 모음 소리(포먼트)를 흉내 낸 짧은 "뿌요! 야호!" ----------
+const VOWEL = { a: [800, 1250], e: [520, 1900], i: [320, 2400], o: [520, 900], u: [360, 800] };
+// 말: [모음, 시작 높이(Hz), 끝 높이, 길이(초), 쉬는 틈]
+const VOICE = {
+  pu:    [['u', 620, 760, .09, 0], ['o', 780, 700, .12, .01]],
+  po:    [['o', 700, 900, .1, 0], ['i', 900, 1000, .08, .01]],
+  yay:   [['i', 700, 900, .08, 0], ['a', 950, 1150, .2, 0]],
+  wow:   [['u', 600, 700, .08, 0], ['a', 760, 1000, .16, 0], ['u', 1000, 800, .12, 0]],
+  cheer: [['a', 700, 880, .12, 0], ['i', 900, 1100, .1, .04], ['a', 900, 1200, .25, .04]],
+  aww:   [['a', 620, 560, .18, 0], ['u', 540, 400, .3, 0]],
+  hmph:  [['u', 300, 230, .18, 0]],
+};
+let voiceCount = 0, lastVoice = 0;
+function jellyVoice(word, delay = 0) {
+  if (!soundOn || !audio || !VOICE[word]) return;
+  const now = audio.currentTime;
+  if (now - lastVoice < .35 && word !== 'cheer') return;   // 너무 자주 겹치지 않게
+  lastVoice = now; voiceCount++;
+  try {
+    const pitchUp = .9 + Math.random() * .25;   // 게임 난수(rand)는 건드리지 않음
+    let t0 = now + .02 + delay;
+    for (const [v, f0, f1, dur, gap] of VOICE[word]) {
+      t0 += gap;
+      const o = audio.createOscillator(), env = audio.createGain(), out = audio.createGain();
+      o.type = 'sawtooth'; o.frequency.setValueAtTime(f0 * pitchUp, t0); o.frequency.exponentialRampToValueAtTime(f1 * pitchUp, t0 + dur);
+      const vib = audio.createOscillator(), vg = audio.createGain(); vib.frequency.value = 9; vg.gain.value = 14; vib.connect(vg).connect(o.frequency);
+      VOWEL[v].forEach((F, k) => { const bp = audio.createBiquadFilter(); bp.type = 'bandpass'; bp.frequency.value = F; bp.Q.value = 6; const g = audio.createGain(); g.gain.value = k ? .5 : 1; o.connect(bp).connect(g).connect(env); });
+      env.gain.setValueAtTime(.0001, t0); env.gain.exponentialRampToValueAtTime(1, t0 + .015); env.gain.setValueAtTime(1, t0 + dur * .6); env.gain.exponentialRampToValueAtTime(.0001, t0 + dur);
+      out.gain.value = .55; env.connect(out).connect(sfxBus);
+      o.start(t0); o.stop(t0 + dur + .02); vib.start(t0); vib.stop(t0 + dur + .02);
+      t0 += dur;
+    }
+  } catch (e) {}
+}
+
+// ---------- 배경 음악: 통통 튀는 8마디 칩튠 (직접 만든 곡, 외부 파일 없음) ----------
+const Music = (() => {
+  const BPM = 138, STEP = 60 / BPM / 4;            // 16분음표 길이
+  const hz = n => 440 * Math.pow(2, (n - 69) / 12);
+  // 코드 진행 (C G Am F | C G F G) — 마디마다 근음
+  const ROOT = [48, 43, 45, 41, 48, 43, 41, 43];
+  const CHORD = { 48: [60, 64, 67], 43: [59, 62, 67], 45: [60, 64, 69], 41: [60, 65, 69] };
+  // 멜로디: 마디마다 16칸, null = 쉼
+  const _ = null;
+  const MEL = [
+    [72, _, 76, _, 79, _, 76, _, 77, _, 76, _, 74, _, 72, _],
+    [74, _, _, 71, 74, _, 79, _, 77, 76, 74, _, 71, _, _, _],
+    [72, _, 76, _, 81, _, 79, 76, 77, _, 76, _, 74, _, 72, _],
+    [77, _, 76, _, 74, _, 72, _, 69, _, 72, _, 74, _, _, _],
+    [79, _, 79, 81, 79, _, 76, _, 77, _, 79, _, 76, _, 72, _],
+    [74, _, 76, 74, 71, _, 74, _, 79, _, 77, _, 74, _, _, _],
+    [77, _, 81, _, 79, _, 77, _, 76, _, 74, _, 72, _, 74, _],
+    [76, _, 74, _, 71, _, 74, _, 79, _, _, _, 83, _, 84, _],
+  ];
+  let timer = null, step = 0, nextT = 0, scheduled = 0, key = 0;
+  function note(f, t, dur, type, vol) {
+    const o = audio.createOscillator(), g = audio.createGain();
+    o.type = type; o.frequency.setValueAtTime(f, t);
+    g.gain.setValueAtTime(vol, t); g.gain.exponentialRampToValueAtTime(.001, t + dur);
+    o.connect(g).connect(musicBus); o.start(t); o.stop(t + dur + .02); scheduled++;
+  }
+  function hat(t, vol) {
+    const len = Math.floor(audio.sampleRate * .03), buf = audio.createBuffer(1, len, audio.sampleRate), d = buf.getChannelData(0);
+    for (let i = 0; i < len; i++) d[i] = (Math.random() * 2 - 1) * (1 - i / len);
+    const src = audio.createBufferSource(), hp = audio.createBiquadFilter(), g = audio.createGain();
+    src.buffer = buf; hp.type = 'highpass'; hp.frequency.value = 6000; g.gain.value = vol;
+    src.connect(hp).connect(g).connect(musicBus); src.start(t); scheduled++;
+  }
+  function kick(t) { const o = audio.createOscillator(), g = audio.createGain(); o.frequency.setValueAtTime(150, t); o.frequency.exponentialRampToValueAtTime(45, t + .12); g.gain.setValueAtTime(.7, t); g.gain.exponentialRampToValueAtTime(.001, t + .14); o.connect(g).connect(musicBus); o.start(t); o.stop(t + .16); scheduled++; }
+  function tick() {
+    if (!audio || soundMode !== 'all' || document.hidden) { nextT = 0; return; }
+    if (!nextT || nextT < audio.currentTime) nextT = audio.currentTime + .05;
+    while (nextT < audio.currentTime + .25) {
+      const bar = Math.floor(step / 16) % 8, s16 = step % 16, t = nextT, k = key;
+      const root = ROOT[bar] + k;
+      if (s16 % 4 === 0) kick(t);
+      if (s16 % 2 === 0) hat(t, s16 % 4 === 2 ? .25 : .12);
+      // 통통 베이스 (8분음표, 옥타브 왔다 갔다)
+      if (s16 % 2 === 0) note(hz(root + (s16 % 4 === 2 ? 12 : 0)), t, STEP * 1.6, 'triangle', .5);
+      // 코드 반주 (뒷박 짧게)
+      if (s16 % 4 === 2) CHORD[ROOT[bar]].forEach(n => note(hz(n + k), t, STEP * 1.2, 'square', .045));
+      const m = MEL[bar][s16];
+      if (m !== null) { note(hz(m + k), t, STEP * 1.8, 'square', .11); note(hz(m + k + 12), t, STEP * .9, 'triangle', .05); }
+      step++; nextT += STEP;
+    }
+  }
+  return {
+    start() { if (!timer) timer = setInterval(tick, 60); tick(); },
+    // 월드마다 조성을 살짝 바꿔 분위기 전환 (0~4)
+    setWorld(w) { key = [0, 2, -3, 5, -1][w] || 0; },
+    info() { return { running: !!timer && soundMode === 'all', scheduled, step }; },
+  };
+})();
 function updateSoundBtn() {
-  $('soundBtn').innerHTML = soundOn
-    ? '<svg viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M11 5L6 9H2v6h4l5 4z" fill="#fff"/><path d="M15.5 8.5a5 5 0 0 1 0 7"/><path d="M19 5a10 10 0 0 1 0 14"/></svg>'
-    : '<svg viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M11 5L6 9H2v6h4l5 4z" fill="#fff"/><path d="M22 9l-6 6M16 9l6 6"/></svg>';
+  const spk = '<path d="M11 5L6 9H2v6h4l5 4z" fill="#fff"/>';
+  $('soundBtn').innerHTML = '<svg viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round">' +
+    (soundMode === 'all' ? '<path d="M17 4v9.5a2.5 2.5 0 1 1-2-2.45V4l6-1.5v8a2.5 2.5 0 1 1-2-2.45" fill="#fff" stroke="none" transform="translate(-5 4) scale(.75)"/>' + spk + '<path d="M15.5 8.5a5 5 0 0 1 0 7"/>'
+      : soundMode === 'sfx' ? spk + '<path d="M15.5 8.5a5 5 0 0 1 0 7"/><path d="M19 5a10 10 0 0 1 0 14"/>'
+      : spk + '<path d="M22 9l-6 6M16 9l6 6"/>') + '</svg>';
+  const label = { all: '소리: 음악+효과음 (누르면 효과음만)', sfx: '소리: 효과음만 (누르면 끄기)', off: '소리 꺼짐 (누르면 켜기)' }[soundMode];
+  $('soundBtn').setAttribute('aria-label', label); $('soundBtn').title = label;
   $('soundBtn').setAttribute('aria-pressed', String(soundOn));
 }
-$('soundBtn').onclick = () => { soundOn = !soundOn; store.set('sound', soundOn); if (soundOn) unlockAudio(); updateSoundBtn(); };
+$('soundBtn').onclick = () => {
+  soundMode = { all: 'sfx', sfx: 'off', off: 'all' }[soundMode];
+  soundOn = soundMode !== 'off'; store.set('sound', soundMode);
+  if (soundOn) unlockAudio();
+  if (master) master.gain.value = soundOn ? .9 : 0;
+  updateSoundBtn(); showToast({ all: '음악 켜짐', sfx: '효과음만', off: '소리 끔' }[soundMode]);
+};
 
 // ============================================================
 // 화면 전환
@@ -1632,6 +1783,7 @@ function updateHud() {
 function startStage(n) {
   $('result').hidden = true;
   newGame(n);
+  Music.setWorld(G.st.world - 1);
   go('play');
   warmSprites(G.st);
   updateHud();
@@ -2035,7 +2187,7 @@ requestAnimationFrame(frame);
 // 테스트용 손잡이 (화면에는 영향 없음)
 window.__jp = {
   get G() { return G; }, P, STAGES, Board, R, ROW_H, W, H, PIVOT, DEADLINE,
-  startStage, aimLimit, shoot, swapQueue, setAngle, go, seedRandom,
+  startStage, aimLimit, music: () => Music.info(), voices: () => voiceCount, soundMode: () => soundMode, sfx, CS, shoot, swapQueue, setAngle, go, seedRandom,
   reset() { Object.assign(P, { stars: new Array(NST).fill(0), stickers: {}, seenIntro: false, at: 0, seenHz: {} }); saveP(); },
   // 설명 카드 닫기 · 생각하는 시간 흘려보내기(조준 중 시계가 흐름) · 놈놈이 대포를 막았는지
   closeCard() { if (!$('hzCard').hidden) $('hzOk').click(); },

@@ -151,29 +151,35 @@ for (const [label, dev] of [['iPhone SE (320x568)', devices['iPhone SE']], ['Gal
   const sw = await page.evaluate(() => window.__jp.G.queue.slice(0, 2));
   check('맨 앞 친구를 누르면 대포 속 친구와 순서가 바뀜', sw[0] === q.second && sw[1] === q.first, sw.join(','));
 
-  // 끌어서 조준: 각도·핸들이 바뀌고, 떼면 발사
+  // 위쪽 판을 누르면 조준이 안 됨 (대포 근처만 터치)
+  const top0 = await page.evaluate(() => ({ a: window.__jp.G.angle, left: window.__jp.G.shotsLeft }));
+  const [tx, ty] = await toScreen(90, 200), [tx2, ty2] = await toScreen(300, 220);
+  await page.mouse.move(tx, ty); await page.mouse.down(); await page.mouse.move(tx2, ty2, { steps: 5 }); await page.mouse.up();
+  const top1 = await page.evaluate(() => ({ a: window.__jp.G.angle, left: window.__jp.G.shotsLeft, aiming: window.__jp.G.aiming }));
+  check('위쪽 판을 눌러 끌면 조준·발사가 안 됨', top1.a === top0.a && top1.left === top0.left && !top1.aiming, JSON.stringify([top0, top1]));
+  // 대포 근처를 좌우로 끌기: 대포·핸들이 돌고, 떼면 발사
   const before = await page.evaluate(() => ({ a: window.__jp.G.angle, crank: window.__jp.G.crank }));
-  const [ax, ay] = await toScreen(60, 300);
-  const [bx, by] = await toScreen(300, 260);
+  const [ax, ay] = await toScreen(110, 560);
+  const [bx, by] = await toScreen(250, 556);
   await page.mouse.move(ax, ay); await page.mouse.down();
   await page.mouse.move((ax + bx) / 2, (ay + by) / 2, { steps: 5 });
   await page.mouse.move(bx, by, { steps: 5 });
   await page.waitForTimeout(80);
   const mid = await page.evaluate(() => ({ a: window.__jp.G.angle, crank: window.__jp.G.crank, aiming: window.__jp.G.aiming }));
   await page.screenshot({ path: path.join(shots, `v2-04-aim-${tag}.png`) });
-  check('끄는 동안 조준 각도가 바뀌고 말랑이 핸들이 돔', mid.aiming && Math.abs(mid.a - before.a) > 0.3 && Math.abs(mid.crank - before.crank) > 1, JSON.stringify(mid));
+  check('대포 근처를 좌우로 끄는 동안 대포가 돌고 말랑이 핸들이 돔', mid.aiming && Math.abs(mid.a - before.a) > 0.3 && Math.abs(mid.crank - before.crank) > 1, JSON.stringify(mid));
   await page.mouse.up();
   const shot = await page.evaluate(() => ({ left: window.__jp.G.shotsLeft, state: window.__jp.G.state }));
   check('손을 떼면 발사 (남은 수 1 줄어듦)', shot.left === 19 && shot.state !== 'aim', JSON.stringify(shot));
   await page.waitForTimeout(1200);
   await page.screenshot({ path: path.join(shots, `v2-05-play-${tag}.png`) });
 
-  // 대포보다 아래로 끌어 떼면 발사 취소
+  // 대포를 잡고 위로 멀리 끌어 올려 떼면 발사 취소
   await page.evaluate(() => window.__jp.advance());
   const left0 = await page.evaluate(() => window.__jp.G.shotsLeft);
-  const [cx, cy] = await toScreen(100, 300), [dx, dy] = await toScreen(100, 600);
+  const [cx, cy] = await toScreen(100, 560), [dx, dy] = await toScreen(100, 300);
   await page.mouse.move(cx, cy); await page.mouse.down(); await page.mouse.move(dx, dy, { steps: 5 }); await page.mouse.up();
-  check('대포 아래로 끌어 떼면 발사 취소', await page.evaluate(() => window.__jp.G.shotsLeft) === left0);
+  check('대포를 잡고 위로 끌어 올려 떼면 발사 취소', await page.evaluate(() => window.__jp.G.shotsLeft) === left0);
   check('캔버스를 누르면 키보드 포커스가 캔버스로', await page.evaluate(() => document.activeElement.id) === 'canvas');
 
   // 다른 화면들도 가로 스크롤·44px 확인 (지도·스티커 북·결과 창·타이틀·프롤로그)

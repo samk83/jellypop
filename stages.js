@@ -14,7 +14,7 @@ window.JellyStages = (() => {
     // ---------------- 월드 1 · 젤리마을 ----------------
     { id: 1, name: '마을 광장', theme: 'plaza', shots: 20, colors: 'ryb',
       friends: [{ name: '몽실', color: '#ff5f8a' }],
-      tip: '<b>끌어서 조준</b>하고 손을 떼면 발사! 같은 색 3개를 붙여 봐요',
+      tip: '<b>대포 근처를 좌우로 끌어</b> 대포를 돌리고, 손을 떼면 발사! 같은 색 3개를 붙여 봐요',
       rows: ['rrryybbbrr', 'ryybbbrry', 'bbrrRyybbb', 'yybbrryyb'] },
     { id: 2, name: '젤리 분수', theme: 'fountain', shots: 22, colors: 'rybg',
       friends: [{ name: '퐁당', color: '#4fb4ff' }],
