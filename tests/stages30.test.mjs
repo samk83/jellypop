@@ -385,9 +385,14 @@ for (const [label, dev] of [['iPhone SE (320x568)', devices['iPhone SE']], ['Gal
   // 대포 근처를 한 번 누르면 소리가 켜지고 배경 음악이 흐름
   const box = await page.evaluate(() => { const r = document.getElementById('canvas').getBoundingClientRect(); return [r.left + 60 * r.width / 360, r.top + 600 * r.height / 620]; });
   await page.mouse.move(box[0], box[1]); await page.mouse.down(); await page.mouse.up();
-  await page.waitForTimeout(900);
+  await page.waitForTimeout(1600);
   const m1 = await page.evaluate(() => window.__jp.music());
+  // 새 레트로 곡은 한 칸에 예약하는 음이 예전보다 적어 조금 더 기다림 (0.9초 → 1.6초)
   check('배경 음악: 화면을 누르면 시작되고 음표가 계속 예약됨', m1.running && m1.scheduled > 20, JSON.stringify(m1));
+  check('레트로 기본 음악: 플레이 화면은 16마디 플레이 테마', m1.track === 'play' && m1.bars === 16 && !m1.boss, JSON.stringify(m1));
+  const tr = await page.evaluate(async () => { const j = window.__jp; j.go('map'); await new Promise(r => setTimeout(r, 400)); const a = j.music(); j.startStage(12); await new Promise(r => setTimeout(r, 400)); const b = j.music(); j.go('map'); j.startStage(1); return { a, b }; });
+  check('레트로 기본 음악: 지도 화면은 타이틀 테마(8마디)로 바뀌고 계속 연주', tr.a.track === 'title' && tr.a.bars === 8 && tr.a.scheduled > m1.scheduled, JSON.stringify(tr.a));
+  check('레트로 기본 음악: 보스 판은 빠른 보스 변주', tr.b.track === 'play' && tr.b.boss === true, JSON.stringify(tr.b));
   const v = await page.evaluate(() => { const j = window.__jp, a = j.voices(); j.sfx('pop', 8); const b = j.voices(); return { a, b }; });
   check('크게 터지면 젤리 추임새 소리', v.b === v.a + 1, JSON.stringify(v));
   const modes = [];

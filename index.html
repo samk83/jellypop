@@ -1846,62 +1846,125 @@ function jellyVoice(word, delay = 0) {
   } catch (e) {}
 }
 
-// ---------- 배경 음악: 통통 튀는 8마디 칩튠 (직접 만든 곡, 외부 파일 없음) ----------
+// ---------- 배경 음악: 레트로 칩튠 (8비트 게임기 소리를 흉내 내 직접 만든 곡, 외부 파일 없음) ----------
+// 채널 4개 = 옛 게임기처럼: 사각파 멜로디 · 사각파 아르페지오(화음을 빠르게 쪼개 치기) · 삼각파 베이스 · 잡음 드럼
+// 곡 2개: 'title'(타이틀·지도·프롤로그, 느긋한 메아리 멜로디) / 'play'(플레이, 16마디 통통 테마)
 const Music = (() => {
-  const BPM = 138, STEP = 60 / BPM / 4;            // 16분음표 길이
+  // 악보: 마디마다 화음 + 8분음표 8칸 멜로디 (. = 쉼, ~ = 앞 음 늘이기, 'Dm/G' = 마디 반씩 두 화음)
+  const SONGS = {
+    title: { bpm: 112, bars: [
+      ['C',  'E5 ~ ~ D5 C5 ~ G4 ~'], ['G',  'D5 ~ ~ E5 D5 ~ B4 ~'],
+      ['Am', 'C5 ~ E5 ~ A5 ~ G5 ~'], ['Em', 'G5 ~ ~ ~ E5 ~ . .'],
+      ['F',  'F5 ~ ~ E5 F5 ~ A5 ~'], ['C',  'G5 ~ ~ E5 C5 ~ E5 ~'],
+      ['F',  'F5 ~ E5 ~ D5 ~ C5 ~'], ['G',  'D5 ~ ~ ~ G5 ~ ~ .'],
+    ] },
+    play: { bpm: 140, bars: [
+      ['C',  'C5 . E5 G5 C6 . G5 E5'], ['Am', 'A5 . G5 E5 C5 . E5 .'],
+      ['F',  'F5 G5 A5 . C6 . A5 F5'], ['G',  'G5 ~ ~ . D5 E5 F5 G5'],
+      ['C',  'C6 . B5 A5 G5 . E5 G5'], ['Am', 'A5 . C6 . E6 . D6 C6'],
+      ['Dm/G', 'D6 . C6 A5 B5 . G5 .'], ['C', 'C6 ~ ~ . G5 . C5 .'],
+      ['F',  'A5 A5 . A5 C6 . A5 F5'], ['G',  'G5 G5 . G5 B5 . G5 D5'],
+      ['Em', 'E5 G5 B5 . E6 . D6 B5'], ['Am', 'C6 ~ A5 ~ E5 ~ A5 .'],
+      ['F',  'F5 A5 C6 F6 E6 . C6 A5'], ['G',  'G5 B5 D6 G6 F6 . D6 B5'],
+      ['E',  'G#5 . B5 . E6 . D6 B5'], ['G',  'G5 . A5 . B5 . D6 .'],
+    ] },
+  };
+  const CHORD = { C: [0, 4, 7], G: [7, 11, 14], Am: [9, 12, 16], Em: [4, 7, 11], F: [5, 9, 12], Dm: [2, 5, 9], E: [4, 8, 11] };
   const hz = n => 440 * Math.pow(2, (n - 69) / 12);
-  // 코드 진행 (C G Am F | C G F G) — 마디마다 근음
-  const ROOT = [48, 43, 45, 41, 48, 43, 41, 43];
-  const CHORD = { 48: [60, 64, 67], 43: [59, 62, 67], 45: [60, 64, 69], 41: [60, 65, 69] };
-  // 멜로디: 마디마다 16칸, null = 쉼
-  const _ = null;
-  const MEL = [
-    [72, _, 76, _, 79, _, 76, _, 77, _, 76, _, 74, _, 72, _],
-    [74, _, _, 71, 74, _, 79, _, 77, 76, 74, _, 71, _, _, _],
-    [72, _, 76, _, 81, _, 79, 76, 77, _, 76, _, 74, _, 72, _],
-    [77, _, 76, _, 74, _, 72, _, 69, _, 72, _, 74, _, _, _],
-    [79, _, 79, 81, 79, _, 76, _, 77, _, 79, _, 76, _, 72, _],
-    [74, _, 76, 74, 71, _, 74, _, 79, _, 77, _, 74, _, _, _],
-    [77, _, 81, _, 79, _, 77, _, 76, _, 74, _, 72, _, 74, _],
-    [76, _, 74, _, 71, _, 74, _, 79, _, _, _, 83, _, 84, _],
-  ];
-  let timer = null, step = 0, nextT = 0, scheduled = 0, key = 0;
-  function note(f, t, dur, type, vol) {
+  const midi = s => { const m = /^([A-G])(#|b)?(\d)$/.exec(s); return 12 * (+m[3] + 1) + { C: 0, D: 2, E: 4, F: 5, G: 7, A: 9, B: 11 }[m[1]] + (m[2] === '#' ? 1 : m[2] ? -1 : 0); };
+  // 악보 → 16분음표 칸마다 { 멜로디 음, 길이(칸), 화음 }
+  function compile(song) {
+    const steps = [];
+    song.bars.forEach(([ch, mel]) => {
+      const [c1, c2 = c1] = ch.split('/'), toks = mel.trim().split(/\s+/);
+      if (toks.length !== 8 || !CHORD[c1] || !CHORD[c2]) throw new Error('악보 오류: ' + ch + ' ' + mel);
+      for (let i = 0; i < 16; i++) steps.push({ m: null, len: 0, ch: i < 8 ? c1 : c2 });
+      const base = steps.length - 16;
+      let last = null;
+      toks.forEach((tk, i) => {
+        if (tk === '~') { if (last) last.len += 2; return; }
+        if (tk === '.') { last = null; return; }
+        last = steps[base + i * 2]; last.m = midi(tk); last.len = 2;
+      });
+    });
+    return steps;
+  }
+  const TRACK = {}; for (const k in SONGS) TRACK[k] = compile(SONGS[k]);
+  // 월드마다 조성·빠르기·멜로디 음색(사각파 폭)을 살짝 바꿈 (0~4)
+  const WORLD = [{ key: 0, bpm: 0, duty: .25 }, { key: 2, bpm: 4, duty: .5 }, { key: -3, bpm: -4, duty: .25 }, { key: 5, bpm: 8, duty: .125 }, { key: -1, bpm: 6, duty: .5 }];
+  let timer = null, step = 0, nextT = 0, scheduled = 0, track = 'title', world = WORLD[0], boss = false;
+  let waves = null, noiseBuf = null;
+  function prepare() {
+    if (waves) return;
+    // 옛 게임기 사각파(폭 12.5%/25%/50%)를 배음 합으로 만든다
+    waves = {};
+    [.125, .25, .5].forEach(d => {
+      const N = 32, re = new Float32Array(N), im = new Float32Array(N);
+      for (let n = 1; n < N; n++) re[n] = 2 / (n * Math.PI) * Math.sin(n * Math.PI * d);
+      waves[d] = audio.createPeriodicWave(re, im);
+    });
+    // 거친 8비트 잡음 (몇 샘플씩 같은 값을 유지해 '치직' 소리)
+    const len = audio.sampleRate >> 1; noiseBuf = audio.createBuffer(1, len, audio.sampleRate);
+    const d = noiseBuf.getChannelData(0); let v = 0;
+    for (let i = 0; i < len; i++) { if (i % 3 === 0) v = Math.random() * 2 - 1; d[i] = v; }
+  }
+  function pulse(f, t, dur, duty, vol) {
     const o = audio.createOscillator(), g = audio.createGain();
-    o.type = type; o.frequency.setValueAtTime(f, t);
-    g.gain.setValueAtTime(vol, t); g.gain.exponentialRampToValueAtTime(.001, t + dur);
+    o.setPeriodicWave(waves[duty]); o.frequency.setValueAtTime(f, t);
+    g.gain.setValueAtTime(vol, t); g.gain.setTargetAtTime(vol * .55, t + .02, .08);
+    g.gain.setValueAtTime(vol * .5, t + Math.max(.03, dur - .03)); g.gain.linearRampToValueAtTime(0, t + dur);
     o.connect(g).connect(musicBus); o.start(t); o.stop(t + dur + .02); scheduled++;
   }
-  function hat(t, vol) {
-    const len = Math.floor(audio.sampleRate * .03), buf = audio.createBuffer(1, len, audio.sampleRate), d = buf.getChannelData(0);
-    for (let i = 0; i < len; i++) d[i] = (Math.random() * 2 - 1) * (1 - i / len);
-    const src = audio.createBufferSource(), hp = audio.createBiquadFilter(), g = audio.createGain();
-    src.buffer = buf; hp.type = 'highpass'; hp.frequency.value = 6000; g.gain.value = vol;
-    src.connect(hp).connect(g).connect(musicBus); src.start(t); scheduled++;
+  function tri(f, t, dur, vol) {
+    const o = audio.createOscillator(), g = audio.createGain();
+    o.type = 'triangle'; o.frequency.setValueAtTime(f, t);
+    g.gain.setValueAtTime(vol, t); g.gain.setValueAtTime(vol, t + dur * .8); g.gain.linearRampToValueAtTime(0, t + dur);
+    o.connect(g).connect(musicBus); o.start(t); o.stop(t + dur + .02); scheduled++;
   }
-  function kick(t) { const o = audio.createOscillator(), g = audio.createGain(); o.frequency.setValueAtTime(150, t); o.frequency.exponentialRampToValueAtTime(45, t + .12); g.gain.setValueAtTime(.7, t); g.gain.exponentialRampToValueAtTime(.001, t + .14); o.connect(g).connect(musicBus); o.start(t); o.stop(t + .16); scheduled++; }
+  function noise(t, dur, vol, type, freq) {
+    const src = audio.createBufferSource(), f = audio.createBiquadFilter(), g = audio.createGain();
+    src.buffer = noiseBuf; f.type = type; f.frequency.value = freq;
+    g.gain.setValueAtTime(vol, t); g.gain.exponentialRampToValueAtTime(.001, t + dur);
+    src.connect(f).connect(g).connect(musicBus); src.start(t, Math.random() * .4); src.stop(t + dur + .01); scheduled++;
+  }
+  function kick(t) {
+    const o = audio.createOscillator(), g = audio.createGain();
+    o.type = 'triangle'; o.frequency.setValueAtTime(160, t); o.frequency.exponentialRampToValueAtTime(40, t + .1);
+    g.gain.setValueAtTime(.8, t); g.gain.exponentialRampToValueAtTime(.001, t + .12);
+    o.connect(g).connect(musicBus); o.start(t); o.stop(t + .14); scheduled++;
+  }
+  function play(s, t, STEP) {
+    const tr = TRACK[track], ev = tr[s % tr.length], i = s % 16, bar = Math.floor(s / 16) % (tr.length / 16), k = world.key;
+    const tones = CHORD[ev.ch], root = 45 + (tones[0] + 3) % 12;   // 베이스 근음: A2~G#3 사이
+    if (track === 'title') {
+      if (ev.m !== null) { pulse(hz(ev.m + k), t, STEP * ev.len, world.duty, .1); pulse(hz(ev.m + k), t + STEP * 3, STEP * ev.len, world.duty, .035); }
+      pulse(hz(72 + tones[i % 3] + k), t, STEP * .9, .125, .028);           // 반짝이는 아르페지오
+      if (i % 4 === 0) tri(hz(root + k), t, STEP * 3.6, .42);
+      if (i === 0) kick(t);
+      if (i === 4 || i === 12) noise(t, .04, .12, 'highpass', 7000);
+    } else {
+      const lastBar = bar === tr.length / 16 - 1;
+      if (ev.m !== null) pulse(hz(ev.m + k), t, STEP * ev.len, world.duty, .11);
+      if (bar >= 8 || boss) pulse(hz(72 + tones[i % 3] + k), t, STEP * .8, .125, .026);   // 후렴(9마디~)·보스 판은 아르페지오
+      if (i % 2 === 0) tri(hz(root + k + (i % 4 === 2 ? 12 : 0)), t, STEP * 1.7, .45);    // 통통 옥타브 베이스
+      if (i === 0 || i === 8 || (i === 10 && bar % 2)) kick(t);
+      if (i === 4 || i === 12 || (lastBar && i >= 13)) noise(t, .11, .3, 'bandpass', 2200);
+      else if (i % 2 === 0) noise(t, .035, i % 4 === 2 ? .14 : .08, 'highpass', 7000);
+    }
+  }
   function tick() {
     if (!audio || soundMode !== 'all' || document.hidden) { nextT = 0; return; }
+    prepare();
+    const STEP = 60 / (SONGS[track].bpm + (track === 'play' ? world.bpm + (boss ? 12 : 0) : 0)) / 4;
     if (!nextT || nextT < audio.currentTime) nextT = audio.currentTime + .05;
-    while (nextT < audio.currentTime + .25) {
-      const bar = Math.floor(step / 16) % 8, s16 = step % 16, t = nextT, k = key;
-      const root = ROOT[bar] + k;
-      if (s16 % 4 === 0) kick(t);
-      if (s16 % 2 === 0) hat(t, s16 % 4 === 2 ? .25 : .12);
-      // 통통 베이스 (8분음표, 옥타브 왔다 갔다)
-      if (s16 % 2 === 0) note(hz(root + (s16 % 4 === 2 ? 12 : 0)), t, STEP * 1.6, 'triangle', .5);
-      // 코드 반주 (뒷박 짧게)
-      if (s16 % 4 === 2) CHORD[ROOT[bar]].forEach(n => note(hz(n + k), t, STEP * 1.2, 'square', .045));
-      const m = MEL[bar][s16];
-      if (m !== null) { note(hz(m + k), t, STEP * 1.8, 'square', .11); note(hz(m + k + 12), t, STEP * .9, 'triangle', .05); }
-      step++; nextT += STEP;
-    }
+    while (nextT < audio.currentTime + .25) { play(step, nextT, STEP); step++; nextT += STEP; }
   }
   return {
     start() { if (!timer) timer = setInterval(tick, 60); tick(); },
-    // 월드마다 조성을 살짝 바꿔 분위기 전환 (0~4)
-    setWorld(w) { key = [0, 2, -3, 5, -1][w] || 0; },
-    info() { return { running: !!timer && soundMode === 'all', scheduled, step }; },
+    // 곡 바꾸기: 'title' / 'play'. 같은 곡이면 이어서 연주
+    setTrack(name) { if (TRACK[name] && name !== track) { track = name; step = 0; } },
+    setWorld(w, isBoss = false) { world = WORLD[w] || WORLD[0]; boss = !!isBoss; },
+    info() { return { running: !!timer && soundMode === 'all', scheduled, step, track, bars: TRACK[track].length / 16, key: world.key, boss }; },
   };
 })();
 function updateSoundBtn() {
@@ -1932,6 +1995,7 @@ function go(name) {
   if (name !== 'play') $('hzCard').hidden = true;
   $('app').inert = false;
   current = name;
+  Music.setTrack(name === 'play' ? 'play' : 'title');
   if (name === 'title') renderTitle();
   if (name === 'map') renderMap();
   if (name === 'book') renderBook();
@@ -1979,7 +2043,7 @@ function updateHud() {
 function startStage(n) {
   $('result').hidden = true;
   newGame(n);
-  Music.setWorld(G.st.world - 1);
+  Music.setWorld(G.st.world - 1, !!G.st.boss);
   // 3D 숲 배경일 때는 게임 판 바깥(화면 위아래 여백)도 같은 숲 그림을 흐리게 깔아 한 장면처럼 보이게 한다
   const p3 = window.Jelly3D && Jelly3D.ok();
   $('play').classList.toggle('f3d', !!p3);
