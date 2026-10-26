@@ -415,11 +415,14 @@ for (const [label, dev] of [['iPhone SE (320x568)', devices['iPhone SE']], ['Gal
     const j = window.__jp; j.startStage(6); j.G.bossHp = 1; let ok = false;
     for (let a = -2.9; a < -0.2 && !ok; a += 0.02) { const r = j.evalShot(a); if (r && r.popped) { j.setAngle(a); ok = true; } }
     j.shoot(); j.advance();
-    await new Promise(r => setTimeout(r, 1300));
+    for (let i = 0; i < 40 && document.getElementById('result').hidden; i++) await new Promise(r => setTimeout(r, 100));
     document.getElementById('resultMain').click();
-    return { banner: !document.getElementById('worldBanner').hidden, text: document.getElementById('worldBanner').textContent, world: document.getElementById('mapWorldName').textContent };
+    const story = !!document.getElementById('story');
+    document.getElementById('csSkip').click();   // 보스 6 컷신(뭉치 + 초대장 조각 1) 건너뛰기
+    await new Promise(r => setTimeout(r, 100));
+    return { story, banner: !document.getElementById('worldBanner').hidden, text: document.getElementById('worldBanner').textContent, world: document.getElementById('mapWorldName').textContent };
   });
-  check('보스를 깨고 지도로 가면 다음 월드 이름이 크게 나옴', tr.banner && tr.text.includes('시럽 숲') && tr.world === '시럽 숲', JSON.stringify(tr));
+  check('보스를 깨고 지도로 가면 다음 월드 이름이 크게 나옴', tr.story && tr.banner && tr.text.includes('시럽 숲') && tr.world === '시럽 숲', JSON.stringify(tr));
   await page.close();
 }
 

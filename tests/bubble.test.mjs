@@ -227,6 +227,12 @@ for (const [label, dev] of [['iPhone SE (320x568)', devices['iPhone SE']], ['Gal
   await page.screenshot({ path: path.join(shots, 'v2-06-clear-desktop.png') });
   check('친구를 구하면 클리어 창: 별 1~3개 + 친구 스티커', s1.win && res.title.includes('클리어') && res.on >= 1 && res.on <= 3 && res.sticker && res.msg.includes('몽실'), JSON.stringify(res));
   await page.click('#resultMain');
+  // 처음 깬 스테이지면 이야기 컷신이 먼저 나온다 → 끝까지 넘기면 지도
+  await page.waitForSelector('#story', { timeout: 2000 });
+  const cs = await page.evaluate(() => ({ title: document.querySelector('#story .cs-chap b').textContent, map: !document.getElementById('map').hidden }));
+  check('스테이지 1을 처음 깨면 "다음 스테이지로" 뒤에 이야기 컷신', cs.title === '첫 번째 친구' && !cs.map, JSON.stringify(cs));
+  for (let i = 0; i < 12 && await page.$('#story'); i++) { await page.click('#csNext'); await page.waitForTimeout(60); }
+  check('컷신을 끝까지 넘기면 사라짐', !(await page.$('#story')));
   await page.waitForTimeout(1100);
   const mv = await page.evaluate(() => {
     const w = document.querySelector('.walker'), n2 = document.querySelector('.node[data-stage="2"]');
