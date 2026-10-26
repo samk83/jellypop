@@ -1,0 +1,36 @@
+// 젤리·거품·대포 3D 그림을 미리 구워 sprites3d.js 로 저장 (게임은 이 그림만 붙인다 → 실시간 3D 계산 없음)
+// 사용: node design/forest/bake-sprites.mjs   (목록: design/forest/sprite-keys.json, "종류|색|표정|귀": 크기px)
+// 2배 크기로 구운 뒤 줄여서 테두리를 매끄럽게 한다.
+import { chromium } from '/opt/node22/lib/node_modules/playwright/index.mjs';
+import fs from 'node:fs';
+import path from 'node:path';
+const dir = path.dirname(new URL(import.meta.url).pathname), root = path.resolve(dir, '../..');
+const keys = JSON.parse(fs.readFileSync(path.join(dir, 'sprite-keys.json'), 'utf8'));
+const baker = fs.readFileSync(path.join(dir, 'jelly3d-baker.js'), 'utf8');
+const browser = await chromium.launch({ executablePath: '/opt/pw-browsers/chromium', args: ['--no-sandbox', '--use-gl=angle', '--use-angle=swiftshader', '--enable-unsafe-swiftshader', '--disable-gpu-watchdog'] });
+const page = await browser.newPage();
+page.on('console', m => console.log('[page]', m.text()));
+await page.setContent('<script>window.JELLY3D_FORCE = true;</script>');
+await page.addScriptTag({ content: baker });
+const out = {};
+let bytes = 0;
+for (const [key, size] of Object.entries(keys)) {
+  const [kind, color, mood, ears] = key.split('|');
+  out[key] = await page.evaluate(async ({ kind, color, mood, ears, size }) => {
+    const big = Jelly3D.bake(kind, { color, mood, ears: ears === '1' }, size * 2);
+    if (!big) throw new Error('bake failed ' + kind + color);
+    const im = new Image(); im.src = big; await im.decode();
+    const c = document.createElement('canvas'); c.width = c.height = size;
+    const g = c.getContext('2d'); g.imageSmoothingQuality = 'high'; g.drawImage(im, 0, 0, size, size);
+    return c.toDataURL('image/webp', 0.82);
+  }, { kind, color, mood, ears, size });
+  bytes += out[key].length;
+  process.stdout.write('.');
+}
+await browser.close();
+const js = `// 자동 생성 파일 (손으로 고치지 않기): node design/forest/bake-sprites.mjs
+// 미리 구운 3D 젤리·거품·대포 그림. 키 = "종류|색|표정|귀"
+window.JELLY3D_SPRITES = ${JSON.stringify(out, null, 0).replace(/","/g, '",\n"')};
+`;
+fs.writeFileSync(path.join(root, 'sprites3d.js'), js);
+console.log(`\n${Object.keys(out).length}장, ${(bytes / 1024).toFixed(0)}KB`);

@@ -351,6 +351,7 @@ img{-webkit-user-drag:none}
   </div>
 </div>
 
+<script src="sprites3d.js"></script>
 <script src="jelly3d.js"></script>
 <script src="gummy.js"></script>
 <script src="stages.js"></script>
@@ -1226,9 +1227,31 @@ function bgImage(world, onload) {
   return im;
 }
 const bg3d = () => { const im = G && window.Jelly3D && Jelly3D.ok() && bgImage(G.st.world || 1); return im && im.complete && !im.failed && im.naturalWidth ? im : null; };
+// 3D 숲 위에 떠다니는 빛 알갱이(반딧불) — 미리 만든 빛 그림 몇 장만 움직이는 가벼운 2D 효과
+const MOTE_COL = ['#fff3a0', '#ffcf7a', '#b8ff9a', '#ffe6f4', '#ffc4e0'];
+const MOTES = Array.from({ length: 14 }, (_, i) => ({ x: (i * 97 + 31) % W, y: 40 + (i * 151) % (DEADLINE - 60), r: 5 + (i % 4) * 2, sp: 6 + (i % 5) * 3, ph: i * 1.7 }));
+const moteImg = {};
+function moteSprite(col) {
+  if (moteImg[col]) return moteImg[col];
+  const c = document.createElement('canvas'); c.width = c.height = 32; const g = c.getContext('2d');
+  const rg = g.createRadialGradient(16, 16, 0, 16, 16, 16); rg.addColorStop(0, '#ffffff'); rg.addColorStop(0.18, col); rg.addColorStop(1, 'rgba(0,0,0,0)');
+  g.fillStyle = rg; g.fillRect(0, 0, 32, 32);
+  return (moteImg[col] = c);
+}
+const stillMotion = window.matchMedia && matchMedia('(prefers-reduced-motion: reduce)').matches;
+function drawMotes(t) {
+  const sp = moteSprite(MOTE_COL[(G.st.world || 1) - 1] || MOTE_COL[0]), tt = stillMotion ? 0 : t;
+  ctx.globalCompositeOperation = 'lighter';
+  for (const m of MOTES) {
+    const y = ((m.y - tt * m.sp) % (DEADLINE - 20) + DEADLINE - 20) % (DEADLINE - 20) + 10, x = m.x + Math.sin(tt * 0.7 + m.ph) * 12;
+    ctx.globalAlpha = 0.35 + 0.35 * Math.sin(tt * 2.1 + m.ph * 3);
+    ctx.drawImage(sp, x - m.r, y - m.r, m.r * 2, m.r * 2);
+  }
+  ctx.globalAlpha = 1; ctx.globalCompositeOperation = 'source-over';
+}
 function drawBackground(theme) {
   const im = bg3d();
-  if (im) { ctx.drawImage(im, 0, 0, W, H); return; }
+  if (im) { ctx.drawImage(im, 0, 0, W, H); drawMotes(G.time); return; }
   if (!spr('bg-' + theme, () => SPR.bg(theme), 0, 0)) {
     const g = ctx.createLinearGradient(0, 0, 0, H); g.addColorStop(0, '#ffd1e8'); g.addColorStop(.8, '#fff6e8'); g.addColorStop(.82, '#c9f3d6'); g.addColorStop(1, '#7fdc9a');
     ctx.fillStyle = g; ctx.fillRect(0, 0, W, H);
@@ -2267,7 +2290,7 @@ requestAnimationFrame(frame);
 // 테스트용 손잡이 (화면에는 영향 없음)
 window.__jp = {
   get G() { return G; }, P, STAGES, Board, R, ROW_H, W, H, PIVOT, DEADLINE,
-  startStage, rescue, aimLimit, music: () => Music.info(), voices: () => voiceCount, soundMode: () => soundMode, sfx, CS, shoot, swapQueue, setAngle, go, seedRandom,
+  startStage, rescue, showResult, aimLimit, music: () => Music.info(), voices: () => voiceCount, soundMode: () => soundMode, sfx, CS, shoot, swapQueue, setAngle, go, seedRandom,
   reset() { Object.assign(P, { stars: new Array(NST).fill(0), stickers: {}, seenIntro: false, at: 0, seenHz: {}, seenStory: {} }); saveP(); },
   story: () => window.JellyStory,
   // 설명 카드 닫기 · 생각하는 시간 흘려보내기(조준 중 시계가 흐름) · 놈놈이 대포를 막았는지

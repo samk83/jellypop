@@ -1,5 +1,5 @@
 // 3D 그림(jelly3d.js) 자동 테스트: node tests/jelly3d.test.mjs
-// 소프트웨어 GPU에서는 기본으로 꺼지므로 ?3d=1 로 강제로 켜고 확인한다.
+// 3D 그림은 미리 구워 둔 그림(sprites3d.js)이라 어떤 기기에서도 켜진다. ?3d=0 이면 끔.
 import { chromium } from 'playwright';
 import { fileURLToPath, pathToFileURL } from 'node:url';
 import path from 'node:path';
@@ -13,6 +13,8 @@ function check(name, ok, info = '') { if (ok) { pass++; console.log('  ✅ ' + n
 const browser = await chromium.launch({ ...(process.env.CHROMIUM ? { executablePath: process.env.CHROMIUM } : {}),
   args: ['--use-gl=angle', '--use-angle=swiftshader', '--enable-unsafe-swiftshader', '--allow-file-access-from-files'] });
 const ctx = await browser.newContext({ viewport: { width: 390, height: 844 }, deviceScaleFactor: 2 });
+// 게임이 WebGL(실시간 3D)을 한 번이라도 켜는지 기록
+await ctx.addInitScript(() => { window.__gl = 0; const gc = HTMLCanvasElement.prototype.getContext; HTMLCanvasElement.prototype.getContext = function (t, ...a) { if (/webgl/i.test(t)) window.__gl++; return gc.call(this, t, ...a); }; });
 await ctx.addInitScript(() => { try { localStorage.setItem('jellypop.progress', JSON.stringify({ seenIntro: true })); } catch (e) { /* noop */ } });
 
 console.log('3D 그림 굽기');
@@ -23,9 +25,10 @@ console.log('3D 그림 굽기');
   page.on('console', m => { if (m.type() === 'error' || m.type() === 'warning') errors.push(m.text()); });
   await page.goto(page3d);
   check('?3d=1 이면 3D 켜짐', await page.evaluate(() => Jelly3D.ok() === true));
+  check('실시간 3D 계산 없음 (WebGL 안 씀, 미리 구운 그림만)', await page.evaluate(() => !!window.JELLY3D_SPRITES && Object.keys(JELLY3D_SPRITES).length >= 80 && window.__gl === 0));
   const r = await page.evaluate(async () => {
     const kinds = [['jelly', { color: '#ff7fae', mood: 'happy', ears: true }], ['jelly', { color: '#4fb4ff', mood: 'joy' }], ['jelly', { color: '#ffd23f', mood: 'worried' }],
-      ['jelly', { color: '#a76bff', mood: 'angry' }], ['bubble', { color: '#5ed46a' }], ['bubble', { color: '#e6f2ff', mood: 'none' }],
+      ['jelly', { color: '#8a5cf0', mood: 'angry' }], ['bubble', { color: '#5ed46a' }], ['bubble', { color: '#e6f2ff', mood: 'none' }],
       ['barrel', { color: '#ff8cb8' }], ['base', { color: '#ff8cb8' }], ['housing', { color: '#ff9fc0' }], ['wheel', { color: '#ff9fc0' }]];
     const out = [];
     for (const [k, o] of kinds) {
@@ -38,13 +41,14 @@ console.log('3D 그림 굽기');
       const n = d.length / 4;
       out.push({ k, ok: true, opaque: opaque / n, clear: clear / n, corner: d[3] });
     }
-    const again = Jelly3D.bake('jelly', { color: '#ff7fae', mood: 'happy', ears: true }, 96) === Jelly3D.bake('jelly', { color: '#ff7fae', mood: 'happy', ears: true }, 90);
+    const again = Jelly3D.bake('jelly', { color: '#FF7FAE', mood: 'happy', ears: true }) === JELLY3D_SPRITES['jelly|#ff7fae|happy|1'];
     return { out, again, bad: Jelly3D.bake('jelly', { color: 'not-a-color' }, 96) };
   });
   r.out.forEach(o => check(`${o.k}: 그림이 나옴 (가운데는 칠해지고 모서리는 투명)`, o.ok && o.opaque > 0.05 && o.clear > 0.1 && o.corner === 0, JSON.stringify(o)));
-  check('같은 요청은 다시 굽지 않고 저장된 그림 재사용', r.again);
+  check('색 대소문자 상관없이 미리 구운 그림을 찾음', r.again);
   check('잘못된 색이면 null (SVG 그림으로 대체)', r.bad === null);
-  check('Art.jelly 가 3D 그림(<image>)을 씀', await page.evaluate(() => Gummy.jelly(0, 0, 20, '#ff7fae', {}).includes('<image')));
+  check('목록에 없는 그림이면 null (SVG 그림으로 대체)', await page.evaluate(() => Jelly3D.bake('jelly', { color: '#123456' }) === null));
+  check('Art.jelly 가 3D 그림(<image>)을 씀', await page.evaluate(() => Gummy.jelly(0, 0, 20, '#ff5f8a', {}).includes('<image')));
   check('갇힌 친구 거품 = 3D 젤리 + 투명 거품', await page.evaluate(() => (Gummy.bubble(0, 0, 18, '#ff5f8a', { trapped: '#4fdcc4' }).match(/<image/g) || []).length === 2));
   // 타이틀: 3D 숲 배경 그림
   await page.waitForTimeout(500);
@@ -62,12 +66,49 @@ console.log('3D 그림 굽기');
     check(`스테이지 ${n}: 월드 ${world} 3D 배경`, s.cls && s.bg.includes(`w${world}.webp`), JSON.stringify(s));
   }
   // 캔버스에 실제로 숲 그림이 그려졌는지 (가운데 아래 풀밭 = 초록이 강함)
-  await page.evaluate(() => window.__jp.startStage(1)); await page.waitForTimeout(600);
-  check('플레이 캔버스에 숲 배경이 그려짐', await page.evaluate(() => { const c = document.getElementById('canvas'), g = c.getContext('2d'); const d = g.getImageData(Math.floor(c.width * 0.85), Math.floor(c.height * 0.9), 1, 1).data; return d[1] > d[0] && d[1] > d[2]; }));
+  // (배경 그림을 불러오는 시간이 기기마다 달라서 최대 5초까지 기다림)
+  await page.evaluate(() => window.__jp.startStage(1));
+  check('플레이 캔버스에 숲 배경이 그려짐', await page.waitForFunction(() => { const c = document.getElementById('canvas'), g = c.getContext('2d'); const d = g.getImageData(Math.floor(c.width * 0.85), Math.floor(c.height * 0.9), 1, 1).data; return d[1] > d[0] && d[1] > d[2]; }, null, { timeout: 5000 }).then(() => true, () => false));
   // 타이틀 숲 그림을 못 불러오면 예전 풍경으로
   await page.evaluate(() => { window.__jp.go('title'); document.querySelector('#titleArt img').dispatchEvent(new Event('error')); });
   check('타이틀 그림 실패 → 구미 풍경으로 대체', await page.evaluate(() => !document.getElementById('title').classList.contains('f3d') && !!document.querySelector('#titleArt img').src.startsWith('data:image/svg')));
   check('콘솔 에러 없음', errors.length === 0, errors.slice(0, 3).join(' | '));
+  await page.close();
+}
+console.log('모든 스테이지: 필요한 3D 그림이 다 미리 구워져 있음 + 시작이 멈추지 않음');
+{
+  const page = await ctx.newPage();
+  const errors = []; page.on('pageerror', e => errors.push(e.message));
+  await page.goto(pathToFileURL(path.join(root, 'index.html')).href);
+  check('주소에 아무것도 없어도 3D 켜짐 (기기 상관없이)', await page.evaluate(() => Jelly3D.ok() === true));
+  await page.evaluate(() => { window.__miss = new Set(); const b = Jelly3D.bake; Jelly3D.bake = (k, o = {}, px) => { const u = b(k, o, px); if (!u) __miss.add([k, o.color, o.mood, o.ears ? 1 : 0].join('|')); return u; }; });
+  let worst = 0;
+  for (let n = 1; n <= 30; n++) {
+    const ms = await page.evaluate(n => { const t = performance.now(); window.__jp.startStage(n); return performance.now() - t; }, n);
+    worst = Math.max(worst, ms);
+    await page.waitForFunction(() => Gummy.pending() === 0, null, { timeout: 15000 });
+  }
+  const allMiss = await page.evaluate(() => [...__miss]);
+  check('30 스테이지에서 쓰는 3D 그림이 모두 있음 (SVG로 빠지는 것 없음)', allMiss.length === 0, allMiss.join(', '));
+  check(`스테이지 시작 동기 처리 300ms 미만 (최대 ${worst.toFixed(0)}ms)`, worst < 300);
+  // 다른 화면들: 결과(이김·짐), 타이틀, 프롤로그 4장, 지도(모든 월드, 친구 다 구함), 스티커 북
+  await page.evaluate(() => {
+    const j = window.__jp;
+    for (const n of [1, 12, 30]) { j.startStage(n); j.G.outcome = { win: true, stars: 3, newSticker: true }; j.showResult(); }
+    j.startStage(5); j.G.outcome = { win: false, stars: 0, newSticker: false, reason: 'shots' }; j.showResult();
+    document.getElementById('result').hidden = true; document.getElementById('app').inert = false;
+    j.go('title');
+    document.getElementById('storyBtn').click(); for (let i = 0; i < 3; i++) document.getElementById('nextSlide').click();
+    j.P.stars = j.P.stars.map(() => 3); for (let i = 1; i <= 30; i++) j.P.stickers[i] = true;
+    j.go('map'); for (let i = 0; i < 5; i++) { const b = document.getElementById('mapPrev'); if (!b.hidden) b.click(); }
+    j.go('book');
+    // 스토리 컷신 30개 (각 장면에 나오는 젤리)
+    for (let id = 1; id <= 30; id++) window.JellyStory.open(id, () => {});
+  });
+  const moreMiss = await page.evaluate(() => [...__miss]);
+  check('결과·타이틀·프롤로그·지도·스티커 북·스토리 컷신도 3D 그림이 모두 있음', moreMiss.length === 0, moreMiss.join(', '));
+  check('WebGL을 한 번도 켜지 않음', await page.evaluate(() => window.__gl === 0));
+  check('콘솔 에러 없음', errors.length === 0, errors.join(' | '));
   await page.close();
 }
 console.log('3D 끔 (?3d=0)');
@@ -76,7 +117,7 @@ console.log('3D 끔 (?3d=0)');
   const errors = []; page.on('pageerror', e => errors.push(e.message));
   await page.goto(pageOff);
   check('?3d=0 이면 3D 꺼짐', await page.evaluate(() => Jelly3D.ok() === false));
-  check('꺼지면 기존 구미 SVG 그림', await page.evaluate(() => !Gummy.jelly(0, 0, 20, '#ff7fae', {}).includes('<image')));
+  check('꺼지면 기존 구미 SVG 그림', await page.evaluate(() => !Gummy.jelly(0, 0, 20, '#ff5f8a', {}).includes('<image')));
   await page.evaluate(() => window.__jp.startStage(1)); await page.waitForTimeout(300);
   check('꺼지면 판 바깥 숲 배경도 안 씀', await page.evaluate(() => !document.getElementById('play').classList.contains('f3d')));
   check('콘솔 에러 없음', errors.length === 0, errors.join(' | '));

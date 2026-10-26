@@ -14,7 +14,8 @@ let pass = 0, fail = 0;
 function check(name, ok, info = '') {
   if (ok) { pass++; console.log('  ✅ ' + name); } else { fail++; console.log('  ❌ ' + name + ' ' + info); }
 }
-const browser = await chromium.launch(process.env.CHROMIUM ? { executablePath: process.env.CHROMIUM } : {});
+// file:// 로 열 때 숲 배경 그림(webp)을 캔버스 픽셀 검사에 쓸 수 있게 허용 (실제 웹 주소에서는 같은 출처라 필요 없음)
+const browser = await chromium.launch({ ...(process.env.CHROMIUM ? { executablePath: process.env.CHROMIUM } : {}), args: ['--allow-file-access-from-files'] });
 
 // 자동 플레이 (bubble.test.mjs 와 같은 방식 + 설명 카드 닫기, 놈놈이 막으면 간지럼, 한 발마다 1.5초 생각)
 function botPlay(stageNo) {
