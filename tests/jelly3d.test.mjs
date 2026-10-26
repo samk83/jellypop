@@ -95,7 +95,7 @@ console.log('모든 스테이지: 필요한 3D 그림이 다 미리 구워져 �
   await page.evaluate(() => {
     const j = window.__jp;
     for (const n of [1, 12, 30]) { j.startStage(n); j.G.outcome = { win: true, stars: 3, newSticker: true }; j.showResult(); }
-    j.startStage(5); j.G.outcome = { win: false, stars: 0, newSticker: false, reason: 'shots' }; j.showResult();
+    j.startStage(5); j.G.outcome = { win: false, stars: 0, newSticker: false, reason: 'line' }; j.showResult();
     document.getElementById('result').hidden = true; document.getElementById('app').inert = false;
     j.go('title');
     document.getElementById('storyBtn').click(); for (let i = 0; i < 3; i++) document.getElementById('nextSlide').click();

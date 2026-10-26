@@ -174,6 +174,35 @@ img{-webkit-user-drag:none}
 .chip.grow{flex:1}
 .chip.friends{align-items:center;min-width:92px}
 .chip.friends b{color:var(--star);font-family:var(--font-num);font-weight:800;font-size:20px}
+/* 위쪽 배너 (내용은 banner.js) + 천장 하강 시간 게이지 */
+#banner{flex:none;margin-top:8px;height:64px;border-radius:18px;position:relative;overflow:hidden;display:flex;align-items:center;gap:8px;padding:0 10px 0 6px;
+  background:linear-gradient(180deg,rgba(255,240,248,.96),rgba(255,206,228,.94));border:2px solid rgba(255,255,255,.8);color:#5a2d91;
+  box-shadow:0 4px 12px rgba(26,10,58,.3),inset 0 -4px 0 rgba(217,84,138,.18),inset 0 3px 0 rgba(255,255,255,.9)}
+#banner[hidden]{display:none}
+#banner::before{content:"";position:absolute;left:10px;right:10px;top:4px;height:10px;border-radius:8px;background:linear-gradient(rgba(255,255,255,.9),rgba(255,255,255,0));pointer-events:none}
+#banner .bimg{flex:none;width:60px;height:54px;display:grid;place-items:center}
+#banner .bimg img{width:60px;height:54px;object-fit:contain}
+#banner .btxt{flex:1;min-width:0;line-height:1.15}
+#banner .btxt small{display:inline-block;font:800 10px var(--font-body);color:#fff;background:#ff4f8b;border-radius:8px;padding:2px 7px;margin-bottom:2px}
+#banner .btxt b{display:block;font:900 15px var(--font-body);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+#banner .btxt span{display:block;font:700 12px var(--font-body);color:#a0457a;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+#banner .bgo{flex:none;font:900 14px var(--font-body);color:#fff;background:linear-gradient(#ffd23f,#ff9f1c);border:0;border-radius:14px;padding:8px 12px;min-height:44px;min-width:52px;
+  box-shadow:0 3px 0 #c76b0a,inset 0 2px 0 rgba(255,255,255,.6);text-shadow:0 1px 1px rgba(122,45,10,.5)}
+#banner .bgo[hidden]{display:none}
+#banner .bdots{position:absolute;right:12px;top:6px;display:flex;gap:4px}
+#banner .bdots i{width:5px;height:5px;border-radius:50%;background:rgba(194,69,122,.3)}#banner .bdots i.on{width:12px;border-radius:3px;background:#ff4f8b}
+#tbar{flex:none;margin-top:8px;height:28px;display:flex;align-items:center;gap:8px;padding:0 2px}
+#tbar .tic{flex:none;width:28px;height:28px;border-radius:50%;display:grid;place-items:center;font-size:15px;background:radial-gradient(circle at 35% 30%,#fff,#ffd1e8 60%,#f59ac4);box-shadow:0 2px 4px rgba(26,10,58,.35)}
+#tbar .track{flex:1;height:16px;border-radius:9px;background:rgba(42,11,78,.55);border:2px solid rgba(255,255,255,.75);position:relative;overflow:hidden;box-shadow:inset 0 2px 3px rgba(0,0,0,.35)}
+#tbar .fill{position:absolute;left:0;top:0;bottom:0;border-radius:7px;background:linear-gradient(#bff7d0,#3fd27a 55%,#25a85c)}
+#tbar .fill::after{content:"";position:absolute;left:4px;right:4px;top:2px;height:3px;border-radius:2px;background:rgba(255,255,255,.7)}
+#tbar.hot .fill{background:linear-gradient(#ffd0de,#ff4f8b 55%,#d81b5e)}
+#tbar.hot .track{animation:tshake .18s linear infinite}
+@keyframes tshake{0%,100%{transform:translateX(0)}25%{transform:translateX(-1.5px)}75%{transform:translateX(1.5px)}}
+#tbar .lbl{flex:none;min-width:92px;text-align:center;font:900 13px var(--font-body);color:#fff;background:rgba(90,45,145,.88);border-radius:12px;padding:4px 8px;border:1.5px solid rgba(255,255,255,.4)}
+#tbar.hot .lbl{background:#ff4f8b}
+@media (max-height:700px){#banner{display:none}}
+@media (prefers-reduced-motion:reduce){#tbar.hot .track{animation:none}}
 #stageWrap{flex:1;min-height:0;display:grid;place-items:center;margin-top:8px;position:relative}
 #canvas{display:block;touch-action:none;border-radius:18px;background:linear-gradient(180deg,#ffd1e8,#ffe6f1 40%,#fff6e8 80%,#7fdc9a 82%)}
 .toast{position:absolute;left:50%;top:38%;transform:translate(-50%,-50%) scale(.7) rotate(-2deg);opacity:0;pointer-events:none;text-align:center;
@@ -308,6 +337,8 @@ img{-webkit-user-drag:none}
       <div class="chip friends"><small id="hudGoalLabel">구할 친구</small><b id="hudGoal">0 / 1</b></div>
       <button class="icon-btn" id="soundBtn" aria-label="소리 켜기/끄기"></button>
     </div>
+    <div id="banner" role="region" aria-label="배너"><div class="bimg" id="bannerImg"></div><div class="btxt"><small id="bannerTag"></small><b id="bannerTitle"></b><span id="bannerSub"></span></div><button class="bgo" id="bannerBtn" type="button"></button><div class="bdots" id="bannerDots"></div></div>
+    <div id="tbar" role="meter" aria-label="천장이 내려오기까지 남은 시간" aria-valuemin="0" aria-valuemax="20" aria-valuenow="20"><div class="tic" aria-hidden="true">⏳</div><div class="track"><div class="fill" id="tfill"></div></div><div class="lbl" id="tlbl"></div></div>
     <div id="stageWrap">
       <canvas id="canvas" tabindex="0" aria-label="게임 판. 대포 근처를 좌우로 끌어 대포를 돌리고, 떼면 발사. 키보드는 왼쪽·오른쪽 화살표로 조준, 스페이스로 발사, X로 순서 바꾸기"></canvas>
       <div class="toast" id="toast" role="status" aria-live="polite"></div>
@@ -355,6 +386,7 @@ img{-webkit-user-drag:none}
 <script src="jelly3d.js"></script>
 <script src="gummy.js"></script>
 <script src="stages.js"></script>
+<script src="banner.js"></script>
 <script src="story-data.js"></script>
 <script src="story.js"></script>
 <script>
@@ -607,13 +639,14 @@ function newGame(stageNo) {
   const st = STAGES[stageNo - 1];
   const b = Board.fromRows(st.rows, st.boss ? 84 : 10, st.kinds, st.colors);
   G = {
-    st, b, shotsLeft: st.shots, queue: [], angle: -Math.PI / 2, crank: 0, aiming: false,
+    st, b, fired: 0, queue: [], angle: -Math.PI / 2, crank: 0, aiming: false,
     state: 'aim', moving: null, fx: [], falls: [], pops: [], texts: [], rescues: [], wobbles: [],
     saved: 0, need: st.boss ? 1 : b.friendCount, bossHp: st.boss ? st.boss.hp : 0, bossHit: 0,
     shotCount: 0, score: 0, settleT: 0, queueShift: 0, y0Target: b.y0, swapT: 0, outcome: null, time: 0,
     paused: false, hz: makeHz(st),
   };
   fillQueue();
+  gaugeLast = '';
 }
 // 조준선 길이(px): 1~6 끝까지 → 7번 700 → 30번 150
 function aimLimit(st) { return st.id <= 6 ? Infinity : Math.max(150, 700 - (st.id - 7) * 24); }
@@ -621,13 +654,15 @@ function aimLimit(st) { return st.id <= 6 ? Infinity : Math.max(150, 700 - (st.i
 function makeHz(st) {
   const cfg = { ...st.hz };
   const h = { cfg, misses: 0, cloud: null, nom: null, aimBoost: 0, warn: null, ceilWarn: 0, phase: 0, red: false,
-    clock: cfg.clock ? cfg.clock.sec : null, overtime: 0, shotT: cfg.shotTimer || 0, dropT: cfg.dropSec || 0,
+    clock: cfg.clock ? cfg.clock.sec : null, shotT: cfg.shotTimer || 0, dropT: 0,
     cloudNext: cfg.cloud ? cfg.cloud.first : -1, nomNext: cfg.nom ? cfg.nom.first : -1, nomIdx: 0, caramelX: null, convWarn: false, timeUp: false };
+  // 타임어택: 모든 스테이지는 시간이 지나면 천장이 한 칸씩 내려온다 (dropSec 가 있으면 그 스테이지만 더 빠르게)
+  cfg.dropSec = Math.min(st.fall || 18, cfg.dropSec || Infinity); h.dropT = cfg.dropSec;
   return h;
 }
 function boardColors() { const s = Board.colorsOnBoard(G.b); const arr = [...s]; return arr.length ? arr : [...G.st.colors]; }
 function randomColor() { const a = boardColors(); return a[Math.floor(rand() * a.length)]; }
-function fillQueue() { const want = Math.min(G.shotsLeft, 6); while (G.queue.length < want) G.queue.push(randomColor()); G.queue.length = Math.min(G.queue.length, want); }
+function fillQueue() { const want = 6; while (G.queue.length < want) G.queue.push(randomColor()); G.queue.length = Math.min(G.queue.length, want); }
 function refreshQueueColors() {
   const s = Board.colorsOnBoard(G.b); if (!s.size) return;
   G.queue = G.queue.map(c => c === 'w' || s.has(c) ? c : randomColor());
@@ -636,9 +671,10 @@ function warn(text) { G.hz.warn = { text, t: 0 }; }
 const nomActive = act => { const n = G && G.hz.nom; return !!n && n.act === act && (n.state === 'block' || n.state === 'hover' || n.state === 'fly'); };
 
 function shoot() {
-  if (!G || G.state !== 'aim' || G.paused || G.shotsLeft <= 0 || !G.queue.length) return false;
+  if (!G || G.state !== 'aim' || G.paused || !G.queue.length) return false;
   const color = G.queue.shift();
-  G.shotsLeft--;
+  G.fired++;
+  G.hz.started = true;   // 천장 시계는 첫 발부터 (팁을 읽는 동안은 안 흐름)
   fillQueue();
   if (G.hz.aimBoost > 0) G.hz.aimBoost--;
   G.queueShift = 1;
@@ -833,7 +869,6 @@ function afterSettle() {
   if (!st.boss && G.saved >= G.need) return finish(true);   // 컨베이어로 떨어진 친구
   b.y0 = G.y0Target;
   if (Board.lowestY(b) + R > DEADLINE) return finish(false, 'line');
-  if (G.shotsLeft <= 0) return finish(false, 'shots');
   refreshQueueColors();
   G.hz.shotT = G.hz.cfg.shotTimer || 0;
   G.state = 'aim';
@@ -844,18 +879,20 @@ function tickHazards(dt) {
   const h = G.hz, cfg = h.cfg;
   if (h.warn && (h.warn.t += dt) > 1.8) h.warn = null;
   if (G.state === 'done' || G.paused || document.hidden) return;
+  h.elapsed = (h.elapsed || 0) + dt;   // 판이 실제로 흐른 시간
   if (h.clock !== null) {
     const before = h.clock;
     h.clock = Math.max(0, h.clock - dt);
     if (before > 0 && h.clock === 0) {
       if (cfg.clock.hard) { if (G.state === 'aim') return finish(false, 'time'); h.timeUp = true; }
-      else { h.overtime = 15; lowerCeiling(2, '시간 끝! 천장이 쿵!'); }
-    } else if (h.clock === 0 && !cfg.clock.hard && (h.overtime -= dt) <= 0) { h.overtime = 15; lowerCeiling(1); }
+      else { cfg.dropSec = Math.max(4, Math.round(cfg.dropSec / 2)); h.dropT = cfg.dropSec; lowerCeiling(2, '시간 끝! 천장이 쿵!'); }
+    }
     if (before > 10 && h.clock <= 10) warn('10초 남았어요!');
   }
-  if (cfg.dropSec) {
+  if (cfg.dropSec && h.started) {
     h.dropT -= dt;
     if (h.dropT <= 0) { h.dropT = cfg.dropSec; lowerCeiling(1); }
+    else if (h.dropT < 3 && h.dropT + dt >= 3) sfx('tick');
   }
   if (cfg.shotTimer && G.state === 'aim') {
     h.shotT -= dt;
@@ -898,10 +935,10 @@ function nomAct(act) {
     Object.assign(n, { state: 'fly', carry: cell.c, shots: 2, x: q.x, y: q.y }, hoverAt());
     showToast('놈놈이 거품을 훔쳤어요!');
   } else if (act === 'take') {
-    if (G.shotsLeft <= 3) { h.nom = null; return; }
-    G.shotsLeft--; const taken = G.queue.pop(); fillQueue();
+    const taken = G.queue.pop(); fillQueue();
+    h.dropT = Math.max(1, h.dropT - 4);
     Object.assign(n, { state: 'fly', carryFriend: COLORS[taken] ? COLORS[taken].base : AC.pink, shots: 3, x: queuePos(2).x, y: queuePos(2).y }, hoverAt());
-    showToast('놈놈이 친구를 데려갔어요!'); updateHud();
+    showToast('놈놈이 친구를 데려갔어요! 천장 -4초'); updateHud();
   } else if (act === 'block') {
     Object.assign(n, { state: 'block', tx: PIVOT.x, ty: PIVOT.y - 74 });
     showToast('놈놈이 대포를 막았어요! 맨 앞 친구를 눌러요');
@@ -919,7 +956,7 @@ function nomHit() {
   const n = G.hz.nom; n.hit = true; n.state = 'leave'; n.t = 0;
   G.score += 50; G.texts.push({ x: n.x, y: n.y - 10, text: '+50', life: 1 });
   burst(n.x, n.y, '#b8a6ff', 10);
-  if (n.act === 'take') { G.shotsLeft++; fillQueue(); showToast('친구를 되찾았어요!'); }
+  if (n.act === 'take') { G.hz.dropT = Math.min(G.hz.cfg.dropSec, G.hz.dropT + 4); showToast('친구를 되찾았어요! +4초'); }
   else if (n.carry) { G.falls.push({ x: n.x, y: n.y, vy: -80, vx: 0, c: n.carry }); showToast('놈놈을 쫓아냈어요!'); }
   else showToast('놈놈을 쫓아냈어요!');
   sfx('rescue'); updateHud();
@@ -939,7 +976,7 @@ function finish(win, reason) {
   const st = G.st;
   let stars = 0, newSticker = false;
   if (win) {
-    let ratio = G.shotsLeft / st.shots;
+    let ratio = 1 - G.fired / st.shots;   // 기준 발 수보다 적게 쏠수록 별이 많다
     if (G.hz.cfg.clock) ratio += (G.hz.clock / G.hz.cfg.clock.sec) * .3;   // 남은 시간 보너스
     stars = ratio >= .35 ? 3 : ratio >= .15 ? 2 : 1;
     P.stars[st.id - 1] = Math.max(P.stars[st.id - 1] || 0, stars);
@@ -969,7 +1006,7 @@ const CK = CS / 0.8;                                           // 그림 상자 
 const CANNON = { bx: PIVOT.x - 6 * CS, by: PIVOT.y + 22 * CS };  // 대포 받침 가운데
 CANNON.wheel = { x: CANNON.bx - 30 * CS, y: CANNON.by - 14 * CS, r: 18 * CS };   // 뒷바퀴 = 말랑이가 돌리는 핸들
 CANNON.front = { x: CANNON.bx + 34 * CS, y: CANNON.by - 12 * CS, r: 15 * CS };
-const MASCOT = { x: CANNON.bx - 97 * CS, y: CANNON.by - 15 * CS, r: 27 };
+const MASCOT = { x: CANNON.bx - 74 * CS, y: CANNON.by - 15 * CS, r: 27 };
 
 // 스프라이트 정의: key → { body, box(anchor 포함) }
 const SPR = {
@@ -1020,7 +1057,7 @@ function drawJellySprite(color, r, opt, x, y, s = 1, alpha = 1) {
 }
 // 구출된 친구 연출 ─ fall(톡 튀어 오른 뒤 낙하·땅에서 2번 통통) → roll(데굴데굴) → hop(말랑이 옆으로 폴짝) → stay(옆에서 같이 응원)
 const RESCUE_R = 14, RESCUE_S = 1.1, RESCUE_GROUND = 592;          // 땅 높이 = 말랑이 발밑
-const RESCUE_SLOTS = [{ x: 30, y: 0 }, { x: 16, y: 6 }, { x: 42, y: 10 }];   // 말랑이 왼쪽 자리 (y = 땅에서 얼마나 앞쪽인지)
+const RESCUE_SLOTS = [{ x: 40, y: 0 }, { x: 24, y: 6 }, { x: 54, y: 10 }];   // 말랑이 왼쪽 자리 (y = 땅에서 얼마나 앞쪽인지)
 function stepRescue(r, dt) {
   r.t += dt; r.sq = Math.max(0, r.sq - dt * 5);
   const rad = RESCUE_R * RESCUE_S, gy = RESCUE_GROUND - rad;
@@ -1299,6 +1336,30 @@ function burst(x, y, c, n) {
 const DUSK = ['gate', 'sunset', 'w2-night', 'w3-gate', 'w3-stalactite', 'w3-lake', 'w3-crystal', 'w3-dark', 'w3-heart', 'w4-boss'];
 const dusk = () => !!bg3d() || DUSK.includes(G.st.theme) || G.st.world === 5;   // 3D 숲 배경 위에서는 밝은 선이 잘 보인다
 
+// 천장 하강 연출 값: amp = 흔들림 세기(px), slide = 막 내려온 판을 위에서 스르륵 내리는 남은 거리(px, 음수)
+function fallShake(dt) {
+  const h = G.hz, b = G.b;
+  if (G.drawY0 === undefined || b.y0 < G.drawY0) G.drawY0 = b.y0;
+  if (b.y0 > G.drawY0 + .5) { if (!G.sliding) { G.sliding = true; G.impact = .45; } G.drawY0 += Math.max(60 * dt, (b.y0 - G.drawY0) * Math.min(1, dt * 9)); if (G.drawY0 > b.y0) G.drawY0 = b.y0; }
+  else { G.drawY0 = b.y0; G.sliding = false; }
+  G.impact = Math.max(0, (G.impact || 0) - dt);
+  const live = G.state !== 'done' && !G.paused && h.started && h.cfg.dropSec;
+  const warnAmp = live && h.dropT < 2 ? (2 - h.dropT) * 1.4 : 0;
+  return { amp: Math.max(warnAmp, G.impact * 9), slide: G.drawY0 - b.y0 };
+}
+// 위쪽 시간 게이지 (HTML): 다음 천장 하강까지 남은 시간
+let gaugeLast = '';
+function updateGauge() {
+  const h = G.hz, sec = h.cfg.dropSec || 0, k = sec ? Math.max(0, h.dropT / sec) : 0, hot = h.dropT < 3;
+  const label = !h.started ? '첫 발부터 ' + Math.ceil(h.dropT) + '초' : h.dropT < .6 ? '⚠ 한 칸 내려와요!' : '하강까지 ' + Math.ceil(h.dropT) + '초';
+  const key = Math.round(k * 200) + label + hot;
+  if (key === gaugeLast) return; gaugeLast = key;
+  $('tfill').style.width = (k * 100).toFixed(1) + '%';
+  $('tlbl').textContent = label;
+  $('tbar').classList.toggle('hot', hot);
+  const tb = $('tbar'); tb.setAttribute('aria-valuemax', Math.ceil(sec)); tb.setAttribute('aria-valuenow', Math.ceil(h.dropT)); tb.setAttribute('aria-valuetext', label);
+}
+
 function render(dt) {
   const t = G.time;
   ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
@@ -1314,8 +1375,9 @@ function render(dt) {
     ctx.fillStyle = 'rgba(245,184,214,.95)'; for (let x = 0; x < W; x += 24) { ctx.beginPath(); ctx.arc(x + 12, b.y0 - 8, 12, 0, Math.PI); ctx.fill(); }
   }
   // 위쪽 사탕 막대 (거품이 매달린 천장). 곧 내려올 때는 떨리며 붉어진다
-  const h = G.hz, quake = h.ceilWarn || (h.cfg.dropSec && h.dropT < 3) || (h.clock === 0 && !h.cfg.clock.hard && h.overtime < 3) ? Math.sin(t * 40) * 1.5 : 0;
-  const by = (G.st.boss ? b.y0 + 2 : b.y0) + quake;
+  // 천장 하강: 2초 전부터 판이 위쪽부터 점점 세게 흔들리고, 내려올 때는 한 칸 스르륵 + 쿵 흔들림
+  const h = G.hz, fs = fallShake(dt), quake = fs.amp ? Math.sin(t * 40) * fs.amp : h.ceilWarn ? Math.sin(t * 40) * 1.5 : 0;
+  const by = (G.st.boss ? b.y0 + 2 : b.y0) + quake + fs.slide;
   const tg = ctx.createLinearGradient(0, by - 12, 0, by + 2); tg.addColorStop(0, '#fff6fa'); tg.addColorStop(1, '#f5b8d6');
   ctx.fillStyle = tg; roundRect(4, by - 12, W - 8, 14, 7); ctx.fill();
   ctx.fillStyle = 'rgba(255,255,255,.9)'; roundRect(10, by - 10, W - 20, 4, 2); ctx.fill();
@@ -1330,13 +1392,17 @@ function render(dt) {
   });
   // 보스
   if (G.st.boss) drawBoss(t);
-  // 거품
-  for (let r = 0; r < b.rows.length; r++) for (let c = 0; c < b.rows[r].length; c++) {
+  // 거품 (흔들림은 위 줄일수록 세다)
+  const nRows = b.rows.length;
+  if (fs.slide) { ctx.save(); ctx.translate(0, fs.slide); }
+  for (let r = 0; r < nRows; r++) for (let c = 0; c < b.rows[r].length; c++) {
     const cell = b.rows[r][c]; if (!cell) continue;
     const p = Board.pos(b, r, c);
+    if (fs.amp) { const k = 1 - r / (nRows + 3); p.x += Math.sin(t * 46 + r * 1.7) * fs.amp * k; p.y += Math.cos(t * 39 + c) * fs.amp * .4 * k; }
     const wb = G.wobbles.find(w => w.r === r && w.c === c);
     drawCell(p.x, p.y, cell, t, wb ? 1 + Math.sin(wb.t * 30) * .12 * (1 - wb.t / .6) : 1);
   }
+  if (fs.slide) ctx.restore();
   G.wobbles = G.wobbles.filter(w => (w.t += dt) < .6);
   // 캐러멜 방울 예고: 천장에 맺힌 방울
   if (h.caramelX !== null) { const yy = b.y0 + 4 + Math.abs(Math.sin(t * 4)) * 4; ctx.fillStyle = '#e8912f'; ctx.beginPath(); ctx.ellipse(h.caramelX, yy, 7, 10, 0, 0, 7); ctx.fill(); ctx.fillStyle = 'rgba(255,255,255,.8)'; ctx.beginPath(); ctx.arc(h.caramelX - 2, yy - 3, 2.2, 0, 7); ctx.fill(); }
@@ -1492,9 +1558,8 @@ function drawHazardHud(t) {
     ctx.fillStyle = hot ? 'rgba(255,79,139,.95)' : 'rgba(90,45,145,.85)'; roundRect(x, DEADLINE + 8, w, 22, 11); ctx.fill();
     ctx.fillStyle = '#fff'; ctx.font = '800 13px "Baloo 2", "Noto Sans KR", sans-serif'; ctx.textAlign = 'center'; ctx.fillText(text, x + w / 2, DEADLINE + 24);
   };
-  if (h.clock === 0 && !cfg.clock.hard) pill(W - 76, 70, '▼ ' + Math.ceil(Math.max(0, h.overtime)) + '초', h.overtime < 3);
+  if (h.clock === 0 && !cfg.clock.hard) pill(W - 76, 70, '서둘러!', true);
   else if (h.clock !== null) { const sec = Math.ceil(h.clock); pill(W - 76, 70, '⏱ ' + Math.floor(sec / 60) + ':' + String(sec % 60).padStart(2, '0'), h.clock <= 10 && Math.sin(t * 10) > 0); }
-  else if (cfg.dropSec) pill(W - 76, 70, '▼ ' + Math.ceil(h.dropT) + '초', h.dropT < 3);
   if (cfg.miss) pill(6, 86, '헛방 ' + '●'.repeat(h.misses) + '○'.repeat(Math.max(0, cfg.miss - h.misses)), h.misses === cfg.miss - 1);
   if (cfg.shotTimer && G.state === 'aim') {
     const k = Math.max(0, h.shotT / cfg.shotTimer);
@@ -1561,19 +1626,18 @@ function drawCannonArea(t, dt) {
   const mx = MASCOT.x, my = MASCOT.y + Math.sin(t * 3) * 1.5 - turning * 2;
   const mood = G.state === 'done' && G.outcome && G.outcome.win ? 'joy' : 'happy';
   const sq = 1 + Math.sin(t * 3) * .015;
+  // 핸들 손잡이: 핸들이 돌아도 말랑이 쪽(왼쪽)에서 크게 벗어나지 않게 반원 안에서만 오간다
+  const ka = Math.PI + Math.sin(G.crank) * .55, kx = wh.x + Math.cos(ka) * wh.r * .7, ky = wh.y + Math.sin(ka) * wh.r * .7;
+  jellyArm(mx + 18, my - 8, kx - 1, ky - 4, 8.5, true);      // 뒤쪽 팔
   drawJellySprite(MAL, MASCOT.r, { ears: true, mood }, mx, my, sq);
-  // 팔 → 핸들 손잡이
-  const kx = wh.x + Math.cos(G.crank) * wh.r * .75, ky = wh.y + Math.sin(G.crank) * wh.r * .75;
-  ctx.strokeStyle = MAL; ctx.lineWidth = 7; ctx.lineCap = 'round';
-  ctx.beginPath(); ctx.moveTo(mx + 16, my - 4); ctx.quadraticCurveTo((mx + kx) / 2 + 6, Math.min(my, ky) - 10, kx, ky); ctx.stroke();
-  ctx.fillStyle = '#ff9fc0'; ctx.beginPath(); ctx.arc(kx, ky, 4.5, 0, 7); ctx.fill();
-  ctx.fillStyle = 'rgba(255,255,255,.8)'; ctx.beginPath(); ctx.arc(kx - 1.5, ky - 1.5, 1.6, 0, 7); ctx.fill();
+  jellyArm(mx + 19, my + 6, kx + 1, ky + 3, 9.5, false);     // 앞쪽 팔
+  ctx.fillStyle = '#ffd23f'; ctx.beginPath(); ctx.arc(kx + 4, ky - 1, 2.6, 0, 7); ctx.fill();   // 손 사이로 보이는 금색 손잡이
   if (turning > .3) { ctx.fillStyle = '#bfe6ff'; ctx.beginPath(); ctx.ellipse(mx + 22, my - 22, 3, 5, .3, 0, 7); ctx.fill(); }
   drawTurnHint(t, dt);
   // 줄 선 친구들 (다음에 쏠 친구들)
   G.queueShift = Math.max(0, G.queueShift - dt * 3.2);
   G.swapT = Math.max(0, G.swapT - dt * 4);
-  const show = Math.min(G.queue.length - 1, 5);
+  const show = Math.min(G.queue.length - 1, 3);   // 다음 친구 3명만 (발사 수 제한 없음)
   for (let i = show; i >= 1; i--) {
     const pos = queuePos(i + G.queueShift);
     const hop = i === 1 ? Math.abs(Math.sin(t * 4)) * 4 : Math.abs(Math.sin(t * 3 + i)) * 2;
@@ -1586,15 +1650,31 @@ function drawCannonArea(t, dt) {
     ctx.beginPath(); ctx.moveTo(p.x - 4, p.y - 22); ctx.lineTo(p.x + 4, p.y - 22); ctx.lineTo(p.x, p.y - 17); ctx.fill();
     ctx.fillStyle = '#5a2d91'; ctx.font = '900 12px "Noto Sans KR", sans-serif'; ctx.textAlign = 'center'; ctx.fillText('다음!', p.x, p.y - 27);
   }
-  const extra = G.shotsLeft - G.queue.length;
-  G.lineShown = { cannon: G.queue.length ? 1 : 0, line: Math.max(0, show), extra: Math.max(0, extra) };   // 화면에 그린 것 (테스트 확인용)
-  if (extra > 0) { const p = queuePos(Math.max(1, show)); ctx.fillStyle = dusk() ? '#fff' : '#7a2d5e'; ctx.font = '800 15px "Baloo 2", sans-serif'; ctx.textAlign = 'left'; ctx.fillText('+' + extra, p.x + 10, p.y + 6); }
-  // 점수 · 남은 발사 수
+  G.lineShown = { cannon: G.queue.length ? 1 : 0, line: Math.max(0, show) };   // 화면에 그린 것 (테스트 확인용)
+  // 점수 · 쏜 거품 수 (적게 쏠수록 별이 많다)
   ctx.fillStyle = 'rgba(217,84,138,.9)'; roundRect(W / 2 - 92, H - 28, 184, 24, 12); ctx.fill();
   ctx.strokeStyle = 'rgba(255,255,255,.35)'; ctx.lineWidth = 1.5; roundRect(W / 2 - 92, H - 28, 184, 24, 12); ctx.stroke();
   ctx.font = '800 13px "Noto Sans KR", sans-serif'; ctx.textAlign = 'center';
-  const label = '점수 ' + G.score + '  ·  남은 발사 ' + G.shotsLeft;
+  const label = '점수 ' + G.score.toLocaleString() + '  ·  쏜 거품 ' + G.fired;
   ctx.fillStyle = '#fff'; ctx.fillText(label, W / 2, H - 11);
+}
+// 말랑이의 짧고 통통한 젤리 팔: 몸 옆에서 나와 살짝 굽어 동그란 손으로 손잡이를 꼭 잡는다
+function jellyArm(sx, sy, hx, hy, w, back) {
+  const L = Math.hypot(hx - sx, hy - sy), a = Math.atan2(hy - sy, hx - sx), nx = -Math.sin(a), ny = Math.cos(a);
+  const cx = (sx + hx) / 2 + nx * L * .22, cy = (sy + hy) / 2 + ny * L * .22;
+  const path = () => { ctx.beginPath(); ctx.moveTo(sx, sy); ctx.quadraticCurveTo(cx, cy, hx, hy); };
+  const edge = back ? '#c94a82' : '#e0679f';
+  ctx.save(); ctx.lineCap = 'round'; ctx.lineJoin = 'round';
+  path(); ctx.strokeStyle = edge; ctx.lineWidth = w + 2.4; ctx.stroke();
+  const g = ctx.createLinearGradient(sx, sy - w, sx, sy + w); g.addColorStop(0, back ? '#ffb8d6' : '#ffd6e8'); g.addColorStop(1, back ? '#f07cb0' : '#ff99c4');
+  path(); ctx.strokeStyle = g; ctx.lineWidth = w; ctx.stroke();
+  ctx.globalAlpha = .75; ctx.beginPath(); ctx.moveTo(sx + 1, sy - w * .28); ctx.quadraticCurveTo(cx, cy - w * .3, (cx + hx) / 2, (cy + hy) / 2 - w * .3); ctx.strokeStyle = '#fff'; ctx.lineWidth = 1.6; ctx.stroke(); ctx.globalAlpha = 1;
+  const hr = w * .72, hg = ctx.createRadialGradient(hx - hr * .4, hy - hr * .45, .5, hx, hy, hr + 1.2);
+  hg.addColorStop(0, '#fff5fa'); hg.addColorStop(.55, back ? '#ffa6cb' : '#ffb8d6'); hg.addColorStop(1, back ? '#e0679f' : '#f27fb0');
+  ctx.fillStyle = edge; ctx.beginPath(); ctx.arc(hx, hy, hr + 1.2, 0, 7); ctx.fill();
+  ctx.fillStyle = hg; ctx.beginPath(); ctx.arc(hx, hy, hr, 0, 7); ctx.fill();
+  ctx.fillStyle = 'rgba(255,255,255,.9)'; ctx.beginPath(); ctx.ellipse(hx - hr * .35, hy - hr * .42, hr * .3, hr * .18, -.6, 0, 7); ctx.fill();
+  ctx.restore();
 }
 // 대포 돌리기 안내: 좌우 화살표, 위쪽을 눌렀을 때 터치 구역 알려 주기
 function drawTurnHint(t, dt) {
@@ -1634,6 +1714,7 @@ function frame(now) {
     G.crankV = (G.crankV || 0) * .85 + (G.angle - lastAngle) / Math.max(dt, .001) * .15; lastAngle = G.angle;
     update(dt);
     render(dt);
+    updateGauge();
   }
   requestAnimationFrame(frame);
 }
@@ -1715,6 +1796,7 @@ function sfx(k, n = 0) {
     else if (k === 'pop') { const f = 480 + Math.min(n, 12) * 40; tone(f, f * 2, .12, 'sine', .25); tone(f * 1.5, f * .8, .08, 'triangle', .1, .04); }
     else if (k === 'drop') [700, 560, 440].forEach((f, i) => tone(f, f * .7, .1, 'sine', .12, i * .05));
     else if (k === 'swap') tone(600, 900, .08, 'sine', .12);
+    else if (k === 'tick') [0, .18, .36].forEach(d => tone(1250, 1150, .05, 'square', .05, d));
     else if (k === 'rescue') [660, 880, 1100].forEach((f, i) => tone(f, f * 1.02, .14, 'triangle', .18, i * .08));
     else if (k === 'boss') tone(160, 80, .3, 'sawtooth', .15);
     else if (k === 'win') [523, 659, 784, 1047].forEach((f, i) => tone(f, f * 1.01, .22, 'triangle', .2, i * .11));
@@ -1853,8 +1935,36 @@ function go(name) {
   if (name === 'title') renderTitle();
   if (name === 'map') renderMap();
   if (name === 'book') renderBook();
-  if (name === 'play') { resize(); setTimeout(() => canvas.focus({ preventScroll: true }), 50); }
+  if (name === 'play') { if (!$('bannerTitle').textContent) showBanner(0); resize(); setTimeout(() => canvas.focus({ preventScroll: true }), 50); }
 }
+// ---------- 위쪽 배너 (내용은 banner.js) ----------
+const BANNER = window.JellyBanner || { items: [] };
+let bannerIdx = 0;
+const BANNER_ART = {
+  cotton: () => Art.cottonTree(2, 32, .95, '#ffb3e0') + Art.jelly(14, 22, 13, MAL, { ears: true, mood: 'joy' }) + Art.giftBox(-16, 30, .55, '#ffd23f'),
+  gift: () => Art.giftBox(0, 30, 1.1, '#ff8fbd') + Art.sparkle(22, -12, 6, '#ffe27a'),
+  star: () => Art.bigStar(0, 6, 22) + Art.sparkle(-24, -12, 5, '#fff'),
+};
+function showBanner(i) {
+  const items = BANNER.items || [];
+  $('banner').hidden = !items.length; if (!items.length) return;
+  bannerIdx = (i + items.length) % items.length;
+  const it = items[bannerIdx], art = BANNER_ART[it.art] || BANNER_ART.cotton;
+  $('bannerImg').innerHTML = cachedArt('banner-' + (it.art || 'cotton'), () => Art.img(art(), { x: -38, y: -24, w: 76, h: 60 }));
+  $('bannerTag').textContent = it.tag || ''; $('bannerTag').hidden = !it.tag;
+  $('bannerTitle').textContent = it.title || ''; $('bannerSub').textContent = it.sub || '';
+  $('bannerBtn').textContent = it.button || ''; $('bannerBtn').hidden = !it.button;
+  $('bannerDots').innerHTML = items.length > 1 ? items.map((_, k) => `<i class="${k === bannerIdx ? 'on' : ''}"></i>`).join('') : '';
+}
+$('bannerBtn').addEventListener('click', () => {
+  const it = (BANNER.items || [])[bannerIdx]; if (!it) return;
+  if (it.url) window.open(it.url, '_blank', 'noopener'); else showToast('곧 열려요!');
+});
+let bannerHold = false;
+['pointerenter', 'focusin'].forEach(e => $('banner').addEventListener(e, () => { bannerHold = true; }));
+['pointerleave', 'focusout'].forEach(e => $('banner').addEventListener(e, () => { bannerHold = false; }));
+const calmMotion = window.matchMedia ? matchMedia('(prefers-reduced-motion: reduce)') : { matches: false };
+setInterval(() => { if (current === 'play' && (BANNER.items || []).length > 1 && !document.hidden && !bannerHold && !calmMotion.matches) showBanner(bannerIdx + 1); }, (BANNER.every || 5) * 1000);
 let toastTimer;
 function showToast(text) { const el = $('toast'); el.textContent = text; el.classList.add('show'); clearTimeout(toastTimer); toastTimer = setTimeout(() => el.classList.remove('show'), 900); }
 function hideTip() { $('tip').classList.add('hide'); }
@@ -2214,7 +2324,7 @@ function showResult() {
   if (!$('resultConfetti').firstChild) $('resultConfetti').innerHTML = cachedArt('confetti', () => Art.img(Art.confetti(5, 70, [0, 40, 390, 500]), { x: 0, y: 0, w: 390, h: 844 }));
   $('resultConfetti').hidden = !o.win;
   [...$('resultStars').children].forEach((s, i) => { if (!s.firstChild) s.innerHTML = cachedArt('bigstar' + i, () => Art.img(Art.bigStar(0, 0, 50, [-15, 0, 15][i]), { x: -62, y: -62, w: 124, h: 124 })); });
-  $('resultScore').innerHTML = `점수 <b>${G.score.toLocaleString()}</b>` + (o.win ? ` · 남은 발사 <b>${G.shotsLeft}</b>` : '');
+  $('resultScore').innerHTML = `점수 <b>${G.score.toLocaleString()}</b>` + (o.win ? ` · 쏜 거품 <b>${G.fired}</b>발` : '');
   if (o.win) {
     $('resultTitle').textContent = '스테이지 클리어!';
     $('resultStars').hidden = false;
@@ -2233,7 +2343,7 @@ function showResult() {
     $('resultStars').hidden = true;
     $('resultMascot').innerHTML = cachedArt('mascotLose', () => Art.img(Art.jelly(195, 95, 58, MAL, { ears: true, mood: 'worried', faceScale: 1.05 }) + `<ellipse cx="172" cy="104" rx="4" ry="7" fill="#8fd3ff" opacity="0.9"/>`, { x: 40, y: 10, w: 320, h: 150 }));
     $('resultSticker').innerHTML = '';
-    $('resultMsg').textContent = o.reason === 'line' ? '거품이 바닥 선을 넘었어요. 위쪽 줄기를 끊어 한꺼번에 떨어뜨려 봐요.' : o.reason === 'time' ? '시간이 다 됐어요! 망설이지 말고 빨리 쏴 봐요.' : '줄 선 친구들을 다 썼어요. 다시 해 볼까요?';
+    $('resultMsg').textContent = o.reason === 'line' ? '거품이 바닥 선을 넘었어요. 위쪽 줄기를 끊어 한꺼번에 떨어뜨려 봐요.' : o.reason === 'time' ? '시간이 다 됐어요! 망설이지 말고 빨리 쏴 봐요.' : '거품이 바닥 선을 넘었어요. 다시 해 볼까요?';
     $('resultMain').textContent = '다시 하기';
     $('resultMain').onclick = () => startStage(st.id);
     $('resultSub').textContent = '지도로';
@@ -2290,7 +2400,7 @@ requestAnimationFrame(frame);
 
 // 테스트용 손잡이 (화면에는 영향 없음)
 window.__jp = {
-  get G() { return G; }, P, STAGES, Board, R, ROW_H, W, H, PIVOT, DEADLINE,
+  get G() { return G; }, lowerCeiling, showBanner, P, STAGES, Board, R, ROW_H, W, H, PIVOT, DEADLINE,
   startStage, rescue, showResult, aimLimit, music: () => Music.info(), voices: () => voiceCount, soundMode: () => soundMode, sfx, CS, shoot, swapQueue, setAngle, go, seedRandom,
   reset() { Object.assign(P, { stars: new Array(NST).fill(0), stickers: {}, seenIntro: false, at: 0, seenHz: {}, seenStory: {} }); saveP(); },
   story: () => window.JellyStory,

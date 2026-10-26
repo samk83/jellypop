@@ -43,7 +43,7 @@ function botPlay(stageNo) {
     j.advance();
   }
   const G = G0();
-  return { win: !!(G.outcome && G.outcome.win), reason: G.outcome && G.outcome.reason, left: G.shotsLeft, shots: G.st.shots, stars: G.outcome && G.outcome.stars };
+  return { win: !!(G.outcome && G.outcome.win), reason: G.outcome && G.outcome.reason, fired: G.fired, shots: G.st.shots, stars: G.outcome && G.outcome.stars };
 }
 
 // 1) 규칙
@@ -131,17 +131,18 @@ for (const [label, dev] of [['iPhone SE (320x568)', devices['iPhone SE']], ['Gal
   check('스테이지 1 플레이 화면', await page.isVisible('#play'));
 
   const lay = await page.evaluate(() => {
-    const small = [...document.querySelectorAll('#play button')].filter(b => { const r = b.getBoundingClientRect(); return r.width < 44 || r.height < 44; }).map(b => b.id);
+    const small = [...document.querySelectorAll('#play button')].filter(b => b.offsetParent !== null).filter(b => { const r = b.getBoundingClientRect(); return r.width < 44 || r.height < 44; }).map(b => b.id);
     const c = document.getElementById('canvas').getBoundingClientRect();
     return { scrollX: document.documentElement.scrollWidth > innerWidth, small, inView: c.bottom <= innerHeight + 1 && c.right <= innerWidth + 1 && c.width > 250 };
   });
   check('가로 스크롤 없음, 게임 판이 화면 안에 다 보임', !lay.scrollX && lay.inView, JSON.stringify(lay));
   check('버튼은 모두 44px 이상', lay.small.length === 0, lay.small.join(','));
 
-  // 줄 선 친구들 = 남은 발사 수
+  // 발사 수 제한 없음: 대포 속 친구 + 다음 친구 3명만 보이고, 위쪽에 배너와 천장 하강 시간 게이지
   await page.waitForTimeout(100);
-  const q = await page.evaluate(() => { const G = window.__jp.G; return { left: G.shotsLeft, shown: G.lineShown, first: G.queue[0], second: G.queue[1] }; });
-  check('화면에 그린 대포 속 친구 + 줄 선 친구 + "+숫자" = 남은 발사 수 (20)', q.shown && q.shown.cannon + q.shown.line + q.shown.extra === q.left && q.left === 20 && q.shown.line === 5, JSON.stringify(q));
+  const q = await page.evaluate(() => { const G = window.__jp.G; return { shown: G.lineShown, len: G.queue.length, first: G.queue[0], second: G.queue[1], banner: getComputedStyle(document.getElementById('banner')).display !== 'none' && document.getElementById('bannerTitle').textContent, tall: innerHeight >= 700, gauge: document.getElementById('tlbl').textContent }; });
+  check('대포 속 친구 1 + 다음 친구 3명 표시 (발사 수 제한 없음)', q.shown && q.shown.cannon === 1 && q.shown.line === 3 && q.len === 6, JSON.stringify(q));
+  check('위쪽 배너(banner.js 내용)는 큰 화면에서만 보이고, 시간 게이지는 항상 보임', (q.tall ? !!q.banner : q.banner === false) && /\d+초/.test(q.gauge), JSON.stringify(q));
 
   // 화면 좌표 계산 (게임 판 논리 좌표 → 화면)
   const toScreen = async (x, y) => page.evaluate(([x, y]) => { const r = document.getElementById('canvas').getBoundingClientRect(); return [r.left + x * r.width / 360, r.top + y * r.height / 620]; }, [x, y]);
@@ -152,10 +153,10 @@ for (const [label, dev] of [['iPhone SE (320x568)', devices['iPhone SE']], ['Gal
   check('맨 앞 친구를 누르면 대포 속 친구와 순서가 바뀜', sw[0] === q.second && sw[1] === q.first, sw.join(','));
 
   // 위쪽 판을 누르면 조준이 안 됨 (대포 근처만 터치)
-  const top0 = await page.evaluate(() => ({ a: window.__jp.G.angle, left: window.__jp.G.shotsLeft }));
+  const top0 = await page.evaluate(() => ({ a: window.__jp.G.angle, left: window.__jp.G.fired }));
   const [tx, ty] = await toScreen(90, 200), [tx2, ty2] = await toScreen(300, 220);
   await page.mouse.move(tx, ty); await page.mouse.down(); await page.mouse.move(tx2, ty2, { steps: 5 }); await page.mouse.up();
-  const top1 = await page.evaluate(() => ({ a: window.__jp.G.angle, left: window.__jp.G.shotsLeft, aiming: window.__jp.G.aiming }));
+  const top1 = await page.evaluate(() => ({ a: window.__jp.G.angle, left: window.__jp.G.fired, aiming: window.__jp.G.aiming }));
   check('위쪽 판을 눌러 끌면 조준·발사가 안 됨', top1.a === top0.a && top1.left === top0.left && !top1.aiming, JSON.stringify([top0, top1]));
   // 대포 근처를 좌우로 끌기: 대포·핸들이 돌고, 떼면 발사
   const before = await page.evaluate(() => ({ a: window.__jp.G.angle, crank: window.__jp.G.crank }));
@@ -169,17 +170,17 @@ for (const [label, dev] of [['iPhone SE (320x568)', devices['iPhone SE']], ['Gal
   await page.screenshot({ path: path.join(shots, `v2-04-aim-${tag}.png`) });
   check('대포 근처를 좌우로 끄는 동안 대포가 돌고 말랑이 핸들이 돔', mid.aiming && Math.abs(mid.a - before.a) > 0.3 && Math.abs(mid.crank - before.crank) > 1, JSON.stringify(mid));
   await page.mouse.up();
-  const shot = await page.evaluate(() => ({ left: window.__jp.G.shotsLeft, state: window.__jp.G.state }));
-  check('손을 떼면 발사 (남은 수 1 줄어듦)', shot.left === 19 && shot.state !== 'aim', JSON.stringify(shot));
+  const shot = await page.evaluate(() => ({ fired: window.__jp.G.fired, state: window.__jp.G.state }));
+  check('손을 떼면 발사 (쏜 거품 1)', shot.fired === 1 && shot.state !== 'aim', JSON.stringify(shot));
   await page.waitForTimeout(1200);
   await page.screenshot({ path: path.join(shots, `v2-05-play-${tag}.png`) });
 
   // 대포를 잡고 위로 멀리 끌어 올려 떼면 발사 취소
   await page.evaluate(() => window.__jp.advance());
-  const left0 = await page.evaluate(() => window.__jp.G.shotsLeft);
+  const left0 = await page.evaluate(() => window.__jp.G.fired);
   const [cx, cy] = await toScreen(100, 560), [dx, dy] = await toScreen(100, 300);
   await page.mouse.move(cx, cy); await page.mouse.down(); await page.mouse.move(dx, dy, { steps: 5 }); await page.mouse.up();
-  check('대포를 잡고 위로 끌어 올려 떼면 발사 취소', await page.evaluate(() => window.__jp.G.shotsLeft) === left0);
+  check('대포를 잡고 위로 끌어 올려 떼면 발사 취소', await page.evaluate(() => window.__jp.G.fired) === left0);
   check('캔버스를 누르면 키보드 포커스가 캔버스로', await page.evaluate(() => document.activeElement.id) === 'canvas');
 
   // 다른 화면들도 가로 스크롤·44px 확인 (지도·스티커 북·결과 창·타이틀·프롤로그)
@@ -190,7 +191,7 @@ for (const [label, dev] of [['iPhone SE (320x568)', devices['iPhone SE']], ['Gal
   });
   const bad = [];
   const checkScreen = async name => { const l = await layoutOf(); if (l.scrollX || l.small.length) bad.push(name + ':' + JSON.stringify(l)); };
-  await page.evaluate(() => { const j = window.__jp; j.G.shotsLeft = 1; j.G.queue.length = 1; j.G.need = 99; j.setAngle(-1.2); j.shoot(); j.advance(); });
+  await page.evaluate(() => { const j = window.__jp; j.G.need = 99; j.lowerCeiling(12); });
   await page.waitForSelector('#result:not([hidden])', { timeout: 3000 });
   await checkScreen('result');
   await page.keyboard.press('Tab'); await page.keyboard.press('Tab'); await page.keyboard.press('Tab');
@@ -258,24 +259,30 @@ for (const [label, dev] of [['iPhone SE (320x568)', devices['iPhone SE']], ['Gal
   const ceil = await page.evaluate(() => {
     // 앞 스테이지 자동 플레이가 난수를 얼마나 썼는지와 상관없게 난수를 다시 고정 (6발 전에 우연히 깨면 확인이 안 됨)
     const j = window.__jp; j.seedRandom(5); j.startStage(5); const y = j.G.b.y0;
-    let n = 0;
-    for (let i = 0; i < 6; i++) { j.setAngle(-Math.PI / 2 + (i % 2 ? .6 : -.6)); j.shoot(); j.advance(); n++; if (j.G.state !== 'aim') break; }
-    return { before: y, after: j.G.b.y0, shots: n, state: j.G.state, outcome: j.G.outcome };
+    const sec = j.G.hz.cfg.dropSec; j.think(3); const idle = j.G.hz.dropT === sec; j.G.hz.started = true; j.think(sec - 1);
+    const mid = j.G.b.y0; j.think(1.2);
+    return { before: y, idle, mid, after: j.G.b.y0, sec, row: j.ROW_H, state: j.G.state };
   });
-  check('5스테이지: 6번 쏘면 천장이 내려옴', ceil.shots === 6 && ceil.after > ceil.before, JSON.stringify(ceil));
+  check('5스테이지: 첫 발 전엔 시계가 멈춰 있고, 시간(12초)이 다 되면 천장이 딱 한 칸 내려옴', ceil.sec === 12 && ceil.idle && ceil.mid === ceil.before && Math.abs(ceil.after - ceil.before - ceil.row) < .01, JSON.stringify(ceil));
   // 6스테이지 보스 체력
   const boss = await page.evaluate(() => { const j = window.__jp; j.startStage(6); return { hp: j.G.bossHp, label: document.getElementById('hudGoalLabel').textContent }; });
   check('6스테이지: 보스 뭉치 체력 표시', boss.hp > 0 && boss.label === '보스 체력', JSON.stringify(boss));
 
-  // 실패: 발사를 다 씀
+  // 발사 수로는 실패하지 않음: 기준 발 수보다 많이 쏴도 계속 (별만 줄어듦)
+  const many = await page.evaluate(() => {
+    const j = window.__jp; j.startStage(1); j.G.need = 99; j.G.hz.cfg.dropSec = 1e9; j.G.hz.dropT = 1e9;
+    for (let i = 0; i < j.G.st.shots + 5 && j.G.state === 'aim'; i++) { j.setAngle(-Math.PI / 2 + (i % 2 ? .9 : -.9)); j.shoot(); j.advance(); }
+    return { fired: j.G.fired, par: j.G.st.shots, state: j.G.state, outcome: j.G.outcome && j.G.outcome.reason };
+  });
+  check('기준 발 수를 넘겨 쏴도 실패하지 않음 (발사 수 제한 없음)', many.fired > many.par || many.outcome === 'line', JSON.stringify(many));
+  // 실패: 천장이 내려와 바닥 선을 넘음 → 실패 창
   const f1 = await page.evaluate(() => {
-    const j = window.__jp; j.startStage(1); j.G.shotsLeft = 1; j.G.queue.length = 1; j.G.need = 99;
-    j.setAngle(-Math.PI / 2); j.shoot(); j.advance(); return j.G.outcome;
+    const j = window.__jp; j.startStage(1); j.G.need = 99; j.lowerCeiling(12); return j.G.outcome;
   });
   await page.waitForSelector('#result:not([hidden])', { timeout: 3000 });
   const fr = await page.evaluate(() => ({ title: document.getElementById('resultTitle').textContent, main: document.getElementById('resultMain').textContent, sub: document.getElementById('resultSub').textContent }));
   await page.screenshot({ path: path.join(shots, 'v2-09-fail-desktop.png') });
-  check('발사를 다 쓰면 실패 창 (다시 하기·지도로)', f1 && !f1.win && f1.reason === 'shots' && fr.main === '다시 하기' && fr.sub === '지도로', JSON.stringify([f1, fr]));
+  check('천장이 바닥 선까지 내려오면 실패 창 (다시 하기·지도로)', f1 && !f1.win && f1.reason === 'line' && fr.main === '다시 하기' && fr.sub === '지도로', JSON.stringify([f1, fr]));
   // 실패: 바닥 선
   const f2 = await page.evaluate(() => {
     const j = window.__jp; j.startStage(5); j.G.y0Target = 380; j.G.need = 99;
@@ -303,8 +310,8 @@ for (const [label, dev] of [['iPhone SE (320x568)', devices['iPhone SE']], ['Gal
   const a0 = await page.evaluate(() => window.__jp.G.angle);
   await page.keyboard.press('ArrowLeft'); await page.keyboard.press('ArrowLeft');
   await page.keyboard.press('Space');
-  const kb = await page.evaluate(() => ({ a: window.__jp.G.angle, left: window.__jp.G.shotsLeft }));
-  check('PC 키보드: 화살표로 조준, 스페이스로 발사', kb.a < a0 && kb.left === 19, JSON.stringify(kb));
+  const kb = await page.evaluate(() => ({ a: window.__jp.G.angle, fired: window.__jp.G.fired }));
+  check('PC 키보드: 화살표로 조준, 스페이스로 발사', kb.a < a0 && kb.fired === 1, JSON.stringify(kb));
   check('콘솔 에러 없음', errors.length === 0, errors.join(' | '));
   await ctx.close();
 }

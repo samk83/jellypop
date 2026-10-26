@@ -5,7 +5,8 @@
 //   s 끈적 시럽(두 번 맞혀야 터짐) · i 얼음(옆이 터지면 녹음) · m 버섯(터지면 옆 거품이 같은 색) · u 흔들 푸딩(옆에 붙으면 색이 바뀜)
 //   g 선물 상자(터지면 무지개 거품) · f 반딧불(터지면 3발 동안 조준선이 길게) · c 수정(아무 색과 짝) · k 쿠키 블록(안 터짐, 떨어뜨려야 없어짐)
 // hz: 방해 요소
-//   drop N(N발마다 천장) · miss N(헛방 N번마다 천장) · dropSec N(N초마다 천장) · cloud {first, every, last, look}
+// fall: 천장이 한 칸 내려오는 간격(초). 모든 스테이지 기본 (0.8.0 타임어택: 발사 수 제한 없음, shots 는 별 기준)
+//   drop N(N발마다 천장) · miss N(헛방 N번마다 천장) · dropSec N(이 스테이지만 더 빠른 하강 간격) · cloud {first, every, last, look}
 //   aim 'short'|'blink'|'none' · clock {sec, hard} · shotTimer N(한 발 N초) · caramel N · conveyor {every, rows} · dark
 //   nom {first, every, acts:['steal'|'block'|'take'|'junk']}
 window.JellyStages = (() => {
@@ -28,9 +29,9 @@ window.JellyStages = (() => {
       friends: [{ name: '찰랑', color: '#ffd23f' }, { name: '살랑', color: '#4fdcc4' }],
       tip: '이번엔 <b>친구가 두 명</b> 갇혀 있어요',
       rows: ['ppyybbrrgg', 'pyybbrrgg', 'yyBbrrgPgg', 'ybbrrggpp', 'bbrrggppyy'] },
-    { id: 5, name: '노을 지붕', theme: 'sunset', shots: 28, colors: 'rybgp', hz: { drop: 6 },
+    { id: 5, name: '노을 지붕', theme: 'sunset', shots: 28, colors: 'rybgp', fall: 12,
       friends: [{ name: '포도알', color: '#a76bff' }],
-      tip: '6번 쏠 때마다 <b>천장이 한 칸 내려와요</b>. 바닥 선을 조심!',
+      tip: '위쪽 <b>시간 게이지</b>가 다 닳으면 천장이 한 칸 내려와요. 이번엔 더 빨라요!',
       rows: ['rrggbbyypp', 'rggbbyypp', 'ggbbyypprr', 'gbbyPpprr', 'bbyypprrgg'] },
     { id: 6, name: '마을 입구', theme: 'gate', shots: 30, colors: 'rybgp', boss: { name: '뭉치', kind: 'mungchi', hp: 36, every: 5 },
       friends: [{ name: '뭉게', color: '#ffb3e0' }],
@@ -62,7 +63,7 @@ window.JellyStages = (() => {
       tip: '밤이라 <b>조준선이 첫 벽까지만</b> 보여요. 반딧불 거품을 터뜨리면 3발 동안 길게!',
       rows: ['ggyygppbbp', 'rrbgrrgrr', 'ppbrbygyyb', 'ggrpPypbr', 'ybpyrrbpby', 'bgrppbggy', 'grgrbrprrb', 'yyppyypby'],
       kinds: ['..........', '.........', '..........', '.........', '.f........', '....f....', '......f...', '.........'] },
-    { id: 12, name: '숲의 심장', theme: 'w2-heart', shots: 32, colors: 'rybgp',
+    { id: 12, name: '숲의 심장', theme: 'w2-heart', shots: 32, colors: 'rybgp', fall: 30,
       boss: { name: '찐득이', kind: 'syrup', hp: 60, every: 5, sticky: .3, phases: [{ at: .5, cloud: { every: 7, last: 3 } }] },
       friends: [{ name: '달콩', color: '#ff6f8f' }],
       tip: '<b>보스 찐득이!</b> 끈적 거품을 던지고, 약해지면 구름을 뿜어요',
@@ -115,11 +116,11 @@ window.JellyStages = (() => {
       tip: '<b>얼음 거품</b>은 옆 거품이 터지면 녹아요. 서리가 위쪽을 가려요',
       rows: ['yyggpprroo', 'rpbbrggyy', 'prggrBbopp', 'pbbyyogyy', 'gryorrogbb', 'gyropproy', 'probbyrgog', 'roggyoppg'],
       kinds: ['..........', '.........', '.......i..', '.i..i...i', 'i.........', '.........', '.i....i...', '.........'] },
-    { id: 22, name: '초콜릿 강', theme: 'w4-choco', shots: 36, colors: 'rybgpo', hz: { dropSec: 14 },
+    { id: 22, name: '초콜릿 강', theme: 'w4-choco', shots: 36, colors: 'rybgpo', hz: { dropSec: 9 },
       friends: [{ name: '초코', color: '#8a5a3a' }],
-      tip: '<b>14초마다</b> 천장이 내려와요. 빨리빨리!',
+      tip: '<b>9초마다</b> 천장이 내려와요. 빨리빨리!',
       rows: ['yybrrogrrb', 'popbobogg', 'gpobppgryy', 'yrpogoRpp', 'yprbygyyrr', 'robppbrbb', 'ropobyrprr'] },
-    { id: 23, name: '포장 공장', theme: 'w4-wrap', shots: 36, colors: 'rybgpo', hz: { nom: { first: 2, every: 5, acts: ['block', 'steal'] } },
+    { id: 23, name: '포장 공장', theme: 'w4-wrap', shots: 36, colors: 'rybgpo', fall: 18, hz: { nom: { first: 2, every: 5, acts: ['block', 'steal'] } },
       friends: [{ name: '리본', color: '#ff5f8a' }],
       tip: '놈놈이 <b>대포를 막으면</b> 맨 앞 친구를 눌러 간지럼 공격! 선물 상자는 무지개 거품을 줘요',
       rows: ['brroobbggy', 'boyrppooy', 'orgbRgyypb', 'ogoyoropb', 'rrbyggoggp', 'ybgppbbpy', 'rrgrroyybb', 'pybygpoor'],
@@ -136,11 +137,11 @@ window.JellyStages = (() => {
       tip: '놈놈이 <b>회색 거품</b>을 던져요. 위쪽 줄기를 끊어 떨어뜨려요',
       rows: ['grrbboppop', 'gporryogo', 'yoybbPpgbp', 'ybopryrro', 'pbpoybpbbo'],
       kinds: ['s.........', '.s.......', 'u.........', '.s...s...', '.....u...u'] },
-    { id: 26, name: '거품 감옥', theme: 'w5-jail', shots: 50, colors: 'rybgpo', hz: { cloud: { first: 3, every: 8, last: 3 }, nom: { first: 4, every: 6, acts: ['take'] } },
+    { id: 26, name: '거품 감옥', theme: 'w5-jail', shots: 50, colors: 'rybgpo', fall: 16, hz: { cloud: { first: 3, every: 8, last: 3 }, nom: { first: 4, every: 6, acts: ['take'] } },
       friends: [{ name: '방울', color: '#5fc8ff' }, { name: '보글', color: '#7fd8ff' }, { name: '송이', color: '#ffd0a0' }],
       tip: '<b>친구 3명</b>을 구해요! 놈놈이 줄 선 친구를 데려가면 맞혀서 되찾아요',
       rows: ['ooygyryygg', 'pgpyggrbo', 'prObpoBpby', 'rgbpoprpy', 'pogoYrgybb'] },
-    { id: 27, name: '거울 복도', theme: 'w5-mirror', shots: 50, colors: 'rybgpo', hz: { aim: 'none' },
+    { id: 27, name: '거울 복도', theme: 'w5-mirror', shots: 50, colors: 'rybgpo', fall: 16, hz: { aim: 'none' },
       friends: [{ name: '똑딱', color: '#4fe0b0' }],
       tip: '거울 때문에 <b>조준선이 안 보여요</b>! 반딧불 거품이 길을 비춰 줘요',
       rows: ['ooyybbyyoo', 'rgororogr', 'rbypbbpybr', 'bygrYrgyb', 'oorgoogroo', 'prpryrprp'],
@@ -157,12 +158,16 @@ window.JellyStages = (() => {
     { id: 30, name: '왕좌의 방', theme: 'w5-throne', shots: 40, colors: 'rybgpo',
       boss: { name: '노놈', kind: 'nomnom', hp: 95, every: 5, phases: [
         { at: .67, nom: { first: 1, every: 4, acts: ['steal', 'block'] }, cloud: { every: 7, last: 3 }, say: '부하들아, 나와라!' },
-        { at: .34, dropSec: 12, aim: 'short', red: true, off: ['nom', 'cloud'], say: '이제 진짜 화났다!' }] },
+        { at: .34, dropSec: 18, aim: 'short', red: true, off: ['nom', 'cloud'], say: '이제 진짜 화났다!' }] },
       friends: [{ name: '촌장님', color: '#9ad85a' }],
       tip: '<b>최종 보스 노놈!</b> 체력이 줄수록 더 세게 방해해요',
       rows: ['pprrggpgoo', 'oobbypyyp', 'rppggyrrpo', 'oorrpogyo', 'rryooyoygg'] },
   ];
-  S.forEach(s => { s.world = Math.floor((s.id - 1) / 6) + 1; s.hz = s.hz || {}; });
+  S.forEach(s => {
+    s.world = Math.floor((s.id - 1) / 6) + 1; s.hz = s.hz || {};
+    // 천장 하강 간격: 1스테이지 19초 → 30스테이지 12초, 보스는 거품 공격이 따로 있어 +10초
+    if (!s.fall) s.fall = Math.round(19 - (s.id - 1) * 0.25) + (s.boss ? 10 : 0);
+  });
 
   // 새 방해 요소가 처음 나올 때 보여 주는 설명 카드 (art: 카드 그림 종류)
   const INFO = {
@@ -174,7 +179,7 @@ window.JellyStages = (() => {
     f: { title: '반딧불 거품', text: '터뜨리거나 떨어뜨리면 3발 동안 조준선이 끝까지 보여요.', how: '어두울 땐 반딧불부터!', art: 'f' },
     u: { title: '흔들 푸딩', text: '푸딩 옆에 거품을 붙였는데 안 터지면 푸딩 색이 바뀌어요.', how: '바뀐 색을 잘 보고 맞혀요.', art: 'u' },
     caramel: { title: '캐러멜 방울', text: '몇 발마다 캐러멜 방울이 떨어져 거품 판 아래에 붙어요.', how: '떨어지기 전에 깜빡이는 표시를 봐요.', art: 'caramel' },
-    'clock-soft': { title: '타임 어택', text: '시간이 끝나면 천장이 2칸 내려오고, 그 뒤로 15초마다 1칸씩!', how: '남은 시간이 많으면 별이 늘어나요.', art: 'clock' },
+    'clock-soft': { title: '타임 어택', text: '시간이 끝나면 천장이 2칸 내려오고, 그 뒤로는 천장이 두 배 빨리 내려와요!', how: '남은 시간이 많으면 별이 늘어나요.', art: 'clock' },
     'clock-hard': { title: '진짜 타임 어택', text: '시간이 끝나기 전에 친구를 구하지 못하면 실패예요.', how: '망설이지 말고 빨리!', art: 'clock' },
     c: { title: '수정 거품', text: '무지개 수정은 아무 색과도 짝이 돼요.', how: '묶음에 끼워 넣어 크게 터뜨려요.', art: 'c' },
     'nom-steal': { title: '꼬마 놈놈 — 거품 도둑', text: '놈놈이 거품을 하나 들고 날아가요. 판 모양이 바뀌어요.', how: '날아다니는 놈놈을 맞히면 쫓아내고 점수!', art: 'nom' },
@@ -183,12 +188,12 @@ window.JellyStages = (() => {
     k: { title: '쿠키 블록', text: '쿠키는 색이 없어 터지지 않아요.', how: '위쪽을 끊어 떨어뜨려요.', art: 'k' },
     shotTimer: { title: '한 발 초침', text: '정해진 초 안에 쏘지 않으면 지금 방향으로 자동 발사돼요.', how: '대포 둘레의 시계를 보세요.', art: 'clock' },
     i: { title: '얼음 거품', text: '얼음 거품은 짝이 되지 않아요. 옆 거품이 터지면 녹아요.', how: '옆을 먼저 터뜨려요.', art: 'i' },
-    dropSec: { title: '시간 천장', text: '몇 초마다 천장이 한 칸씩 내려와요.', how: '빨리 쏠수록 유리해요.', art: 'clock' },
+    dropSec: { title: '시간 천장', text: '이 스테이지는 천장이 평소보다 훨씬 자주 내려와요.', how: '위쪽 시간 게이지를 보며 빨리빨리!', art: 'clock' },
     g: { title: '선물 상자', text: '터뜨리거나 떨어뜨리면 다음 거품이 무지개 거품이 돼요.', how: '무지개 거품은 붙은 곳에서 가장 좋은 색이 돼요.', art: 'g' },
     'nom-block': { title: '꼬마 놈놈 — 대포 막기', text: '놈놈이 대포 앞을 막으면 쏜 거품이 막혀요.', how: '맨 앞 친구(또는 대포)를 눌러 간지럼 공격!', art: 'nom' },
     'aim-blink': { title: '깜빡 조준선', text: '고장 난 조준기 때문에 조준선이 깜빡여요.', how: '보일 때 방향을 기억해요.', art: 'aim' },
     'nom-junk': { title: '꼬마 놈놈 — 방해 거품', text: '놈놈이 색 없는 회색 거품을 던져 붙여요.', how: '위쪽 줄기를 끊어 떨어뜨려요.', art: 'nom' },
-    'nom-take': { title: '꼬마 놈놈 — 친구 데려가기', text: '놈놈이 줄 선 친구를 데려가면 남은 발사가 1 줄어요.', how: '3발 안에 놈놈을 맞히면 되찾아요.', art: 'nom' },
+    'nom-take': { title: '꼬마 놈놈 — 친구 데려가기', text: '놈놈이 줄 선 친구를 데려가면 천장 시간이 4초 줄어요.', how: '3발 안에 놈놈을 맞히면 되찾고 4초도 돌려받아요.', art: 'nom' },
     'aim-none': { title: '조준선 없음', text: '거울 때문에 조준선이 보이지 않아요. 대포 앞 화살표만 보여요.', how: '반딧불 거품이 3발 동안 길을 비춰 줘요.', art: 'aim' },
   };
   // 스테이지에 나오는 방해 요소 열쇠 목록 (설명 카드용)

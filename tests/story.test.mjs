@@ -129,7 +129,7 @@ for (const [tag, vp] of [['390', { width: 390, height: 844 }], ['360x640', { wid
   });
   await page.evaluate(() => { window.__jp.reset(); window.__jp.P.seenIntro = true; });
   const a = await clear();
-  check('구출된 친구: 떨어져 땅에서 2번 통통 → 데굴데굴 → 폴짝 → 말랑이 옆에 섬', a.win && a.phases.includes('roll') && a.phases.includes('hop') && a.stay === 'stay' && a.bounces === 3 && Math.abs(a.x - 30) <= 1, JSON.stringify(a));
+  check('구출된 친구: 떨어져 땅에서 2번 통통 → 데굴데굴 → 폴짝 → 말랑이 옆에 섬', a.win && a.phases.includes('roll') && a.phases.includes('hop') && a.stay === 'stay' && a.bounces === 3 && Math.abs(a.x - 40) <= 1, JSON.stringify(a));
   check('결과 창은 친구가 말랑이 옆에 도착한 뒤 나옴', a.shown && a.stay === 'stay', JSON.stringify(a));
   await page.screenshot({ path: path.join(shots, 'v7-rescue-landed-390.png') });
   await page.click('#resultMain');
@@ -151,7 +151,7 @@ for (const [tag, vp] of [['390', { width: 390, height: 844 }], ['360x640', { wid
   await page.click('#csSkip');
 
   const lose = await page.evaluate(async () => {
-    const j = window.__jp; j.startStage(2); j.closeCard(); j.G.shotsLeft = 1; j.G.queue.length = 1; j.G.need = 99; j.setAngle(-1.2); j.shoot(); j.advance();
+    const j = window.__jp; j.startStage(2); j.closeCard(); j.G.need = 99; j.lowerCeiling(12);
     const t0 = performance.now(); while (document.getElementById('result').hidden && performance.now() - t0 < 3000) await new Promise(r => setTimeout(r, 20));
     return Math.round(performance.now() - t0);
   });

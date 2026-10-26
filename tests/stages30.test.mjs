@@ -47,7 +47,7 @@ function botPlay(stageNo) {
     j.advance();
   }
   const G = G0();
-  return { win: !!(G.outcome && G.outcome.win), reason: G.outcome && G.outcome.reason, left: G.shotsLeft };
+  return { win: !!(G.outcome && G.outcome.win), reason: G.outcome && G.outcome.reason, left: G.st.shots - G.fired };
 }
 
 // 1) 특수 거품 규칙 (판 함수 직접)
@@ -133,19 +133,22 @@ function botPlay(stageNo) {
     out.friends = new Set(j.STAGES.map(s => s.friends[0].name)).size;
     out.bosses = j.STAGES.filter(s => s.boss).map(s => s.id).join(',');
     // 스테이지마다 켜진 방해 요소가 표와 같은지
-    const want = { 5: 'drop', 8: 'cloud', 9: 'miss', 11: 'aim', 14: 'caramel', 15: 'clock', 16: 'nom', 17: 'dark', 19: 'conveyor', 20: 'shotTimer', 22: 'dropSec', 23: 'nom', 27: 'aim', 29: 'clock' };
+    const want = { 8: 'cloud', 9: 'miss', 11: 'aim', 14: 'caramel', 15: 'clock', 16: 'nom', 17: 'dark', 19: 'conveyor', 20: 'shotTimer', 22: 'dropSec', 23: 'nom', 27: 'aim', 29: 'clock' };
     out.bad = [];
     for (let n = 1; n <= j.NST; n++) {
       j.startStage(n); j.closeCard();
-      const cfg = j.G.hz.cfg, keys = Object.keys(cfg);
+      // 0.8.0: 모든 스테이지에 시간 천장(cfg.dropSec)이 기본으로 켜진다 → 방해 요소는 스테이지 표(st.hz)로 확인
+      const keys = Object.keys(j.G.st.hz);
       if (want[n] && !keys.includes(want[n])) out.bad.push(n + ':' + want[n] + ' 없음');
-      if (n <= 6 && keys.some(k => k !== 'drop')) out.bad.push(n + ':' + keys);
-      if (n <= 4 && keys.length) out.bad.push(n + ':' + keys);
+      if (n <= 6 && keys.length) out.bad.push(n + ':' + keys);
+      if (!(j.G.hz.cfg.dropSec > 0)) out.bad.push(n + ': 시간 천장 없음');
     }
+    out.fall = j.STAGES.map(s => s.fall);
     return out;
   });
   check('스테이지 30개, 배경 30종, 친구 30명, 보스는 6·12·18·24·30', t.count === 30 && t.themes === 30 && t.friends === 30 && t.bosses === '6,12,18,24,30', JSON.stringify(t));
-  check('방해 요소는 진행표에 정한 스테이지에서만 켜짐 (월드 1은 5스테이지 천장뿐)', t.bad.length === 0, t.bad.join(' | '));
+  check('방해 요소는 진행표에 정한 스테이지에서만 켜짐 (월드 1은 없음), 모든 스테이지에 시간 천장', t.bad.length === 0, t.bad.join(' | '));
+  check('천장 하강 간격: 1스테이지 19초 → 뒤로 갈수록 짧아짐, 5스테이지는 12초로 빠름', t.fall[0] === 19 && t.fall[4] === 12 && t.fall[28] < t.fall[6] && t.fall.every(v => v >= 8), JSON.stringify(t.fall));
 
   const warn = await page.evaluate(() => {
     const j = window.__jp, out = {}, miss = a => { j.setAngle(a); j.shoot(); j.advance(); };
@@ -215,19 +218,18 @@ function botPlay(stageNo) {
     j.G.hz.cfg.nom = { first: 0, every: 99, acts: ['block'] };
     j.G.hz.nomNext = 0; j.G.hz.nomIdx = 0; j.G.shotCount = -1; j.setAngle(-0.25); j.shoot(); j.advance();   // 다음 발에서 놈놈 등장
     out.blocked = j.blocked();
-    const left = j.G.shotsLeft; j.shoot(); j.advance();
-    out.blockedShot = j.G.shotsLeft === left - 1 && !j.blocked();
+    const left = j.G.fired, cnt = j.Board.count(j.G.b); j.shoot(); j.advance();
+    out.blockedShot = j.G.fired === left + 1 && j.Board.count(j.G.b) <= cnt && !j.blocked();
     j.G.hz.nom = { act: 'block', state: 'block', side: 1, x: 180, y: 480, tx: 180, ty: 480, t: 0 };
     j.swapQueue(); out.chased = !j.blocked();
-    // 친구 데려가기: 발사 -1, 맞히면 +1
+    // 친구 데려가기: 천장 시간 -4초, 맞히면 +4초
     j.startStage(26); j.closeCard();
-    const before = j.G.shotsLeft;
     j.G.hz.cfg.nom = { first: 0, every: 99, acts: ['take'] }; j.G.hz.nomNext = j.G.shotCount + 1; j.G.hz.nomIdx = 0;
-    j.setAngle(-0.25); j.shoot(); j.advance();
-    out.taken = before - j.G.shotsLeft;   // 쏜 1발 + 데려간 1발
+    j.G.hz.dropT = 10; const g0 = j.G.hz.elapsed || 0; j.setAngle(-0.25); j.shoot(); j.advance();
+    out.taken = Math.round(10 - (j.G.hz.elapsed - g0) - j.G.hz.dropT);   // 날아간 시간을 빼고 4초
     const n = j.G.hz.nom; n.state = 'hover'; n.x = 180; n.y = 400; n.tx = 180; n.ty = 400;
-    const l2 = j.G.shotsLeft; j.setAngle(-Math.PI / 2); j.shoot(); j.advance();
-    out.back = j.G.shotsLeft - (l2 - 1);
+    const t2 = j.G.hz.dropT, g2 = j.G.hz.elapsed; j.setAngle(-Math.PI / 2); j.shoot(); j.advance();
+    out.back = Math.round(j.G.hz.dropT - t2 + (j.G.hz.elapsed - g2));
     // 방해 거품: 색 없는 회색 거품이 판에 붙음
     j.startStage(25); j.closeCard();
     j.G.hz.cfg.nom = { first: 0, every: 99, acts: ['junk'] }; j.G.hz.nomNext = j.G.shotCount + 1; j.G.hz.nomIdx = 0;
@@ -245,7 +247,7 @@ function botPlay(stageNo) {
   });
   check('놈놈 대포 막기: 쏜 거품이 막혀 1발이 사라짐', nom.blocked && nom.blockedShot, JSON.stringify(nom));
   check('놈놈 대포 막기: 맨 앞 친구 누르기(간지럼)로 쫓아냄', nom.chased, JSON.stringify(nom));
-  check('놈놈 친구 데려가기: 남은 발사 -1, 놈놈을 맞히면 +1', nom.taken === 2 && nom.back === 1, JSON.stringify(nom));
+  check('놈놈 친구 데려가기: 천장 시간 -4초, 놈놈을 맞히면 +4초', nom.taken === 4 && nom.back === 4, JSON.stringify(nom));
   check('놈놈 방해 거품: 회색 거품이 판에 붙음', nom.junk, JSON.stringify(nom));
   check('앞 놈놈이 떠나는 중이어도 다음 놈놈은 빼꼼 예고부터', nom.peekAfterLeave === 'peek', JSON.stringify(nom));
   check('설명 카드가 떠 있는 동안 순서 바꾸기 안 됨', nom.swapPaused, JSON.stringify(nom));
@@ -254,10 +256,10 @@ function botPlay(stageNo) {
     const j = window.__jp, out = {};
     // 한 발 초침 (20): 7초 지나면 자동 발사
     j.startStage(20); j.closeCard();
-    const l = j.G.shotsLeft; j.think(7.2); out.auto = j.G.shotsLeft === l - 1;
+    const l = j.G.fired; j.think(7.2); out.auto = j.G.fired === l + 1;
     // 손가락을 대고 있어도 초침은 흐름
     j.startStage(20); j.closeCard(); j.G.aiming = true;
-    const la = j.G.shotsLeft; j.think(7.2); out.autoHold = j.G.shotsLeft === la - 1 && !j.G.aiming;
+    const la = j.G.fired; j.think(7.2); out.autoHold = j.G.fired === la + 1 && !j.G.aiming;
     // 진짜 타임 어택 (29): 시간이 끝나면 실패
     j.startStage(29); j.closeCard();
     j.G.hz.clock = 1; j.think(1.5); out.hard = j.G.outcome && j.G.outcome.reason;
@@ -265,13 +267,14 @@ function botPlay(stageNo) {
     j.startStage(15); j.closeCard();
     const y0 = j.G.b.y0; j.G.hz.clock = .5; j.think(1);
     out.soft = Math.round((j.G.b.y0 - y0) / j.ROW_H);
-    // 시간 끝난 뒤 15초마다 1칸, 3초 전부터 예고(떨림)
-    const y2 = j.G.b.y0; j.think(12.5);
-    out.overWarn = j.G.b.y0 === y2 && j.G.hz.overtime < 3 && j.G.hz.overtime > 0;
-    j.think(3); out.overDrop = Math.round((j.G.b.y0 - y2) / j.ROW_H);
+    // 시간 끝난 뒤에는 천장 간격이 절반으로 (서둘러!)
+    out.rush = [j.G.hz.cfg.dropSec, j.STAGES[14].fall]; j.G.hz.started = true;
+    const y2 = j.G.b.y0; j.think(j.G.hz.cfg.dropSec - .5);
+    out.overWarn = j.G.b.y0 === y2;
+    j.think(1); out.overDrop = Math.round((j.G.b.y0 - y2) / j.ROW_H);
     // 시간 천장 (22)
     j.startStage(22); j.closeCard();
-    const y1 = j.G.b.y0; j.think(14.2); out.dropSec = j.G.b.y0 > y1;
+    j.G.hz.started = true; const y1 = j.G.b.y0; j.think(8.6); const ya = j.G.b.y0; j.think(.6); out.dropSec = ya === y1 && j.G.b.y0 > y1 && j.G.hz.cfg.dropSec === 9;
     // 숨은 탭·설명 카드에서는 시계가 멈춤
     j.startStage(15); j.closeCard();
     const c0 = j.G.hz.clock;
@@ -285,9 +288,9 @@ function botPlay(stageNo) {
   check('한 발 초침: 7초 안에 안 쏘면 자동 발사', tm.auto, JSON.stringify(tm));
   check('진짜 타임 어택(29): 시간이 끝나면 실패', tm.hard === 'time', JSON.stringify(tm));
   check('부드러운 타임 어택(15): 시간이 끝나면 천장 2칸', tm.soft === 2, JSON.stringify(tm));
-  check('시간이 끝난 뒤에도 15초마다 1칸, 3초 전 예고', tm.overWarn && tm.overDrop === 1, JSON.stringify(tm));
+  check('시간이 끝난 뒤에는 천장 간격이 절반(서둘러!)', tm.rush[0] === Math.max(4, Math.round(tm.rush[1] / 2)) && tm.overWarn && tm.overDrop === 1, JSON.stringify(tm));
   check('한 발 초침: 손가락을 대고 있어도 시간이 흘러 자동 발사', tm.autoHold, JSON.stringify(tm));
-  check('시간 천장(22): 14초마다 천장이 내려옴', tm.dropSec, JSON.stringify(tm));
+  check('시간 천장(22): 이 스테이지만 9초마다로 빠름', tm.dropSec, JSON.stringify(tm));
   check('앱을 내리면(숨은 탭) 시계가 멈추고, 돌아오면 다시 흐름', tm.hiddenStop && tm.runs, JSON.stringify(tm));
   check('설명 카드가 떠 있는 동안 시계가 멈춤', tm.pauseStop, JSON.stringify(tm));
 
