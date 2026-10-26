@@ -250,11 +250,13 @@ for (const [label, dev] of [['iPhone SE (320x568)', devices['iPhone SE']], ['Gal
 
   // 5스테이지 천장 내려옴
   const ceil = await page.evaluate(() => {
-    const j = window.__jp; j.startStage(5); const y = j.G.b.y0;
-    for (let i = 0; i < 6; i++) { j.setAngle(-Math.PI / 2 + (i % 2 ? .6 : -.6)); j.shoot(); j.advance(); if (j.G.state !== 'aim') break; }
-    return { before: y, after: j.G.b.y0 };
+    // 앞 스테이지 자동 플레이가 난수를 얼마나 썼는지와 상관없게 난수를 다시 고정 (6발 전에 우연히 깨면 확인이 안 됨)
+    const j = window.__jp; j.seedRandom(5); j.startStage(5); const y = j.G.b.y0;
+    let n = 0;
+    for (let i = 0; i < 6; i++) { j.setAngle(-Math.PI / 2 + (i % 2 ? .6 : -.6)); j.shoot(); j.advance(); n++; if (j.G.state !== 'aim') break; }
+    return { before: y, after: j.G.b.y0, shots: n, state: j.G.state, outcome: j.G.outcome };
   });
-  check('5스테이지: 6번 쏘면 천장이 내려옴', ceil.after > ceil.before, JSON.stringify(ceil));
+  check('5스테이지: 6번 쏘면 천장이 내려옴', ceil.shots === 6 && ceil.after > ceil.before, JSON.stringify(ceil));
   // 6스테이지 보스 체력
   const boss = await page.evaluate(() => { const j = window.__jp; j.startStage(6); return { hp: j.G.bossHp, label: document.getElementById('hudGoalLabel').textContent }; });
   check('6스테이지: 보스 뭉치 체력 표시', boss.hp > 0 && boss.label === '보스 체력', JSON.stringify(boss));

@@ -15,7 +15,7 @@ window.JellyStages = (() => {
     { id: 1, name: '마을 광장', theme: 'plaza', shots: 20, colors: 'ryb',
       friends: [{ name: '몽실', color: '#ff5f8a' }],
       tip: '<b>대포 근처를 좌우로 끌어</b> 대포를 돌리고, 손을 떼면 발사! 같은 색 3개를 붙여 봐요',
-      rows: ['rrryybbbrr', 'ryybbbrry', 'bbrrRyybbb', 'yybbrryyb'] },
+      rows: ['ryyrbbryyb', 'bbryyrbrb', 'rrybrbyryy', 'bybrBybbr', 'brryyrryyr'] },   // 0.6.1: 4줄 큰 덩어리 → 5줄 2개씩 섞인 판 (Owner: 너무 쉬움)
     { id: 2, name: '젤리 분수', theme: 'fountain', shots: 22, colors: 'rybg',
       friends: [{ name: '퐁당', color: '#4fb4ff' }],
       tip: '<b>벽에 튕겨서</b> 구석의 친구를 노려 봐요',
