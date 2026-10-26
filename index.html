@@ -1260,8 +1260,9 @@ function drawBackground(theme) {
 // 스테이지 시작 때 필요한 스프라이트를 미리 굽는다
 const bossKey = (mood, red) => 'boss-' + G.st.boss.kind + '-' + mood + (red ? '-red' : '');
 function warmSprites(st) {
+  // 3D 숲 배경을 쓰면 무거운 SVG 풍경은 굽지 않는다 (숲 그림을 못 불러올 때만 drawBackground 가 그때 굽는다)
   if (window.Jelly3D && Jelly3D.ok()) bgImage(st.world || 1, () => spriteReady());
-  Art.sprite('bg-' + st.theme, () => SPR.bg(st.theme), dpr, spriteReady);
+  else Art.sprite('bg-' + st.theme, () => SPR.bg(st.theme), dpr, spriteReady);
   for (const c of st.colors) { Art.sprite('bub-' + c, () => SPR.bubble(c), dpr, spriteReady); Art.sprite('jel-' + COLORS[c].base + '-10-happy', () => SPR.jelly(COLORS[c].base, 10, {}), dpr, spriteReady); }
   for (const c of 'wkn') Art.sprite('bub-' + c, () => SPR.bubble(c), dpr, spriteReady);
   const kinds = new Set((st.kinds || []).join('').replace(/[.ck]/g, ''));
