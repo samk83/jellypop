@@ -20,3 +20,4 @@
 18. 0.10.4 지도 소품 3D·지도 미리 굽기 완료 → Owner: 휴대폰에서 지도 5장 확인. 지도·소품을 바꾸면 `node design/forest/bake-map.mjs` 다시 실행. 다음 후보: 남은 2D(탑·울타리·공장·고드름), sprites3d.js(1.2MB)를 화면별로 나눠 첫 로딩 줄이기
 19. 0.10.5 남은 소품 3D·그림 파일 나누기 완료 → Owner: 휴대폰에서 첫 로딩·지도·컷신 확인. 새 화면·스테이지가 3D 그림을 더 쓰면 `node design/forest/list-first-sprites.mjs` → `REUSE=1 node design/forest/bake-sprites.mjs` → `node design/forest/bake-map.mjs`. 다음 후보: 처음 파일(684KB) 젤리 그림 해상도 줄이기, 배경 webp 화질 조정
 20. 0.10.7 GitHub 운영 정책 적용 완료(main이 기본 브랜치). 앞으로 모든 작업은 `main`에서 기능 브랜치 → `npm test` → PR → Merge. 남은 원격 브랜치 `claude/jellypop-game`(합쳐짐)·`claude/keen-cerf-wpf3qg`(하네스 초기 설치, 이미 포함됨) 정리는 브랜치 삭제라 Owner 결정
+21. 0.11.0 영어판·언어 전환 완료 → 다음: JellyDock(jellydock.com/jellypop/)에 올리기(젤리독 repo PR, 운영 배포는 Owner 승인 L3). Owner: 휴대폰에서 English 버튼 눌러 영어 문구 느낌 확인. 새 한국어 문구는 `T()`로 감싸고 `lang-en.js`에 영어 추가(빠지면 `tests/i18n.test.mjs`가 잡음)

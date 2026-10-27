@@ -155,9 +155,9 @@ window.JellyStory = (() => {
     pending = done;
     const sfx = opt.sfx || (() => {});
     const w = st.world, fr = st.friends;
-    const names = { mal: '말랑이', f: fr[0].name, f2: (fr[1] || fr[0]).name, f3: (fr[2] || fr[0]).name, boss: st.boss ? st.boss.name : '', nonom: '노놈', nom: '꼬마 놈놈', all: '모두 함께' };
+    const names = { mal: T('말랑이'), f: fr[0].name, f2: (fr[1] || fr[0]).name, f3: (fr[2] || fr[0]).name, boss: st.boss ? st.boss.name : '', nonom: T('노놈'), nom: T('꼬마 놈놈'), all: T('모두 함께') };
     el = document.createElement('div'); el.id = 'story';
-    el.setAttribute('role', 'dialog'); el.setAttribute('aria-modal', 'true'); el.setAttribute('aria-label', `이야기 ${id}: ${d.title}`);
+    el.setAttribute('role', 'dialog'); el.setAttribute('aria-modal', 'true'); el.setAttribute('aria-label', T('이야기 {n}', { n: id }) + ': ' + d.title);
     // 배경: 월드 3D 숲 그림 (실패하면 그라데이션 그대로)
     const bg = `<div class="cs-bg" id="csBg"></div><div class="cs-veil"></div>`;
     // 배우들
@@ -194,12 +194,12 @@ window.JellyStory = (() => {
     const sparks = [[60, 180], [330, 230], [200, 120], [110, 330], [300, 380]].map(([x, y], i) => `<div class="cs-a twinkle" style="left:${x}px;top:${y}px;width:22px;animation-delay:${i * .35}s">${art('sp', () => A.img(A.sparkle(0, 0, 10, '#fff'), { x: -12, y: -12, w: 24, h: 24 }))}</div>`).join('');
     const confetti = d.kind === 'ending' ? `<div class="cs-l hide" data-k="confetti">${Array.from({ length: 26 }, (_, i) => `<div class="cs-a rain" style="left:${(i * 61) % 380}px;top:0;width:12px;animation-delay:${-(i * .37) % 3.2}s;animation-duration:${2.6 + (i % 5) * .3}s">${confettiPiece(['#ff5f8a', '#ffd23f', '#4fb4ff', '#4fdcc4', '#a76bff'][i % 5], i)}</div>`).join('')}</div>` : '';
     const got = d.piece ? d.piece - 1 : DATA.filter(x => x.id < id && x.piece).length;
-    const pieceChip = (d.kind === 'boss' || d.kind === 'invite') ? `<div class="cs-pieces" aria-label="초대장 조각 ${d.piece} / 4">초대장 조각 ${PIECES.map((_, i) => `<i class="${i < got ? 'on' : ''}" data-p="${i}"></i>`).join('')}</div>` : '';
+    const pieceChip = (d.kind === 'boss' || d.kind === 'invite') ? `<div class="cs-pieces" aria-label="${T('초대장 조각')} ${d.piece} / 4">${T('초대장 조각')} ${PIECES.map((_, i) => `<i class="${i < got ? 'on' : ''}" data-p="${i}"></i>`).join('')}</div>` : '';
     el.innerHTML = bg + `<div class="cs-stage" id="csStage">${props(d.prop)(w)}${sparks}${actors.join('')}${confetti}</div>` +
-      `<div class="cs-top"><div class="cs-chap"><small>월드 ${w} · ${WORLDS[w - 1]} — 스테이지 ${id}</small><b>${d.title}</b></div><button class="cs-skip" id="csSkip">건너뛰기</button></div>` + pieceChip +
+      `<div class="cs-top"><div class="cs-chap"><small>${T('월드 {n}', { n: w })} · ${WORLDS[w - 1]} — ${T('스테이지 {n}', { n: id })}</small><b>${d.title}</b></div><button class="cs-skip" id="csSkip">${T('건너뛰기')}</button></div>` + pieceChip +
       (d.kind === 'invite' ? `<div class="cs-card hide" id="csCard">${[2, 0, 1].map((k, i) => `<span style="animation-delay:${i * .3}s">${PIECES[k]}</span>`).join(' ')}<br><span style="animation-delay:1s;font-size:16px">${PIECES[3]}</span></div>` : '') +
       `<div class="cs-box" id="csBox"><div class="cs-who" id="csWho"></div><div class="cs-text" id="csText" aria-live="polite"></div>` +
-      `<div class="cs-row"><div class="cs-dots">${d.lines.map(() => '<i></i>').join('')}</div><button class="cs-next" id="csNext">다음 ▶</button></div></div>`;
+      `<div class="cs-row"><div class="cs-dots">${d.lines.map(() => '<i></i>').join('')}</div><button class="cs-next" id="csNext">${T('다음 ▶')}</button></div></div>`;
     document.body.appendChild(el);
     const $ = k => el.querySelector(`[data-k="${k}"]`);
     // 배경 그림은 다 불러온 뒤에 바꿔 끼운다 (없으면 그라데이션)
@@ -244,7 +244,7 @@ window.JellyStory = (() => {
       li = i; const [sp, t] = d.lines[i];
       whoEl.textContent = sp ? names[sp] : '·'; whoEl.className = 'cs-who' + (sp ? '' : ' none') + (sp === 'nonom' || sp === 'nom' || sp === 'boss' ? ' dark' : '');
       dots.forEach((x, k) => x.classList.toggle('on', k <= i));
-      nextEl.textContent = i < d.lines.length - 1 ? '다음 ▶' : (id === STAGES.length ? '끝!' : '계속 ▶');
+      nextEl.textContent = i < d.lines.length - 1 ? T('다음 ▶') : (id === STAGES.length ? T('끝!') : T('계속 ▶'));
       cue(i);
       // 글자가 톡톡 찍히는 효과 (누르면 바로 다 보임)
       full = t; let n = 0; textEl.textContent = '';

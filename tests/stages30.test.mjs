@@ -1,6 +1,7 @@
 // 젤리팝 30스테이지 · 방해 요소 자동 테스트: node tests/stages30.test.mjs
 // docs/SPEC-stages-30.md 9장 수락기준을 실제 브라우저로 확인한다.
 import { chromium, devices } from 'playwright';
+import { koreanByDefault } from './locale.mjs';
 import { fileURLToPath, pathToFileURL } from 'node:url';
 import path from 'node:path';
 import fs from 'node:fs';
@@ -16,6 +17,7 @@ function check(name, ok, info = '') {
 }
 // file:// 로 열 때 숲 배경 그림(webp)을 캔버스 픽셀 검사에 쓸 수 있게 허용 (실제 웹 주소에서는 같은 출처라 필요 없음)
 const browser = await chromium.launch({ ...(process.env.CHROMIUM ? { executablePath: process.env.CHROMIUM } : {}), args: ['--allow-file-access-from-files'] });
+koreanByDefault(browser);
 
 // 자동 플레이 (bubble.test.mjs 와 같은 방식 + 설명 카드 닫기, 놈놈이 막으면 간지럼, 한 발마다 1.5초 생각)
 function botPlay(stageNo) {

@@ -1,6 +1,7 @@
 // 3D 그림(jelly3d.js) 자동 테스트: node tests/jelly3d.test.mjs
 // 3D 그림은 미리 구워 둔 그림(sprites3d.js)이라 어떤 기기에서도 켜진다. ?3d=0 이면 끔.
 import { chromium } from 'playwright';
+import { koreanByDefault } from './locale.mjs';
 import { fileURLToPath, pathToFileURL } from 'node:url';
 import path from 'node:path';
 
@@ -12,6 +13,7 @@ function check(name, ok, info = '') { if (ok) { pass++; console.log('  ✅ ' + n
 
 const browser = await chromium.launch({ ...(process.env.CHROMIUM ? { executablePath: process.env.CHROMIUM } : {}),
   args: ['--use-gl=angle', '--use-angle=swiftshader', '--enable-unsafe-swiftshader', '--allow-file-access-from-files'] });
+koreanByDefault(browser);
 const ctx = await browser.newContext({ viewport: { width: 390, height: 844 }, deviceScaleFactor: 2 });
 // 게임이 WebGL(실시간 3D)을 한 번이라도 켜는지 기록
 await ctx.addInitScript(() => { window.__gl = 0; const gc = HTMLCanvasElement.prototype.getContext; HTMLCanvasElement.prototype.getContext = function (t, ...a) { if (/webgl/i.test(t)) window.__gl++; return gc.call(this, t, ...a); }; });

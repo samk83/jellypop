@@ -1,5 +1,6 @@
 // 젤리팝 이야기 컷신 · 친구 구출 연출 자동 테스트: node tests/story.test.mjs
 import { chromium } from 'playwright';
+import { koreanByDefault } from './locale.mjs';
 import { fileURLToPath, pathToFileURL } from 'node:url';
 import path from 'node:path';
 import fs from 'node:fs';
@@ -13,6 +14,7 @@ function check(name, ok, info = '') {
   if (ok) { pass++; console.log('  ✅ ' + name); } else { fail++; console.log('  ❌ ' + name + ' ' + info); }
 }
 const browser = await chromium.launch(process.env.CHROMIUM ? { executablePath: process.env.CHROMIUM } : {});
+koreanByDefault(browser);
 
 // 1) 이야기 데이터
 {
