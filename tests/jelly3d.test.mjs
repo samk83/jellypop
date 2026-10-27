@@ -72,7 +72,7 @@ console.log('3D 그림 굽기');
   // 캔버스에 실제로 숲 그림이 그려졌는지 (가운데 아래 풀밭 = 초록이 강함)
   // (배경 그림을 불러오는 시간이 기기마다 달라서 최대 5초까지 기다림)
   await page.evaluate(() => window.__jp.startStage(1));
-  check('플레이 캔버스에 숲 배경이 그려짐', await page.waitForFunction(() => { const c = document.getElementById('canvas'), g = c.getContext('2d'); const d = g.getImageData(Math.floor(c.width * 0.85), Math.floor(c.height * 0.9), 1, 1).data; return d[1] > d[0] && d[1] > d[2]; }, null, { timeout: 5000 }).then(() => true, () => false));
+  check('플레이 캔버스에 숲 배경이 그려짐', await page.waitForFunction(() => { const c = document.getElementById('canvas'), t = window.__px || (window.__px = document.createElement('canvas').getContext('2d', { willReadFrequently: true })); t.clearRect(0, 0, 1, 1); t.drawImage(c, Math.floor(c.width * 0.85), Math.floor(c.height * 0.9), 1, 1, 0, 0, 1, 1); const d = t.getImageData(0, 0, 1, 1).data; return d[1] > d[0] && d[1] > d[2]; }, null, { timeout: 5000 }).then(() => true, () => false));
   // 타이틀 숲 그림을 못 불러오면 예전 풍경으로
   await page.evaluate(() => { window.__jp.go('title'); document.querySelector('#titleArt img').dispatchEvent(new Event('error')); });
   check('타이틀 그림 실패 → 구미 풍경으로 대체', await page.evaluate(() => !document.getElementById('title').classList.contains('f3d') && !!document.querySelector('#titleArt img').src.startsWith('data:image/svg')));
@@ -109,6 +109,27 @@ console.log('모든 스테이지: 필요한 3D 그림이 다 미리 구워져 �
     // 스토리 컷신 30개 (각 장면에 나오는 젤리)
     for (let id = 1; id <= 30; id++) window.JellyStory.open(id, () => {});
   });
+  // 지도·프롤로그에 3D 숲 그림이 깔림
+  const bgOk = await page.evaluate(async () => {
+    const j = window.__jp, out = [];
+    const loaded = async sel => { const im = document.querySelector(sel); if (!im) return false; if (!im.complete) await new Promise(r => { im.onload = im.onerror = r; }); return im.naturalWidth > 0; };
+    j.P.stars = j.P.stars.map(() => 3);
+    for (let w = 0; w < 5; w++) { j.go('map'); for (let i = 0; i < 5; i++) { const b = document.getElementById('mapPrev'); if (!b.hidden) b.click(); } for (let i = 0; i < w; i++) document.getElementById('mapNext').click(); out.push(await loaded('#mapWorld img.bg3d')); }
+    j.go('title'); document.getElementById('storyBtn').click();
+    for (let i = 0; i < 4; i++) { out.push(await loaded('#slides img.bg3d')); if (i < 3) document.getElementById('nextSlide').click(); }
+    return out;
+  });
+  check('지도 5장·프롤로그 4장에 3D 숲 배경이 깔림', bgOk.length === 9 && bgOk.every(Boolean), JSON.stringify(bgOk));
+  // 보스가 쓰러질 때 눈이 동그래진 3D 표정 (보스 5종)
+  const downs = [];
+  for (const n of [6, 12, 18, 24, 30]) {
+    await page.evaluate(n => { const j = window.__jp; j.startStage(n); j.closeCard(); const G = j.G; G.bossHp = 0; G.state = 'settle'; G.settleT = 0; }, n);
+    await page.waitForTimeout(500);
+    downs.push(await page.evaluate(() => !!window.__jp.G.bossDown));
+    await page.waitForFunction(() => Gummy.pending() === 0, null, { timeout: 15000 });
+  }
+  check('보스가 쓰러지면 쓰러짐 연출 시작 (5종)', downs.every(Boolean), JSON.stringify(downs));
+  await page.evaluate(() => { document.getElementById('result').hidden = true; document.getElementById('app').inert = false; });
   const moreMiss = await page.evaluate(() => [...__miss]);
   check('결과·타이틀·프롤로그·지도·스티커 북·스토리 컷신도 3D 그림이 모두 있음', moreMiss.length === 0, moreMiss.join(', '));
   check('WebGL을 한 번도 켜지 않음', await page.evaluate(() => window.__gl === 0));
@@ -123,6 +144,7 @@ console.log('3D 끔 (?3d=0)');
   check('?3d=0 이면 3D 꺼짐', await page.evaluate(() => Jelly3D.ok() === false));
   check('꺼지면 기존 구미 SVG 그림', await page.evaluate(() => !Gummy.jelly(0, 0, 20, '#ff5f8a', {}).includes('<image')));
   await page.evaluate(() => window.__jp.startStage(1)); await page.waitForTimeout(300);
+  check('꺼지면 지도에도 3D 숲 배경 없음', await page.evaluate(() => { window.__jp.go('map'); return !document.querySelector('#mapWorld img.bg3d'); }));
   check('꺼지면 판 바깥 숲 배경도 안 씀', await page.evaluate(() => !document.getElementById('play').classList.contains('f3d')));
   check('콘솔 에러 없음', errors.length === 0, errors.join(' | '));
 }

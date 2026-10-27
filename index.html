@@ -102,6 +102,7 @@ img{-webkit-user-drag:none}
   padding:calc(env(safe-area-inset-top) + 16px) 18px calc(env(safe-area-inset-bottom) + 22px)}
 .slide .scene{position:absolute;inset:0;overflow:hidden}
 .slide .scene img{position:absolute;inset:0;width:100%;height:100%;object-fit:cover;object-position:center 60%}
+.slide .scene img.bg3d{object-position:center 40%}
 .slide .caption{position:relative;background:rgba(255,255,255,.92);border:2px solid #ffb3d1;border-radius:18px;padding:14px 16px;font-size:16px;line-height:1.55;color:var(--ink);
   box-shadow:0 8px 20px rgba(42,11,78,.18)}
 .slide .caption b{display:block;font-family:var(--font-display);font-weight:900;color:#ff4f8b;font-size:19px;margin-bottom:2px}
@@ -130,6 +131,7 @@ img{-webkit-user-drag:none}
 .map-field{position:absolute;inset:0;overflow:hidden}
 .map-world{position:absolute;overflow:visible}
 .map-world img.scene{position:absolute;inset:0;width:100%;height:100%;display:block}
+.map-world img.bg3d{object-fit:cover;object-position:center 45%}
 .map-world svg.village{position:absolute;inset:0;width:100%;height:100%;display:block;pointer-events:none}
 @keyframes ping{0%{transform:scale(.9);opacity:.9}100%{transform:scale(1.35);opacity:0}}
 .node{position:absolute;width:60px;height:56px;margin:-28px 0 0 -30px;display:grid;place-items:center;z-index:2;padding:0;
@@ -859,6 +861,7 @@ function afterSettle() {
   const st = G.st, b = G.b;
   G.shotCount++;
   if (st.boss && G.bossHp <= 0) {
+    G.bossDown = G.time; sfx('boss');
     rescue(0, { x: 180, y: 60 });
     return finish(true);
   }
@@ -1310,7 +1313,7 @@ function warmSprites(st) {
   for (const m of ['happy', 'joy']) Art.sprite('jel-' + MAL + '-' + MASCOT.r + '-e' + m, () => SPR.jelly(MAL, MASCOT.r, { ears: true, mood: m }), dpr, spriteReady);
   Art.sprite('cannonBase', SPR.cannonBase, dpr, spriteReady); Art.sprite('barrel', SPR.barrel, dpr, spriteReady); Art.sprite('housing', SPR.housing, dpr, spriteReady);
   Art.sprite('wheel-' + CANNON.wheel.r, () => SPR.wheel(CANNON.wheel.r), dpr, spriteReady); Art.sprite('wheel-' + CANNON.front.r, () => SPR.wheel(CANNON.front.r), dpr, spriteReady);
-  if (st.boss) for (const m of ['angry', 'worried']) for (const red of st.boss.kind === 'nomnom' ? [0, 1] : [0]) Art.sprite(bossKey(m, red), () => SPR.boss(st.boss.kind, m, red), dpr, spriteReady);
+  if (st.boss) for (const m of ['angry', 'worried', 'o']) for (const red of st.boss.kind === 'nomnom' ? [0, 1] : [0]) Art.sprite(bossKey(m, red), () => SPR.boss(st.boss.kind, m, red), dpr, spriteReady);
 }
 
 function resize() {
@@ -1588,10 +1591,21 @@ function drawBoss(t) {
   G.bossHit = Math.max(0, G.bossHit - .03);
   const shake = G.bossHit * Math.sin(t * 60) * 4;
   const x = 180 + shake, y = 50 + Math.sin(t * 2) * 3;
-  const mood = G.bossHit > .2 ? 'worried' : 'angry';
-  const sq = 1 + Math.sin(t * 2) * .02;
-  if (!spr(bossKey(mood, G.hz.red), () => SPR.boss(G.st.boss.kind, mood, G.hz.red), x, y, sq)) { ctx.fillStyle = '#8a5cf0'; ctx.beginPath(); ctx.ellipse(x, y, 28, 26, 0, 0, 7); ctx.fill(); }
-  if (G.bossHit > .2) { ctx.globalAlpha = G.bossHit * .5; ctx.fillStyle = '#fff'; ctx.beginPath(); ctx.ellipse(x, y, 28, 26, 0, 0, 7); ctx.fill(); ctx.globalAlpha = 1; }
+  // 표정: 평소 화남 → 맞으면 당황(3D 그림 바뀜, 하얗게 번쩍) → 쓰러지면 눈이 동그래져 빙글빙글 돌다 작아지며 사라짐
+  const down = G.bossDown != null ? Math.min(1, Math.max(.001, (t - G.bossDown) / 1.1)) : 0;
+  const mood = down ? 'o' : G.bossHit > .2 ? 'worried' : 'angry';
+  const sq = (1 + Math.sin(t * 2) * .02) * (1 + G.bossHit * .08) * (down ? 1 - down * down * .75 : 1);
+  const rot = down ? Math.sin(down * 22) * .35 * (1 - down) : 0;
+  const by = down ? y + Math.sin(down * Math.PI) * -10 + down * 14 : y;
+  const key = bossKey(mood, G.hz.red), def = () => SPR.boss(G.st.boss.kind, mood, G.hz.red);
+  if (!spr(key, def, x, by, sq, 1 - down * down, rot)) { ctx.globalAlpha = 1 - down * down; ctx.fillStyle = '#8a5cf0'; ctx.beginPath(); ctx.ellipse(x, by, 28 * sq, 26 * sq, 0, 0, 7); ctx.fill(); ctx.globalAlpha = 1; }
+  else if (G.bossHit > .2 && !down) { ctx.save(); ctx.globalCompositeOperation = 'lighter'; spr(key, def, x, by, sq, G.bossHit * .45); ctx.restore(); }
+  if (down && down < 1) {
+    // 머리 위를 도는 별 3개
+    ctx.save(); ctx.globalAlpha = 1 - down; ctx.fillStyle = '#ffe27a';
+    for (let i = 0; i < 3; i++) { const a = t * 6 + i * 2.09; ctx.beginPath(); ctx.arc(x + Math.cos(a) * 26 * sq, by - 34 * sq + Math.sin(a) * 6, 3.5, 0, 7); ctx.fill(); }
+    ctx.restore();
+  }
   // 체력 막대 (분홍 유리 패널)
   ctx.fillStyle = 'rgba(217,84,138,.9)'; roundRect(30, 4, 300, 16, 8); ctx.fill();
   ctx.strokeStyle = 'rgba(255,255,255,.35)'; ctx.lineWidth = 1.5; roundRect(30, 4, 300, 16, 8); ctx.stroke();
@@ -2134,37 +2148,41 @@ const SLIDES = [
   { bg: 'linear-gradient(#ffd1e8,#fff6e8 60%,#7fdc9a)', title: '신비한 거품 대포', text: '창고에서 핸들이 달린 거품 대포를 찾았어요. 친구들이 줄을 서서 도와주면 거품을 쏠 수 있어요!',
     say: ['말랑이', '이걸로 거품을 맞히면 친구들이 풀려날 거야!'], art: 'cannon' },
 ];
+// 프롤로그 장면마다 깔 3D 숲 그림 (낮 마을 → 밤 습격 → 안개 낀 빈 마을 → 다시 낮)
+const SLIDE_BG3D = { village: 'title', attack: 'w3', alone: 'w4', cannon: 'w1' };
 function slideArt(kind) {
-  return cachedArt('slide-' + kind, () => {
-    const A = Art, HL = A.HILLS; let b = '';
+  const f3d = !!(window.Jelly3D && Jelly3D.ok());
+  const bg = f3d ? `<img class="bg3d" alt="" draggable="false" src="assets/bg/${SLIDE_BG3D[kind]}.webp" onerror="this.remove()">` : '';
+  return bg + cachedArt('slide-' + kind + (f3d ? '-3d' : ''), () => {
+    const A = Art, HL = A.HILLS, hill = mapHill(f3d), sky = v => f3d ? '' : v; let b = '';
     if (kind === 'village') {
-      b += `<rect width="390" height="844" fill="${A.linear([[0, '#ffd1e8'], [0.3, '#ffe6f1'], [0.55, '#fff6e8'], [0.62, '#c9f3d6'], [1, '#7fdc9a']])}"/>`;
-      b += `<circle cx="80" cy="140" r="70" fill="#fff8d0" opacity="0.8" filter="url(#soft24)"/>` + A.cloud(300, 150, .6) + A.cloud(90, 260, .5);
-      b += A.hill(80, 560, 230, 60, HL[0]) + A.hill(330, 560, 220, 55, HL[1]);
+      b += sky(`<rect width="390" height="844" fill="${A.linear([[0, '#ffd1e8'], [0.3, '#ffe6f1'], [0.55, '#fff6e8'], [0.62, '#c9f3d6'], [1, '#7fdc9a']])}"/>`);
+      b += sky(`<circle cx="80" cy="140" r="70" fill="#fff8d0" opacity="0.8" filter="url(#soft24)"/>` + A.cloud(300, 150, .6) + A.cloud(90, 260, .5));
+      b += hill(80, 560, 230, 60, HL[0]) + hill(330, 560, 220, 55, HL[1]);
       b += A.house(60, 525, { s: .55, wall: '#fff4ea', roof: '#ff8fb1' }) + A.house(135, 535, { s: .65, wall: '#fdf0ff', roof: '#7fd6ff' }) + A.tree(185, 538, .6) + A.house(240, 528, { s: .6, wall: '#fff6e0', roof: '#ffb347' }) + A.house(320, 540, { s: .7, wall: '#f3f0ff', roof: '#a76bff' }) + A.tree(20, 540, .6, '#8fdc7a');
-      b += A.hill(195, 640, 300, 90, HL[2]) + A.hill(195, 760, 330, 130, HL[3]);
+      b += hill(195, 640, 300, 90, HL[2]) + hill(195, 760, 330, 130, HL[3]);
       [[40, 700], [330, 700], [355, 740], [55, 780], [345, 790]].forEach(([x, y], i) => b += A.flower(x, y, [AC.pink, '#ffe27a', '#fff'][i % 3], 1.3));
       b += A.jelly(70, 660, 36, AC.blue, { mood: 'joy' }) + A.jelly(320, 665, 38, AC.yellow) + A.jelly(135, 700, 30, AC.green, { mood: 'joy' }) + A.jelly(255, 705, 30, AC.purple) + A.jelly(195, 640, 56, MAL, { ears: true, mood: 'joy' });
       b += A.sparkle(300, 600, 10) + A.sparkle(60, 620, 8);
     } else if (kind === 'attack') {
-      b += `<rect width="390" height="844" fill="${A.linear([[0, '#1d0f3a'], [0.5, '#5a3aa6'], [0.78, '#9b6fd8'], [0.8, '#2f7a4a'], [1, '#1f4a3a']])}"/>`;
-      b += A.starsSky(9, 70, [0, 0, 390, 560], .9);
+      b += sky(`<rect width="390" height="844" fill="${A.linear([[0, '#1d0f3a'], [0.5, '#5a3aa6'], [0.78, '#9b6fd8'], [0.8, '#2f7a4a'], [1, '#1f4a3a']])}"/>`);
+      b += sky(A.starsSky(9, 70, [0, 0, 390, 560], .9));
       b += `<ellipse cx="195" cy="300" rx="150" ry="130" fill="#b47cff" opacity="0.35" filter="url(#soft24)"/>`;
       b += A.boss(195, 300, 78);
-      b += A.hill(195, 740, 330, 130, '#2f7a4a');
+      b += hill(195, 740, 330, 130, '#2f7a4a');
       b += A.bubble(80, 560, 40, AC.blue, { trapped: AC.blue }) + A.bubble(200, 600, 44, AC.yellow, { trapped: AC.yellow }) + A.bubble(315, 560, 40, AC.green, { trapped: AC.green });
       b += `<path d="M80,520 Q120,380 180,230" stroke="#d9b8ff" stroke-width="2" stroke-dasharray="4 8" fill="none" opacity="0.6"/><path d="M315,520 Q280,380 215,230" stroke="#d9b8ff" stroke-width="2" stroke-dasharray="4 8" fill="none" opacity="0.6"/>`;
     } else if (kind === 'alone') {
-      b += `<rect width="390" height="844" fill="${A.linear([[0, '#d9c8ff'], [0.55, '#f3eaff'], [0.62, '#d4f5de'], [1, '#8ae2a4']])}"/>`;
-      b += A.cloud(80, 200, .5, .8, '#fff', '#d7c6f3') + A.cloud(310, 150, .55, .8, '#fff', '#d7c6f3');
-      b += A.hill(195, 640, 300, 90, '#a9e6c0') + A.hill(195, 760, 330, 130, '#8ae2a4');
+      b += sky(`<rect width="390" height="844" fill="${A.linear([[0, '#d9c8ff'], [0.55, '#f3eaff'], [0.62, '#d4f5de'], [1, '#8ae2a4']])}"/>`);
+      b += sky(A.cloud(80, 200, .5, .8, '#fff', '#d7c6f3') + A.cloud(310, 150, .55, .8, '#fff', '#d7c6f3'));
+      b += hill(195, 640, 300, 90, '#a9e6c0') + hill(195, 760, 330, 130, '#8ae2a4');
       b += `<g opacity="0.55">${A.house(70, 540, { s: .55, wall: '#eee6f6', roof: '#d9b8e0' })}${A.house(330, 545, { s: .6, wall: '#eee6f6', roof: '#c9c0ff' })}</g>`;
       b += A.jelly(195, 600, 70, MAL, { ears: true, mood: 'worried' });
       b += `<ellipse cx="170" cy="612" rx="4" ry="7" fill="#8fd3ff" opacity="0.9"/><ellipse cx="168" cy="628" rx="2.5" ry="4" fill="#8fd3ff" opacity="0.7"/>`;
     } else {
-      b += `<rect width="390" height="844" fill="${A.linear([[0, '#ffd1e8'], [0.3, '#ffe6f1'], [0.55, '#fff6e8'], [0.62, '#c9f3d6'], [1, '#7fdc9a']])}"/>`;
-      b += A.cloud(60, 180, .5) + A.cloud(320, 230, .6);
-      b += A.hill(195, 640, 300, 90, HL[2]) + A.hill(195, 760, 330, 130, HL[3]);
+      b += sky(`<rect width="390" height="844" fill="${A.linear([[0, '#ffd1e8'], [0.3, '#ffe6f1'], [0.55, '#fff6e8'], [0.62, '#c9f3d6'], [1, '#7fdc9a']])}"/>`);
+      b += sky(A.cloud(60, 180, .5) + A.cloud(320, 230, .6));
+      b += hill(195, 640, 300, 90, HL[2]) + hill(195, 760, 330, 130, HL[3]);
       b += `<ellipse cx="230" cy="660" rx="120" ry="18" fill="#5fc98a" opacity="0.45"/>`;
       const px = 236, py = 622, s = 1.15;
       b += A.cannonBase(230, 644, s) + A.cannonWheel(230 - 30 * s, 644 - 14 * s, 18 * s);
@@ -2199,22 +2217,27 @@ $('skipBtn').onclick = endIntro;
 const MAP_W = 390, MAP_H = 844;
 const MAP_NODES = [[118, 722], [272, 660], [112, 566], [262, 462], [128, 348], [195, 266]];
 const ROAD_PTS = Art.sampleCurve([[160, 844], ...MAP_NODES], 70);
-function mapArt() {
-  const A = Art, HL = A.HILLS, lin = A.linear;
-  let b = `<rect width="${MAP_W}" height="${MAP_H}" fill="${lin([[0, '#ffd7ea'], [0.25, '#fff1f6'], [0.3, '#d4f5de'], [1, '#8ae2a4']])}"/>`;
-  for (let i = 0; i < 18; i++) { const x = (i * 73) % MAP_W, y = 60 + (i * 131) % 700; b += `<circle cx="${x}" cy="${y}" r="${2 + (i % 3)}" fill="#fff" opacity="0.7"/>`; }
-  b += `<circle cx="60" cy="150" r="60" fill="#fff8d0" opacity="0.8" filter="url(#soft24)"/>`;
-  b += A.cloud(300, 120, .55) + A.cloud(90, 175, .45) + A.cloud(200, 95, .35);
-  b += A.hill(60, 290, 200, 50, HL[0]) + A.hill(340, 285, 180, 45, HL[1]);
+// 3D 숲 배경 위에 그릴 때는 언덕을 반투명하게 깔아 숲이 비쳐 보이게 한다 (하늘·해·별은 3D 그림이 대신)
+const mapHill = f3d => f3d ? (x, y, w, h, c) => `<g opacity="0.62">${Art.hill(x, y, w, h, c)}</g>` : Art.hill;
+function mapArt(f3d) {
+  const A = Art, HL = A.HILLS, lin = A.linear, hill = mapHill(f3d);
+  let b = '';
+  if (!f3d) {
+    b += `<rect width="${MAP_W}" height="${MAP_H}" fill="${lin([[0, '#ffd7ea'], [0.25, '#fff1f6'], [0.3, '#d4f5de'], [1, '#8ae2a4']])}"/>`;
+    for (let i = 0; i < 18; i++) { const x = (i * 73) % MAP_W, y = 60 + (i * 131) % 700; b += `<circle cx="${x}" cy="${y}" r="${2 + (i % 3)}" fill="#fff" opacity="0.7"/>`; }
+    b += `<circle cx="60" cy="150" r="60" fill="#fff8d0" opacity="0.8" filter="url(#soft24)"/>`;
+    b += A.cloud(300, 120, .55) + A.cloud(90, 175, .45) + A.cloud(200, 95, .35);
+  }
+  b += hill(60, 290, 200, 50, HL[0]) + hill(340, 285, 180, 45, HL[1]);
   b += `<g opacity="0.96">${A.castle(195, 272, .82, '#c3a6f2')}</g>`;
-  b += `<rect x="0" y="200" width="${MAP_W}" height="120" fill="${lin([[0, '#ffffff', 0.45], [1, '#ffffff', 0]])}"/>`;
-  b += A.hill(195, 400, 320, 70, HL[2]);
+  if (!f3d) b += `<rect x="0" y="200" width="${MAP_W}" height="120" fill="${lin([[0, '#ffffff', 0.45], [1, '#ffffff', 0]])}"/>`;
+  b += hill(195, 400, 320, 70, HL[2]);
   // 강 + 폭포
   b += `<path d="M0 410 C80 395 150 425 230 415 C300 406 340 430 390 418 L390 470 C330 482 280 455 210 468 C140 480 70 450 0 465 Z" fill="${lin([[0, '#7fd0ff'], [1, '#3fa7f0']])}"/>`;
   b += `<path d="M0 410 C80 395 150 425 230 415 C300 406 340 430 390 418 L390 426 C330 440 280 414 210 428 C140 440 70 408 0 420 Z" fill="#bfe9ff" opacity="0.6"/>`;
   [[40, 445], [120, 452], [300, 448], [350, 462], [200, 455]].forEach(([x, y]) => b += `<path d="M${x} ${y} q6 -3 12 0 q6 3 12 0" stroke="#fff" stroke-width="2" fill="none" opacity="0.7" stroke-linecap="round"/>`);
   b += `<path d="M326 326 L390 326 L390 424 L338 424 Z" fill="${lin([[0, HL[1]], [1, A.dark(HL[3], 0.3)]], 0, 0, 1, 0)}"/><rect x="348" y="335" width="34" height="85" rx="8" fill="${lin([[0, '#e8f8ff'], [0.5, '#bfe9ff'], [1, '#e8f8ff']], 0, 0, 1, 0)}" opacity="0.95"/><rect x="352" y="340" width="6" height="75" rx="3" fill="#fff" opacity="0.8"/><ellipse cx="365" cy="420" rx="26" ry="8" fill="#fff" opacity="0.8" filter="url(#soft6)"/>`;
-  b += A.hill(195, 560, 330, 90, HL[3]) + A.hill(195, 760, 360, 150, '#6ad28b');
+  b += hill(195, 560, 330, 90, HL[3]) + hill(195, 760, 360, 150, '#6ad28b');
   b += A.road(ROAD_PTS, { widthFn: t => 56 - t * 36, edge: '#f0a4c0', edgeW: 7, fill: '#fff0f6', top: '#fff' });
   ROAD_PTS.filter((_, i) => i % 6 === 3).forEach(([x, y], i) => b += `<circle cx="${x}" cy="${y}" r="3.5" fill="${[AC.pink, AC.blue, AC.yellow, AC.green][i % 4]}" opacity="0.8"/>`);
   // 다리
@@ -2240,13 +2263,16 @@ const MAP_LOOK = [null,
   { sky: [[0, '#e8f6ff'], [0.25, '#f4faff'], [0.3, '#dfe6f5'], [1, '#aab6d6']], hills: ['#dfe6f5', '#cfd8ee', '#bcc8e6', '#aab6d6'], river: ['#a87850', '#6a4020'], road: ['#ffffff', '#9fb0d8'] },
   { sky: [[0, '#1d0f3a'], [0.25, '#4a2c86'], [0.3, '#5a3a9a'], [1, '#2f2050']], hills: ['#6a4aa8', '#5a3a9a', '#4a3a7a', '#3f2a6a'], river: ['#6fa8ff', '#2f5ad0'], road: ['#f3eaff', '#9b6fd8'] },
 ];
-function mapArtWorld(wi) {
-  if (wi === 0) return mapArt();
-  const A = Art, lin = A.linear, L = MAP_LOOK[wi], HL = L.hills;
-  let b = `<rect width="${MAP_W}" height="${MAP_H}" fill="${lin(L.sky)}"/>`;
-  b += wi === 4 || wi === 2 ? A.starsSky(wi * 5, 50, [0, 0, MAP_W, 260], .8) : '';
-  for (let i = 0; i < 18; i++) { const x = (i * 73) % MAP_W, y = 60 + (i * 131) % 700; b += `<circle cx="${x}" cy="${y}" r="${2 + (i % 3)}" fill="#fff" opacity="${wi === 4 ? .35 : .6}"/>`; }
-  b += A.hill(60, 290, 200, 50, HL[0]) + A.hill(340, 285, 180, 45, HL[1]);
+function mapArtWorld(wi, f3d) {
+  if (wi === 0) return mapArt(f3d);
+  const A = Art, lin = A.linear, L = MAP_LOOK[wi], HL = L.hills, hill = mapHill(f3d);
+  let b = '';
+  if (!f3d) {
+    b += `<rect width="${MAP_W}" height="${MAP_H}" fill="${lin(L.sky)}"/>`;
+    b += wi === 4 || wi === 2 ? A.starsSky(wi * 5, 50, [0, 0, MAP_W, 260], .8) : '';
+    for (let i = 0; i < 18; i++) { const x = (i * 73) % MAP_W, y = 60 + (i * 131) % 700; b += `<circle cx="${x}" cy="${y}" r="${2 + (i % 3)}" fill="#fff" opacity="${wi === 4 ? .35 : .6}"/>`; }
+  }
+  b += hill(60, 290, 200, 50, HL[0]) + hill(340, 285, 180, 45, HL[1]);
   // 꼭대기 랜드마크 (보스 칸)
   if (wi === 1) {
     b += `<rect x="170" y="140" width="50" height="140" rx="20" fill="${lin([[0, '#d98a4a'], [0.5, '#b8652a'], [1, '#8a4512']], 0, 0, 1, 0)}"/>`;
@@ -2257,13 +2283,13 @@ function mapArtWorld(wi) {
   } else if (wi === 3) {
     b += A.factory(195, 280, 1.1);
   } else {
-    b += `<circle cx="300" cy="90" r="50" fill="#fff3c4" opacity="0.45" filter="url(#soft24)"/><circle cx="300" cy="90" r="22" fill="${A.radial('#fffbe6', '#fff0b3', '#f5d98a')}"/>`;
+    if (!f3d) b += `<circle cx="300" cy="90" r="50" fill="#fff3c4" opacity="0.45" filter="url(#soft24)"/><circle cx="300" cy="90" r="22" fill="${A.radial('#fffbe6', '#fff0b3', '#f5d98a')}"/>`;
     b += `<g opacity="0.96">${A.castle(195, 272, .82, '#8a6ad0', { night: true })}</g>`;
   }
-  b += A.hill(195, 400, 320, 70, HL[2]);
+  b += hill(195, 400, 320, 70, HL[2]);
   b += `<path d="M0 410 C80 395 150 425 230 415 C300 406 340 430 390 418 L390 470 C330 482 280 455 210 468 C140 480 70 450 0 465 Z" fill="${lin([[0, L.river[0]], [1, L.river[1]]])}"/>`;
   b += `<path d="M0 410 C80 395 150 425 230 415 C300 406 340 430 390 418 L390 426 C330 440 280 414 210 428 C140 440 70 408 0 420 Z" fill="#fff" opacity="0.35"/>`;
-  b += A.hill(195, 560, 330, 90, HL[3]) + A.hill(195, 760, 360, 150, A.dark(HL[3], .12));
+  b += hill(195, 560, 330, 90, HL[3]) + hill(195, 760, 360, 150, A.dark(HL[3], .12));
   b += A.road(ROAD_PTS, { widthFn: t => 56 - t * 36, edge: L.road[1], edgeW: 7, fill: L.road[0], top: '#fff' });
   b += `<g>${A.groundShadow(238, 478, 40, 8, 0.3)}<path d="M200 462 Q238 440 276 462 L276 470 Q238 450 200 470 Z" fill="${lin([[0, '#fff'], [1, L.road[1]]])}"/><rect x="200" y="470" width="76" height="8" fill="${L.road[1]}"/></g>`;
   // 월드 소품
@@ -2305,7 +2331,9 @@ function renderMap() {
   let oy = Math.min(0, Math.max(fh - wh, (fh - footH - labelH) - nBottom * k));
   if (nTop * k + oy < headH) oy = Math.min(0, Math.max(fh - wh, headH - nTop * k));
   world.style.left = ox + 'px'; world.style.top = oy + 'px'; world.style.width = ww + 'px'; world.style.height = wh + 'px';
-  world.innerHTML = cachedArt('map' + wi, () => mapArtWorld(wi)) +
+  const f3d = !!(window.Jelly3D && Jelly3D.ok());   // 3D 숲 그림을 맨 아래 깔고, 길·칸·소품은 그 위에
+  world.innerHTML = (f3d ? `<img class="scene bg3d" alt="" draggable="false" src="assets/bg/w${wi + 1}.webp" onerror="this.remove()">` : '') +
+    cachedArt('map' + wi + (f3d ? '-3d' : ''), () => mapArtWorld(wi, f3d)) +
     `<svg class="village" id="mapPath" viewBox="0 0 ${MAP_W} ${MAP_H}" preserveAspectRatio="none" aria-hidden="true"><path id="roadLine" d="M${ROAD_PTS.map(p => p[0].toFixed(1) + ' ' + p[1].toFixed(1)).join(' L')}" fill="none" stroke="none"/></svg>`;
   const pct = (x, y, node) => { node.style.left = x / MAP_W * 100 + '%'; node.style.top = y / MAP_H * 100 + '%'; };
   const sizes = [28, 26, 24, 22, 20, 18];
