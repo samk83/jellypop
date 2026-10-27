@@ -175,6 +175,39 @@ vec2 propMap(vec3 q){
     float cap = max(sdEll(c - vec3(0.0, -0.75, 0.0), vec3(1.78, 1.25, 1.78)), capEdge - q.y);
     for(int i=0;i<4;i++){ float a = 0.45 + float(i)*0.75; vec3 d = vec3(cos(a), 0.0, sin(a)); cap = smin(cap, sdCap(q, d*1.70 + vec3(0.0, 2.35, 0.0), d*1.80 + vec3(0.0, 1.75 - 0.25*float(i%2), 0.0), 0.15), 0.12); }
     if(cap < res.x) res = vec2(cap, 101.0);
+  } else if(uKind==19){   // 탑 꼭대기 (기울기 0, 1칸 = 탑 폭/3): 몸통 끝 + 성벽 띠 + 원뿔 지붕 + 깃발(uCol2). 몸통과 이음매 = 그림 가운데보다 1.6칸 아래
+    vec3 c = q + FOOT;
+    float body = max(length(c.xz) - 1.5, c.y + 1.6); res = vec2(body, 114.0);
+    float crown = max(length(c.xz) - 1.74, abs(c.y + 1.45) - 0.30) - 0.04; if(crown < res.x) res = vec2(crown, 114.0);
+    float roof = sdRCone(c - vec3(0.0, -1.15, 0.0), 1.90, 0.06, 3.50); if(roof < res.x) res = vec2(roof, 122.0);
+    float pole = sdCap(c, vec3(0.0, 2.25, 0.0), vec3(0.0, 3.35, 0.0), 0.06); if(pole < res.x) res = vec2(pole, 121.0);
+    float flag = sdRBox(c - vec3(0.50, 3.05, 0.0), vec3(0.44, 0.24, 0.03), 0.03); if(flag < res.x) res = vec2(flag, 106.0);
+  } else if(uKind==20){   // 탑 몸통 (기울기 0): 위아래로 늘여 쓰는 둥근 기둥
+    vec3 c = q + FOOT; res = vec2(length(c.xz) - 1.5, 114.0);
+  } else if(uKind==21){   // 캐러멜 종유석 (기울기 0): 그림 위 끝에서 매달려 아래로 뾰족 + 맺힌 방울
+    vec3 c = q + FOOT;
+    float st = sdRCone(vec3(c.x, 3.9 - c.y, c.z), 1.60, 0.08, 6.9); st += 0.05*sin(c.y*2.6 + c.x*3.0)*smoothstep(-3.0, 3.0, c.y);
+    st = smin(st, length(c - vec3(0.0, -3.42, 0.0)) - 0.20, 0.10); res = vec2(st, 107.0);
+  } else if(uKind==22){   // 파이프 (기울기 0): 그림 폭을 꽉 채운 관. uAcc 1 = 가로. 길이 방향으로 늘여 쓴다
+    vec3 c = q + FOOT; res = vec2((uAcc==1 ? length(c.yz) : length(c.xz)) - 3.5, 107.0);
+  } else if(uKind==23){   // 울타리 말뚝 (기울기 0, 1칸 = 21s/6.55): 크림색 판자 + 뾰족한 머리
+    vec3 c = q + FOOT;
+    float post = sdRBox(c - vec3(0.0, -0.9, 0.0), vec3(0.75, 2.95, 0.32), 0.14);
+    vec3 t = c - vec3(0.0, 2.05, 0.0); t.xy = rot2(0.7854)*t.xy; post = smin(post, sdRBox(t, vec3(0.53, 0.53, 0.32), 0.12), 0.05);
+    res = vec2(post, 111.0);
+  } else if(uKind==24){   // 디저트 공장 (1칸 = 24s): 둥근 벽(uCol2) + 톱니 지붕 4개(uCol) + 불 켜진 창 4 + 문 + 굴뚝 2
+    float body = sdRBox(q - vec3(0.0, 1.25, 0.0), vec3(2.92, 1.25, 1.30), 0.30); res = vec2(body, 106.0);
+    for(int i=0;i<4;i++){ float x0 = -2.92 + float(i)*1.46; vec2 v = q.xy - vec2(x0, 2.35);
+      float tri = max(max(dot(v, vec2(-0.775, 0.632)), dot(v - vec2(1.46, 0.0), vec2(0.792, 0.611))), -v.y);
+      tri = max(tri, abs(q.z) - 1.10) - 0.06; if(tri < res.x) res = vec2(tri, 107.0); }
+    for(int i=0;i<4;i++){ float w = sdRBox(q - vec3(-2.04 + float(i)*1.33, 1.50, 1.30), vec3(0.36, 0.32, 0.08), 0.10); if(w < res.x) res = vec2(w, 109.0); }
+    float door = sdRBox(q - vec3(0.0, 0.50, 1.30), vec3(0.56, 0.54, 0.10), 0.18); if(door < res.x) res = vec2(door, 108.0);
+    float ch = min(sdCap(q, vec3(-1.75, 2.0, -0.4), vec3(-1.75, 4.85, -0.4), 0.34), sdCap(q, vec3(1.54, 2.0, -0.4), vec3(1.54, 4.45, -0.4), 0.30)); if(ch < res.x) res = vec2(ch, 103.0);
+  } else if(uKind==25){   // 쿠키 블록 (가운데 기준, 그림 = 2.4r): 앞을 보는 도톰한 쿠키 + 초코칩 6개
+    vec3 c = q + FOOT; float ang = atan(c.y, c.x), rr = length(c.xy) + 0.07*sin(ang*7.0) + 0.04*sin(ang*13.0 + 1.0);
+    float ck = length(vec2(max(rr - 2.25, 0.0), c.z*(1.0 + 0.10*smoothstep(1.0, 2.6, rr)))) - 0.70; res = vec2(ck, 125.0);
+    vec2 CH[6] = vec2[6](vec2(-0.40, 0.30), vec2(0.30, 0.45), vec2(0.45, -0.25), vec2(-0.20, -0.40), vec2(0.05, 0.02), vec2(-0.55, -0.15));
+    for(int i=0;i<6;i++){ float chip = sdEll(c - vec3(CH[i]*2.95, 0.60), vec3(0.36, 0.30, 0.22)); if(chip < res.x) res = vec2(chip, 126.0); }
   } else {   // 버섯: 크림색 기둥 + 반질반질한 점박이 갓
     float st = sdRCone(q, 0.78, 0.55, 1.8); res = vec2(st, 111.0);
     vec3 c = q - vec3(0.0, 1.65, 0.0);
@@ -332,6 +365,8 @@ vec3 candy(vec3 p, vec3 n, vec3 rd, float id){
   else if(id > 120.5 && id < 121.5){ alb = vec3(1.0); spec = 1.0; rough = 80.0; }
   else if(id > 121.5 && id < 122.5){ alb = mix(uCol, vec3(0.35,0.18,0.57), 0.4); spec = 1.4; rough = 100.0; }
   else if(id > 123.5 && id < 124.5){ alb = vec3(0.38,0.42,0.58); spec = 1.5; rough = 90.0; }
+  else if(id > 124.5 && id < 125.5){ float rr = length(p.xy); alb = mix(vec3(0.97,0.80,0.52), vec3(0.80,0.50,0.22), smoothstep(1.6, 2.9, rr) + 0.25*(1.0 - smoothstep(0.08, 0.16, voro(p*2.2).x))); spec = 0.5; rough = 40.0; }
+  else if(id > 125.5 && id < 126.5){ alb = vec3(0.33,0.16,0.09); spec = 1.5; rough = 100.0; }
   else if(id > 122.5 && id < 123.5){ vec3 rf = reflect(rd, n); return mix(vec3(0.80,0.88,1.0), vec3(1.0,0.86,0.95), 0.5 + 0.5*rf.x) * (0.85 + 0.35*smoothstep(0.2, 0.9, rf.y)) + vec3(1.2)*smoothstep(0.93, 0.97, dot(rf, normalize(vec3(-0.5, 0.6, 0.6)))); }
   else { alb = vec3(1.0,0.93,0.80); spec = 0.6; rough = 50.0; }
   alb = pow(alb, vec3(2.2));
@@ -344,7 +379,7 @@ vec3 candy(vec3 p, vec3 n, vec3 rd, float id){
 void main(){
   vec2 uv = (2.0*gl_FragCoord.xy - uRes) / uRes.y;
   if(uAcc > 0 && uKind == 0){ RR = 2.3; FOOT = vec3(0.0, -3.0, 0.0); }   // 보스·놈놈만 (나무의 uAcc는 솜사탕 나무 표시)
-  float a = uKind==5 ? 0.0 : uKind>=6 ? 0.32 : 0.12;   // 지도 소품은 위에서 조금 더 내려다봄
+  float a = uKind==5 || (uKind>=19 && uKind<=23) ? 0.0 : uKind==25 ? 0.12 : uKind>=6 ? 0.32 : 0.12;   // 지도 소품은 위에서 조금 더 내려다봄 (늘여 쓰는 탑·관·말뚝·종유석은 정면)
   vec3 rd = normalize(vec3(0, -sin(a), -cos(a)));
   vec3 ro = vec3(uv*3.6, 0.0) + vec3(0, 20.0*sin(a), 20.0*cos(a));
   camPos = ro - rd*100.0;
@@ -368,7 +403,7 @@ void main(){
   col = col / (1.0 + col*0.25);
   o = vec4(pow(clamp(col,0.0,1.0), vec3(0.4545)), cov);
 }`;
-  const KIND = { jelly: 0, bubble: 1, barrel: 2, base: 3, housing: 4, wheel: 5, house: 6, tree: 7, mushroom: 8, castle: 9, fountain: 10, windmill: 11, lamp: 12, crystal: 13, gift: 14, gear: 15, mirror: 16, pot: 17, pudding: 18 };
+  const KIND = { jelly: 0, bubble: 1, barrel: 2, base: 3, housing: 4, wheel: 5, house: 6, tree: 7, mushroom: 8, castle: 9, fountain: 10, windmill: 11, lamp: 12, crystal: 13, gift: 14, gear: 15, mirror: 16, pot: 17, pudding: 18, towertop: 19, towerbody: 20, stalactite: 21, pipe: 22, picket: 23, factory: 24, cookie: 25 };
   const MOOD = { happy: 0, joy: 1, worried: 2, angry: 3, none: 3, o: 2 };   // o(깜짝)은 걱정 얼굴로
   let gl = null, prog = null, cv = null, state = null, U = {};
   const cache = {};

@@ -26,6 +26,7 @@ console.log('3D 그림 굽기');
   await page.goto(page3d);
   check('?3d=1 이면 3D 켜짐', await page.evaluate(() => Jelly3D.ok() === true));
   check('실시간 3D 계산 없음 (WebGL 안 씀, 미리 구운 그림만)', await page.evaluate(() => !!window.JELLY3D_SPRITES && Object.keys(JELLY3D_SPRITES).length >= 80 && window.__gl === 0));
+  await page.evaluate(() => Jelly3D.scene());   // 컷신용 젤리 그림은 소품 파일 쪽
   const r = await page.evaluate(async () => {
     const kinds = [['jelly', { color: '#ff7fae', mood: 'happy', ears: true }], ['jelly', { color: '#4fb4ff', mood: 'joy' }], ['jelly', { color: '#ffd23f', mood: 'worried' }],
       ['jelly', { color: '#8a5cf0', mood: 'angry' }], ['bubble', { color: '#5ed46a' }], ['bubble', { color: '#e6f2ff', mood: 'none' }],
@@ -83,6 +84,9 @@ console.log('모든 스테이지: 필요한 3D 그림이 다 미리 구워져 �
 {
   const page = await ctx.newPage();
   const errors = []; page.on('pageerror', e => errors.push(e.message));
+  // 소품 그림 파일은 잠시 막아 둔다 → 게임(30 스테이지)은 처음 받는 그림 파일만으로 3D가 모두 나와야 함
+  let release; const gate = new Promise(r => { release = r; });
+  await page.route('**/sprites3d-scene.js', async r => { await gate; await r.continue(); });
   await page.goto(pathToFileURL(path.join(root, 'index.html')).href);
   check('주소에 아무것도 없어도 3D 켜짐 (기기 상관없이)', await page.evaluate(() => Jelly3D.ok() === true));
   await page.evaluate(() => { window.__miss = new Set(); const b = Jelly3D.bake; Jelly3D.bake = (k, o = {}, px) => { const u = b(k, o, px); if (!u) __miss.add([k, o.color, o.mood || 'happy', o.ears ? 1 : 0].join('|')); return u; }; });
@@ -93,9 +97,12 @@ console.log('모든 스테이지: 필요한 3D 그림이 다 미리 구워져 �
     await page.waitForFunction(() => Gummy.pending() === 0, null, { timeout: 15000 });
   }
   const allMiss = await page.evaluate(() => [...__miss]);
-  check('30 스테이지에서 쓰는 3D 그림이 모두 있음 (SVG로 빠지는 것 없음)', allMiss.length === 0, allMiss.join(', '));
+  check('30 스테이지에서 쓰는 3D 그림이 처음 받는 파일에 모두 있음 (SVG로 빠지는 것 없음)', allMiss.length === 0 && await page.evaluate(() => !window.JELLY3D_SCENE), allMiss.join(', '));
+  release();
+  await page.waitForFunction(() => window.JELLY3D_SCENE === true, null, { timeout: 10000 });
   check(`스테이지 시작 동기 처리 300ms 미만 (최대 ${worst.toFixed(0)}ms)`, worst < 300);
   // 다른 화면들: 결과(이김·짐), 타이틀, 프롤로그 4장, 지도(모든 월드, 친구 다 구함), 스티커 북
+  await page.evaluate(() => Jelly3D.scene());   // 소품 그림 파일(sprites3d-scene.js)은 첫 화면 뒤에 따로 온다
   await page.evaluate(() => {
     const j = window.__jp;
     for (const n of [1, 12, 30]) { j.startStage(n); j.G.outcome = { win: true, stars: 3, newSticker: true }; j.showResult(); }
@@ -114,7 +121,7 @@ console.log('모든 스테이지: 필요한 3D 그림이 다 미리 구워져 �
     const j = window.__jp, out = [];
     const loaded = async sel => { const im = document.querySelector(sel); if (!im) return false; if (!im.complete) await new Promise(r => { im.onload = im.onerror = r; }); return im.naturalWidth > 0; };
     j.P.stars = j.P.stars.map(() => 3);
-    for (let w = 0; w < 5; w++) { j.go('map'); for (let i = 0; i < 5; i++) { const b = document.getElementById('mapPrev'); if (!b.hidden) b.click(); } for (let i = 0; i < w; i++) document.getElementById('mapNext').click(); out.push(await loaded('#mapWorld img.scene') && document.querySelector('#mapWorld img.scene').src.includes('assets/map/w' + (w + 1) + '.webp')); j.mapScene(w); }
+    for (let w = 0; w < 5; w++) { j.go('map'); for (let i = 0; i < 5; i++) { const b = document.getElementById('mapPrev'); if (!b.hidden) b.click(); } for (let i = 0; i < w; i++) document.getElementById('mapNext').click(); out.push(await loaded('#mapWorld img.scene') && document.querySelector('#mapWorld img.scene').src.includes('assets/map/w' + (w + 1) + '.webp')); await j.mapScene(w); }
     j.go('title'); document.getElementById('storyBtn').click();
     for (let i = 0; i < 4; i++) { out.push(await loaded('#slides img.bg3d')); if (i < 3) document.getElementById('nextSlide').click(); }
     return out;
@@ -148,7 +155,7 @@ console.log('미리 구운 지도 그림');
       const ga = a.getContext('2d', { willReadFrequently: true }), gb = b.getContext('2d', { willReadFrequently: true });
       const bg = await load(`assets/bg/w${wi + 1}.webp`), k = Math.max(W / bg.width, H / bg.height);
       ga.drawImage(bg, (W - bg.width * k) * 0.5, (H - bg.height * k) * 0.45, bg.width * k, bg.height * k);
-      ga.drawImage(await load(/src="([^"]+)"/.exec(window.__jp.mapScene(wi))[1]), 0, 0, W, H);
+      ga.drawImage(await load(/src="([^"]+)"/.exec(await window.__jp.mapScene(wi))[1]), 0, 0, W, H);
       gb.drawImage(await load(`assets/map/w${wi + 1}.webp`), 0, 0, W, H);
       // 13×13 칸마다 평균 색 차이 → 가장 큰 칸 (소품 하나만 바뀌어도 잡힘)
       const da = ga.getImageData(0, 0, W, H).data, db = gb.getImageData(0, 0, W, H).data, B = 13; let worst = 0;
@@ -172,12 +179,46 @@ console.log('미리 구운 지도 그림');
   check('미리 구운 지도 그림을 못 불러오면 숲 배경 + 길·소품을 그 자리에서 그림', await page.waitForFunction(() => !!document.querySelector('#mapWorld img.bg3d') && document.querySelectorAll('#mapWorld img.scene').length === 2, null, { timeout: 3000 }).then(() => true, () => false));
   await page.close();
 }
+console.log('3D 그림 파일 나누기 (첫 로딩 가볍게)');
+{
+  const fs = await import('node:fs');
+  const core = fs.statSync(path.join(root, 'sprites3d.js')).size, scene = fs.statSync(path.join(root, 'sprites3d-scene.js')).size;
+  check(`처음 받는 그림 파일 ${(core / 1024).toFixed(0)}KB < 800KB, 소품 파일 ${(scene / 1024).toFixed(0)}KB 따로`, core < 800 * 1024 && scene > 100 * 1024);
+  const page = await ctx.newPage();
+  const order = []; page.on('request', r => { const m = /(sprites3d[\w-]*\.js|title\.webp)/.exec(r.url()); if (m) order.push(m[1]); });
+  await page.goto(pathToFileURL(path.join(root, 'index.html')).href);
+  const first = await page.evaluate(() => ({ scene: !!window.JELLY3D_SCENE, house: Object.keys(JELLY3D_SPRITES).some(k => k.startsWith('house|')), cookie: Object.keys(JELLY3D_SPRITES).some(k => k.startsWith('cookie|')) }));
+  check('첫 화면에는 게임 그림만 (집 같은 소품 없음, 쿠키 블록은 있음)', !first.house && first.cookie, JSON.stringify(first));
+  check('첫 화면이 뜬 뒤 소품 그림 파일을 저절로 불러옴', await page.waitForFunction(() => window.JELLY3D_SCENE === true && Object.keys(JELLY3D_SPRITES).some(k => k.startsWith('house|')), null, { timeout: 5000 }).then(() => true, () => false));
+  check('소품 파일은 타이틀 그림보다 나중에 요청', order.indexOf('sprites3d-scene.js') > order.indexOf('title.webp') && order.indexOf('title.webp') >= 0, order.join(','));
+  await page.close();
+}
+{
+  // 소품 파일이 늦게 와도: 프롤로그는 기다렸다가 3D 소품으로, 못 오면 구미 그림으로
+  const page = await ctx.newPage();
+  let release; const gate = new Promise(r => { release = r; });
+  await page.route('**/sprites3d-scene.js', async r => { await gate; await r.continue(); });
+  await page.goto(pathToFileURL(path.join(root, 'index.html')).href);
+  await page.evaluate(() => { window.__jp.go('title'); document.getElementById('storyBtn').click(); });
+  const waiting = await page.evaluate(() => document.getElementById('intro').hidden);
+  release();
+  const shown = await page.waitForFunction(() => !document.getElementById('intro').hidden && !!document.querySelector('#slides .scene'), null, { timeout: 5000 }).then(() => true, () => false);
+  check('소품 파일이 오기 전에는 프롤로그를 기다렸다가, 오면 바로 보여 줌', waiting && shown);
+  await page.close();
+  const page2 = await ctx.newPage(); const errs = []; page2.on('pageerror', e => errs.push(e.message));
+  await page2.route('**/sprites3d-scene.js', r => r.abort());
+  await page2.goto(pathToFileURL(path.join(root, 'index.html')).href);
+  await page2.evaluate(() => { window.__jp.go('title'); document.getElementById('storyBtn').click(); });
+  check('소품 파일을 못 불러와도 프롤로그가 뜸 (소품만 구미 그림)', await page2.waitForFunction(() => !document.getElementById('intro').hidden, null, { timeout: 5000 }).then(() => true, () => false) && errs.length === 0, errs.join(' | '));
+  await page2.close();
+}
 console.log('숲 배경 그림을 못 불러올 때 (판 풍경으로 대체)');
 {
   const page = await ctx.newPage();
   await page.route('**/assets/bg/*.webp', r => r.abort());
   await page.goto(pathToFileURL(path.join(root, 'index.html')).href);
   await page.evaluate(() => { window.__miss = new Set(); const b = Jelly3D.bake; Jelly3D.bake = (k, o = {}, px) => { const u = b(k, o, px); if (!u) __miss.add([k, o.color, o.mood || 'happy', o.ears ? 1 : 0].join('|')); return u; }; });
+  await page.evaluate(() => Jelly3D.scene());
   for (let n = 1; n <= 30; n++) { await page.evaluate(n => window.__jp.startStage(n), n); await page.waitForFunction(() => Gummy.pending() === 0, null, { timeout: 15000 }); }
   const miss = await page.evaluate(() => [...__miss]);
   check('판 풍경의 집·나무·버섯도 3D 그림이 모두 있음', miss.length === 0, miss.join(', '));

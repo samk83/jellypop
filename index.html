@@ -1377,7 +1377,8 @@ function drawMotes(t) {
 function drawBackground(theme) {
   const im = bg3d();
   if (im) { ctx.drawImage(im, 0, 0, W, H); drawMotes(G.time); return; }
-  if (!spr('bg-' + theme, () => SPR.bg(theme), 0, 0)) {
+  const propsReady = !(window.Jelly3D && Jelly3D.sceneLoaded) || Jelly3D.sceneLoaded();   // 소품 3D 그림이 아직이면 잠깐 단색 하늘
+  if (!propsReady || !spr('bg-' + theme, () => SPR.bg(theme), 0, 0)) {
     const g = ctx.createLinearGradient(0, 0, 0, H); g.addColorStop(0, '#ffd1e8'); g.addColorStop(.8, '#fff6e8'); g.addColorStop(.82, '#c9f3d6'); g.addColorStop(1, '#7fdc9a');
     ctx.fillStyle = g; ctx.fillRect(0, 0, W, H);
   }
@@ -2256,7 +2257,7 @@ function titleArtSvg() {
   return A.img(b, { x: 0, y: 0, w: 390, h: 844, lx: 100, ly: -120 }, 'class="cover"');
 }
 // 타이틀 숲 그림을 못 불러오면 예전 구미 풍경으로
-window.titleBgFailed = function () { $('title').classList.remove('f3d'); artCache.title = titleArtSvg(); $('titleArt').innerHTML = artCache.title; };
+window.titleBgFailed = function () { $('title').classList.remove('f3d'); sceneReady(() => { artCache.title = titleArtSvg(); $('titleArt').innerHTML = artCache.title; }); };
 function totalStickers() { return Object.keys(P.stickers).length; }
 function renderTitle() {
   const n = totalStickers();
@@ -2332,7 +2333,10 @@ function slideArt(kind) {
   });
 }
 let slideIdx = 0;
-function startIntro() { slideIdx = 0; go('intro'); renderSlide(); }
+// 소품 3D 그림(sprites3d-scene.js)이 오기 전에 그리면 구미 그림으로 저장돼 버리니, 소품을 그리는 화면은 먼저 기다린다
+// 4초가 지나도 안 오면 기다리지 않고 구미 그림으로 (화면이 멈춘 것처럼 보이지 않게)
+const sceneReady = fn => (window.Jelly3D && Jelly3D.scene && !Jelly3D.sceneLoaded() ? Promise.race([Jelly3D.scene(), new Promise(r => setTimeout(r, 4000))]).then(fn) : fn());
+function startIntro() { slideIdx = 0; sceneReady(() => { go('intro'); renderSlide(); }); }
 function renderSlide() {
   const s = SLIDES[slideIdx];
   $('dots').innerHTML = SLIDES.map((_, i) => `<i class="${i === slideIdx ? 'on' : ''}"></i>`).join('');
@@ -2446,7 +2450,7 @@ function mapArtWorld(wi, f3d) {
   return A.img(b, { x: 0, y: 0, w: MAP_W, h: MAP_H, lx: 100, ly: -120 }, 'class="scene"');
 }
 // 미리 구운 지도 그림을 못 불러오면: 3D 숲 그림 위에 길·소품을 그 자리에서 그린다 (그것도 안 되면 숲 없이)
-window.mapBakedFailed = (img, wi) => { img.outerHTML = `<img class="scene bg3d" alt="" draggable="false" src="assets/bg/w${wi + 1}.webp" onerror="this.remove()">` + cachedArt('map' + wi + '-3d', () => mapArtWorld(wi, true)); };
+window.mapBakedFailed = (img, wi) => sceneReady(() => { if (img.isConnected) img.outerHTML = `<img class="scene bg3d" alt="" draggable="false" src="assets/bg/w${wi + 1}.webp" onerror="this.remove()">` + cachedArt('map' + wi + '-3d', () => mapArtWorld(wi, true)); });
 function coinImg(r, state, color) { return Art.img(Art.coin(0, 0, r, { state, color }), { x: -r * 1.4, y: -r * 1.2, w: r * 2.8, h: r * 2.4 }); }
 function unlockedCount() { let n = 1; for (let i = 0; i < NST; i++) if (P.stars[i] > 0) n = i + 2; return Math.min(n, NST); }
 let walkFrom = null, mapAnim = 0, mapView = null;
@@ -2586,7 +2590,7 @@ function playStory(id, then) {
   if (!window.JellyStory || !JellyStory.has(id) || P.seenStory[id]) return then();
   P.seenStory[id] = true; saveP();
   $('app').inert = true;
-  JellyStory.open(id, () => { $('app').inert = false; then(); }, { sfx });
+  sceneReady(() => JellyStory.open(id, () => { $('app').inert = false; then(); }, { sfx }));
 }
 $('playMap').onclick = () => { G = null; $('result').hidden = true; go('map'); };
 // 결과 창: 포커스를 창 안에 가두고, Esc는 지도로
@@ -2634,7 +2638,7 @@ window.__jp = {
   startStage, rescue, showResult, land, hazardsAfterShot, unlockAudio, boom, audioReady: () => !!audio, LUCKY, pickLucky, applyLucky, seenHz: () => P.seenHz, aimLimit, music: () => Music.info(), voices: () => voiceCount, soundMode: () => soundMode, sfx, CS, shoot, swapQueue, setAngle, go, seedRandom,
   reset() { Object.assign(P, { stars: new Array(NST).fill(0), stickers: {}, seenIntro: false, at: 0, seenHz: {}, seenStory: {} }); saveP(); },
   story: () => window.JellyStory,
-  mapScene: wi => mapArtWorld(wi, true),   // 지도 그림 굽기 도구용 (design/forest/bake-map.mjs)
+  mapScene: wi => Jelly3D.scene().then(() => mapArtWorld(wi, true)),   // 지도 그림 굽기 도구용 (design/forest/bake-map.mjs)
   // 설명 카드 닫기 · 생각하는 시간 흘려보내기(조준 중 시계가 흐름) · 놈놈이 대포를 막았는지
   closeCard() { if (!$('hzCard').hidden) $('hzOk').click(); },
   think(sec) { let n = 0; while (G && G.state === 'aim' && n++ < sec * 30) update(1 / 30); return G && G.state; },

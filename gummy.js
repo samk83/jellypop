@@ -207,6 +207,14 @@ window.Gummy = (() => {
   }
   const hill = (cx, cy, rx, ry, c) => `<ellipse cx="${cx}" cy="${cy}" rx="${rx}" ry="${ry}" fill="${radial(light(c, 0.25), c, dark(c, 0.18), 0.4, 0.2, 0.85)}"/>`;
   function fence(x1, y, x2, s = 1) {
+    // 3D: 말뚝 그림 한 장을 <use>로 되풀이 + 가로대 2줄은 가로 관 그림을 늘여서 (말뚝 1칸 = 21s/6.55)
+    const u = 21 * s / 6.55, post3 = tex3d('picket', { color: '#f6e6d2' }, 7.2 * u * PX), rail3 = post3 && tex3d('pipe', { color: '#f6e6d2', mood: 'h' }, 3 * s * PX);
+    if (rail3) {
+      const id = uid('fp'), n3 = Math.floor((x2 - x1) / (14 * s));
+      let f = `<defs><image id="${id}" href="${post3}" width="${7.2 * u}" height="${7.2 * u}" preserveAspectRatio="none"/></defs>`;
+      for (let i = 0; i <= n3; i++) f += `<use href="#${id}" x="${x1 + i * 14 * s - 3.6 * u}" y="${y - 7.2 * u}"/>`;
+      return f + image3d(rail3, x1 - 2 * s, y - 14.5 * s, x2 - x1 + 4 * s, 4 * s) + image3d(rail3, x1 - 2 * s, y - 7.5 * s, x2 - x1 + 4 * s, 4 * s);
+    }
     let g = `<rect x="${x1}" y="${y - 14 * s}" width="${x2 - x1}" height="${3 * s}" fill="#f6e6d2"/><rect x="${x1}" y="${y - 7 * s}" width="${x2 - x1}" height="${3 * s}" fill="#f6e6d2"/>`;
     const n = Math.floor((x2 - x1) / (14 * s));
     for (let i = 0; i <= n; i++) { const x = x1 + i * 14 * s; g += `<path d="M${x - 2.5 * s} ${y} L${x - 2.5 * s} ${y - 17 * s} L${x} ${y - 21 * s} L${x + 2.5 * s} ${y - 17 * s} L${x + 2.5 * s} ${y} Z" fill="${linear([[0, '#fff8f0'], [1, '#dcc8b2']], 0, 0, 1, 0)}"/>`; }
@@ -242,6 +250,10 @@ window.Gummy = (() => {
   }
   function tower(x, y, w, h, c, { flag = '#ff5f8a', s = 1 } = {}) {
     const r = w / 2; let g = '';
+    // 3D: 몸통 기둥 그림을 높이만큼 늘이고, 그 위에 지붕 그림 (1칸 = w/3, 이음매는 지붕 그림 위에서 5.2칸)
+    const u = w / 3, top3 = tex3d('towertop', { color: c, mood: flag }, 7.2 * u * PX), body3 = top3 && tex3d('towerbody', { color: c }, 7.2 * u * PX);
+    if (body3) return groundShadow(x, y + 2 * s, r * 1.3, r * 0.32, 0.3) + image3d(body3, x - 3.6 * u, y - h, 7.2 * u, h) + image3d(top3, x - 3.6 * u, y - h - 5.2 * u, 7.2 * u, 7.2 * u) +
+      `<rect x="${x - 4 * s}" y="${y - h * 0.6}" width="${8 * s}" height="${12 * s}" rx="${4 * s}" fill="#ffe08a"/><rect x="${x - 4 * s}" y="${y - h * 0.6}" width="${8 * s}" height="${12 * s}" rx="${4 * s}" fill="#ffd36a" opacity="0.7" filter="url(#soft6)"/>`;
     g += `<rect x="${x - r}" y="${y - h}" width="${w}" height="${h}" fill="${linear([[0, light(c, 0.3)], [0.35, light(c, 0.08)], [0.7, c], [1, dark(c, 0.35)]], 0, 0, 1, 0)}"/>`;
     g += `<ellipse cx="${x}" cy="${y}" rx="${r}" ry="${r * 0.3}" fill="${dark(c, 0.25)}"/>`;
     g += `<rect x="${x - r * 1.12}" y="${y - h - 6 * s}" width="${w * 1.12}" height="${12 * s}" fill="${linear([[0, light(c, 0.35)], [0.7, c], [1, dark(c, 0.35)]], 0, 0, 1, 0)}"/>`;
@@ -414,6 +426,8 @@ window.Gummy = (() => {
   // 쿠키 블록 (색 없음, 터지지 않고 떨어뜨려야 없어짐)
   function cookie(x, y, r) {
     let s = `<circle cx="${x}" cy="${y + r * 0.15}" r="${r * 0.95}" fill="#5a2d1e" opacity="0.2" filter="url(#soft)"/>`;
+    const t3 = tex3d('cookie', { color: '#e8b26a' }, r * 2.4 * PX);
+    if (t3) return s + image3d(t3, x - 1.2 * r, y - 1.2 * r, 2.4 * r, 2.4 * r);
     s += `<g filter="url(#gelSmall)"><circle cx="${x}" cy="${y}" r="${r * 0.98}" fill="${radial('#ffe0a8', '#e8b26a', '#b97a35', 0.4, 0.35, 0.8)}"/></g>`;
     [[-0.4, -0.3], [0.3, -0.45], [0.45, 0.25], [-0.2, 0.4], [0.05, -0.02], [-0.55, 0.15]].forEach(([dx, dy], i) => { s += `<ellipse cx="${x + dx * r}" cy="${y + dy * r}" rx="${r * (i % 2 ? 0.12 : 0.15)}" ry="${r * 0.11}" fill="#5a2d1e"/>`; });
     return s + `<ellipse cx="${x - r * 0.35}" cy="${y - r * 0.55}" rx="${r * 0.25}" ry="${r * 0.09}" fill="#fff" opacity="0.6" transform="rotate(-25 ${x - r * 0.35} ${y - r * 0.55})"/>`;
@@ -438,6 +452,8 @@ window.Gummy = (() => {
     return g + cloud(x, y - 44 * s, 0.75 * s, 0.98, light(c, 0.3), c);
   }
   function stalactite(x, y, len, c = '#d08a3a') {
+    const u = len / 6.6, t3 = tex3d('stalactite', { color: c }, 7.2 * u * PX);   // 3D: 그림 위 끝 = 매달린 곳, 끝(방울 위)까지 6.6칸
+    if (t3) return image3d(t3, x - 3.6 * u, y, 7.2 * u, 7.2 * u);
     return `<path d="M${x - len * 0.22} ${y} Q${x - len * 0.08} ${y + len * 0.6} ${x} ${y + len} Q${x + len * 0.08} ${y + len * 0.6} ${x + len * 0.22} ${y} Z" fill="${linear([[0, dark(c, 0.15)], [0.5, c], [1, light(c, 0.35)]], 0, 0, 1, 0)}"/><circle cx="${x}" cy="${y + len + 4}" r="${len * 0.07}" fill="${light(c, 0.3)}"/>`;
   }
   function crystalRock(x, y, s = 1, c = '#9fd8ff') {
@@ -464,10 +480,15 @@ window.Gummy = (() => {
     return teeth + `<g filter="url(#gelSmall)"><circle cx="${x}" cy="${y}" r="${r}" fill="${radial(light(c, 0.4), c, dark(c, 0.2), 0.4, 0.3, 0.8)}"/></g><circle cx="${x}" cy="${y}" r="${r * 0.32}" fill="${dark(c, 0.35)}"/>`;
   }
   function pipe(x, y, w, h, c = '#ff9fc0') {
+    // 3D: 관 그림(폭의 7.0/7.2를 관이 채움)을 길이 방향으로 늘인다
+    const hz = w > h, d = Math.min(w, h), e = d * (7.2 / 7.0 - 1) / 2, t3 = tex3d('pipe', { color: c, mood: hz ? 'h' : 'v' }, d * PX);
+    if (t3) return hz ? image3d(t3, x, y - e, w, h + 2 * e) : image3d(t3, x - e, y, w + 2 * e, h);
     return `<rect x="${x}" y="${y}" width="${w}" height="${h}" rx="${Math.min(w, h) * 0.3}" fill="${w > h ? linear([[0, light(c, 0.45)], [0.5, c], [1, dark(c, 0.25)]], 0, 0, 0, 1) : linear([[0, light(c, 0.45)], [0.5, c], [1, dark(c, 0.25)]], 0, 0, 1, 0)}"/>`;
   }
   function factory(x, y, s = 1, wall = '#ffe1f0', roof = '#ff8fb1') {
     let g = groundShadow(x, y + 3, 80 * s, 10 * s, 0.3);
+    const p3 = prop3d('factory', { color: roof, mood: wall }, x, y, 24 * s);
+    if (p3) return g + p3 + `<circle cx="${x - 42 * s}" cy="${y - 128 * s}" r="${10 * s}" fill="#fff" opacity="0.8" filter="url(#soft6)"/><circle cx="${x + 37 * s}" cy="${y - 117 * s}" r="${8 * s}" fill="#fff" opacity="0.8" filter="url(#soft6)"/>`;
     g += pipe(x - 50 * s, y - 120 * s, 16 * s, 70 * s, '#c9d3ea') + pipe(x + 30 * s, y - 110 * s, 14 * s, 60 * s, '#c9d3ea');
     g += `<circle cx="${x - 42 * s}" cy="${y - 130 * s}" r="${10 * s}" fill="#fff" opacity="0.8" filter="url(#soft6)"/><circle cx="${x + 37 * s}" cy="${y - 122 * s}" r="${8 * s}" fill="#fff" opacity="0.8" filter="url(#soft6)"/>`;
     g += `<g filter="url(#glass)"><rect x="${x - 70 * s}" y="${y - 60 * s}" width="${140 * s}" height="${60 * s}" rx="${10 * s}" fill="${radial(light(wall, 0.3), wall, dark(wall, 0.1), 0.4, 0.3, 0.9)}"/></g>`;
@@ -476,8 +497,10 @@ window.Gummy = (() => {
     return g + `<rect x="${x - 14 * s}" y="${y - 26 * s}" width="${28 * s}" height="${26 * s}" rx="${6 * s}" fill="${dark(roof, 0.15)}"/>`;
   }
   function belt(x, y, w, s = 1) {
-    let g = `<rect x="${x}" y="${y}" width="${w}" height="${12 * s}" rx="${6 * s}" fill="${linear([[0, '#8f99b5'], [1, '#4f5873']], 0, 0, 0, 1)}"/>`;
+    const t3 = tex3d('pipe', { color: '#6f7a99', mood: 'h' }, 12 * s * PX);   // 3D: 둥근 벨트 몸통 (가로 관 그림을 늘여서) + 그 위 눈금
+    let g = t3 ? image3d(t3, x, y - 0.2 * s, w, 12.4 * s) : `<rect x="${x}" y="${y}" width="${w}" height="${12 * s}" rx="${6 * s}" fill="${linear([[0, '#8f99b5'], [1, '#4f5873']], 0, 0, 0, 1)}"/>`;
     for (let i = 0; i < w / (14 * s); i++) g += `<rect x="${x + 4 * s + i * 14 * s}" y="${y + 2 * s}" width="${6 * s}" height="${3 * s}" rx="${1.5 * s}" fill="#c9d3ea" opacity="0.8"/>`;
+    if (t3) return g + gear(x + 6 * s, y + 6 * s, 5.5 * s) + gear(x + w - 6 * s, y + 6 * s, 5.5 * s);
     return g + `<circle cx="${x + 6 * s}" cy="${y + 6 * s}" r="${7 * s}" fill="#c9d3ea"/><circle cx="${x + w - 6 * s}" cy="${y + 6 * s}" r="${7 * s}" fill="#c9d3ea"/>`;
   }
   function giftBox(x, y, s = 1, c = '#4fb4ff') {

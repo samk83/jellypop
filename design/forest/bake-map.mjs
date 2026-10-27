@@ -18,7 +18,7 @@ for (let wi = 0; wi < 5; wi++) {
     const bg = await load(`assets/bg/w${wi + 1}.webp`);
     const k = Math.max(W / bg.width, H / bg.height), bw = bg.width * k, bh = bg.height * k;
     g.drawImage(bg, (W - bw) * 0.5, (H - bh) * 0.45, bw, bh);
-    const html = window.__jp.mapScene(wi), src = /src="([^"]+)"/.exec(html)[1];
+    const html = await window.__jp.mapScene(wi), src = /src="([^"]+)"/.exec(html)[1];
     g.drawImage(await load(src), 0, 0, W, H);
     return c.toDataURL('image/webp', 0.8);
   }, wi);
