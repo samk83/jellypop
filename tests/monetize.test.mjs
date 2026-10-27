@@ -4,6 +4,7 @@ import { chromium, devices } from 'playwright';
 import { fileURLToPath, pathToFileURL } from 'node:url';
 import path from 'node:path';
 import fs from 'node:fs';
+import { koreanByDefault } from './locale.mjs';
 import http from 'node:http';
 
 const root = path.dirname(path.dirname(fileURLToPath(import.meta.url)));
@@ -16,6 +17,7 @@ function check(name, ok, info = '') {
   if (ok) { pass++; console.log('  ✅ ' + name); } else { fail++; console.log('  ❌ ' + name + ' ' + info); }
 }
 const browser = await chromium.launch({ ...(process.env.CHROMIUM ? { executablePath: process.env.CHROMIUM } : {}), args: ['--allow-file-access-from-files'] });
+koreanByDefault(browser);
 const phone = { ...devices['iPhone 13'] };
 delete phone.defaultBrowserType;
 
@@ -77,6 +79,25 @@ async function loseStage(page, n = 1) {
   const t = await page.evaluate(() => ({ clock: window.__jp.G.hz.clock, state: window.__jp.G.state }));
   check('시간 +20초로 이어진다', t.clock > 19 && t.state === 'aim', JSON.stringify(t));
   check('콘솔 에러 없음', errs.length === 0, errs.join(' | '));
+  await ctx.close();
+}
+
+// 2-1) 영어 화면
+{
+  console.log('영어 화면 (언어 전환)');
+  const ctx = await browser.newContext({ ...phone, locale: 'en-US' });
+  const page = await ctx.newPage();
+  await page.goto(fileUrl + '?monetize=mock&adms=200&lang=en');
+  await page.evaluate(() => JellyMonetize.init());
+  check('후원 팩 버튼 영어', (await page.textContent('#shopBtn')).includes('Supporter Pack'));
+  await loseStage(page);
+  const t = await page.textContent('#resultAd');
+  check('이어하기 버튼 영어', t.includes('Watch an ad to continue') && t.includes('Ceiling goes up 3 rows'), t);
+  await page.click('#resultAd');
+  check('가짜 광고 안내도 영어', (await page.textContent('#mockAd')).includes('Ad placeholder'));
+  await page.evaluate(() => { document.getElementById('result').hidden = true; window.__jp.go('title'); });
+  await page.click('#shopBtn');
+  check('상점 영어(상품·버튼)', (await page.textContent('#shop')).includes('Mallang Supporter Pack') && (await page.textContent('#shop')).includes('Buy · $2.99') && (await page.textContent('#shop')).includes('Restore purchases'));
   await ctx.close();
 }
 

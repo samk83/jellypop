@@ -6,6 +6,7 @@ import { fileURLToPath, pathToFileURL } from 'node:url';
 import { execFileSync } from 'node:child_process';
 import path from 'node:path';
 import fs from 'node:fs';
+import { koreanByDefault } from './locale.mjs';
 
 const root = path.dirname(path.dirname(fileURLToPath(import.meta.url)));
 const app = path.join(root, 'app'), toss = path.join(app, 'toss');
@@ -52,6 +53,7 @@ else {
   check('토스 설정 appName = jellypop', /appName:\s*'jellypop'/.test(read('app/toss/apps-in-toss.config.ts')));
 
   const browser = await chromium.launch({ ...(process.env.CHROMIUM ? { executablePath: process.env.CHROMIUM } : {}), args: ['--allow-file-access-from-files'] });
+  koreanByDefault(browser);
   const phone = { ...devices['iPhone 13'] }; delete phone.defaultBrowserType;
   const ctx = await browser.newContext(phone);
   const page = await ctx.newPage();

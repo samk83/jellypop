@@ -1,11 +1,13 @@
 // sw.js — 서비스 워커(오프라인에서도 열리게 해 주는 브라우저 일꾼)
 // 처음 열 때 게임 파일을 저장해 두고, 다음부터는 인터넷이 없어도 게임이 뜬다.
 // 게임 파일을 바꿨으면 VERSION 숫자를 올리기 → 휴대폰이 새 파일을 받는다. (tests/monetize.test.mjs 가 목록 누락을 잡는다)
-const VERSION = 'jellypop-v0.11.0';
+const VERSION = 'jellypop-v0.12.0';
 const PRECACHE = [
   './',
   'index.html',
   'manifest.webmanifest',
+  'i18n.js',
+  'lang-en.js',
   'sprites3d.js',
   'jelly3d.js',
   'gummy.js',

@@ -9,6 +9,13 @@
 // 설정 값: monetize-config.js
 window.JellyMonetize = (() => {
   'use strict';
+  // 게임 화면에 넣는 문구의 영어 (i18n.js 사전에 추가 — 정적 HTML 은 게임 시작 때 자동 번역, 나중에 넣는 글자는 T())
+  if (window.JellyI18n && window.JellyI18n.add) window.JellyI18n.add({
+    '▶ 이어하기': '▶ Continue', '▶ 광고 보고 이어하기': '▶ Watch an ad to continue', '천장이 3칸 올라가요': 'Ceiling goes up 3 rows', '시간 +20초': '+20 seconds',
+    '이어서 해 봐요!': 'Keep going!', '후원 팩': 'Supporter Pack', '🎁 후원 팩': '🎁 Supporter Pack', '구매 복원': 'Restore purchases', '닫기': 'Close',
+    '구매했어요': 'Purchased', '구매하기': 'Buy',
+    "구매는 스토어 계정으로 결제돼요. 한 번 사면 다시 설치해도 '구매 복원'으로 돌아와요.": 'Purchases are billed to your store account. Use “Restore purchases” after reinstalling.',
+  });
   const CFG = Object.assign({ enabled: true, continuePerStage: 1, web: {}, admob: {}, toss: {}, products: [] }, window.JellyMonetizeConfig || {});
   const KEY = 'jellypop2.ent';
   const listeners = [];

@@ -35,8 +35,10 @@ const visibleText = () => {
   const dict = {};
   const src = fs.readFileSync(path.join(root, 'lang-en.js'), 'utf8');
   new Function('JellyI18n', src)({ add: o => Object.assign(dict, o) });
+  // 다른 파일이 JellyI18n.add 로 넣는 영어 (monetize.js)
+  new Function('window', 'localStorage', fs.readFileSync(path.join(root, 'monetize.js'), 'utf8'))({ JellyI18n: { add: o => Object.assign(dict, o) } }, { getItem: () => null });
   const missing = [];
-  for (const f of ['index.html', 'stages.js', 'story-data.js', 'story.js', 'banner.js']) {
+  for (const f of ['index.html', 'stages.js', 'story-data.js', 'story.js', 'banner.js', 'monetize.js']) {
     const text = fs.readFileSync(path.join(root, f), 'utf8');
     for (const m of text.matchAll(/\bT\('((?:[^'\\]|\\.)*)'/g)) {
       const k = m[1].replace(/\\'/g, "'");

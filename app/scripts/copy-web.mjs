@@ -8,13 +8,13 @@ const app = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
 const root = path.resolve(app, '..');
 const www = path.join(app, 'www');
 export const FILES = [
-  'index.html', 'manifest.webmanifest',
+  'index.html', 'manifest.webmanifest', 'i18n.js', 'lang-en.js',
   'sprites3d.js', 'sprites3d-scene.js', 'jelly3d.js', 'gummy.js', 'stages.js', 'banner.js', 'story-data.js', 'story.js',
   'monetize-config.js', 'monetize.js',
 ];
 export const DIRS = ['assets', 'icons'];
-// 다른 스레드가 추가하는 파일(있으면 복사): 영어판
-export const OPTIONAL = ['i18n.js', 'lang-en.js'];
+// 있으면 복사하는 파일 (지금은 없음)
+export const OPTIONAL = [];
 
 if (process.argv[1] === fileURLToPath(import.meta.url)) {
   fs.rmSync(www, { recursive: true, force: true });

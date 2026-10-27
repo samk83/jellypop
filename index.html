@@ -2688,13 +2688,11 @@ function showResult() {
   $('resultAd').hidden = !canRevive();
   if (!$('resultAd').hidden) {
     const free = JellyMonetize.has('freecontinue');
-    $('resultAd').innerHTML = (free ? tx('▶ 이어하기') : tx('▶ 광고 보고 이어하기')) + `<small>${o.reason === 'time' ? tx('시간 +20초') : tx('천장이 3칸 올라가요')}</small>`;
+    $('resultAd').innerHTML = (free ? T('▶ 이어하기') : T('▶ 광고 보고 이어하기')) + `<small>${o.reason === 'time' ? T('시간 +20초') : T('천장이 3칸 올라가요')}</small>`;
   }
   setTimeout(() => $('resultMain').focus({ preventScroll: true }), 50);
 }
 // ---------- 이어하기 (보상형 광고 · 후원 팩, monetize.js) ----------
-const tx = s => (typeof window.T === 'function' ? window.T(s) : s);
-if (window.JellyI18n && JellyI18n.add) JellyI18n.add({ '▶ 이어하기': '▶ Continue', '▶ 광고 보고 이어하기': '▶ Watch an ad to continue', '천장이 3칸 올라가요': 'Ceiling goes up 3 rows', '시간 +20초': '+20 seconds', '이어서 해 봐요!': 'Keep going!', '후원 팩': 'Supporter Pack', '🎁 후원 팩': '🎁 Supporter Pack', '구매 복원': 'Restore purchases', '닫기': 'Close', '구매했어요': 'Purchased', '구매하기': 'Buy', "구매는 스토어 계정으로 결제돼요. 한 번 사면 다시 설치해도 '구매 복원'으로 돌아와요.": 'Purchases are billed to your store account. Use “Restore purchases” after reinstalling.' });
 function canRevive() {
   if (!G || !G.outcome || G.outcome.win || !window.JellyMonetize) return false;
   if ((G.continues || 0) >= JellyMonetize.continuePerStage) return false;
@@ -2724,7 +2722,7 @@ function revive() {
   if (G.st.boss && Board.count(b) === 0) { Board.pushTop(b, [...G.st.colors]); Board.pushTop(b, [...G.st.colors]); }
   if (!G.st.boss && G.saved >= G.need) return finish(true);
   refreshQueueColors();
-  showToast(tx('이어서 해 봐요!'));
+  showToast(T('이어서 해 봐요!'));
   updateHud();
   setTimeout(() => canvas.focus({ preventScroll: true }), 50);
 }
@@ -2747,7 +2745,7 @@ let shopBusy = false;
 async function renderShop() {
   const list = await JellyMonetize.products();
   $('shopList').innerHTML = list.map(p => `<div class="shop-item"><b>${p.title}</b><small>${p.desc}</small>` +
-    (p.owned ? `<button class="btn light" disabled>${tx('구매했어요')} ✓</button>` : `<button class="btn" data-buy="${p.id}">${tx('구매하기')} · ${p.price}</button>`) + '</div>').join('');
+    (p.owned ? `<button class="btn light" disabled>${T('구매했어요')} ✓</button>` : `<button class="btn" data-buy="${p.id}">${T('구매하기')} · ${p.price}</button>`) + '</div>').join('');
   $('shopList').querySelectorAll('[data-buy]').forEach(b => b.onclick = async () => {
     if (shopBusy) return; shopBusy = true; b.disabled = true;
     const ok = await withAdPause(() => JellyMonetize.buy(b.dataset.buy));

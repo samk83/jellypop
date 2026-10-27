@@ -37,7 +37,7 @@ for (const lang of LANGS) for (const [name, w, h, s] of SIZES) {
   await page.waitForTimeout(800);
   await snap('4-boss');
   // 5 클리어 (별 3개, 스티커)
-  await page.evaluate(() => { const j = window.__jp; j.startStage(6); j.closeCard(); j.G.fired = 1; j.finish(true); });
+  await page.evaluate(() => { const j = window.__jp; j.startStage(6); j.closeCard(); j.G.fired = 9; j.G.score = 12480; j.finish(true); });
   await page.waitForFunction(() => !document.getElementById('result').hidden, null, { timeout: 5000 });
   await snap('5-clear');
   await ctx.close();
