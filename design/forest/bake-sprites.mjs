@@ -5,7 +5,8 @@ import { chromium } from '/opt/node22/lib/node_modules/playwright/index.mjs';
 import fs from 'node:fs';
 import path from 'node:path';
 const dir = path.dirname(new URL(import.meta.url).pathname), root = path.resolve(dir, '../..');
-const keys = JSON.parse(fs.readFileSync(path.join(dir, 'sprite-keys.json'), 'utf8'));
+const keys = JSON.parse(fs.readFileSync(path.join(dir, process.env.KEYS || 'sprite-keys.json'), 'utf8'));
+const outFile = process.env.OUT || path.join(root, 'sprites3d.js');
 const baker = fs.readFileSync(path.join(dir, 'jelly3d-baker.js'), 'utf8');
 const browser = await chromium.launch({ executablePath: '/opt/pw-browsers/chromium', args: ['--no-sandbox', '--use-gl=angle', '--use-angle=swiftshader', '--enable-unsafe-swiftshader', '--disable-gpu-watchdog'] });
 const page = await browser.newPage();
@@ -17,7 +18,13 @@ let bytes = 0;
 for (const [key, size] of Object.entries(keys)) {
   const [kind, color, mood, ears] = key.split('|');
   out[key] = await page.evaluate(async ({ kind, color, mood, ears, size }) => {
-    const big = Jelly3D.bake(kind, { color, mood, ears: ears === '1' }, size * 2);
+    // 투명 젤리 빛 때문에 짙은 색이 회색으로 바래 보이니 놈놈 몸은 채도를 올린 색으로 굽는다 (남보라 / 빨개진 자주)
+    const deep = hex => ({ '#3b2a7a': '#5a2fd6', '#722258': '#d02a7c' })[hex] || hex;
+    // boss|종류|표정|0 → 장식 달린 보스 젤리, nom|몸 색|표정|꼬마(1) → 놈놈·노놈
+    const BOSS = { mungchi: ['#8a5cf0', 1], syrup: ['#e8912f', 2], pudding: ['#ffc94a', 3], robot: ['#7f9bd1', 4] };
+    const big = kind === 'boss' ? Jelly3D.bake('jelly', { color: BOSS[color][0], mood, acc: BOSS[color][1] }, size * 2)
+      : kind === 'nom' ? Jelly3D.bake('jelly', { color: deep(color), mood, acc: ears === '1' ? 6 : 5 }, size * 2)
+      : Jelly3D.bake(kind, { color, mood, ears: ears === '1' }, size * 2);
     if (!big) throw new Error('bake failed ' + kind + color);
     const im = new Image(); im.src = big; await im.decode();
     const c = document.createElement('canvas'); c.width = c.height = size;
@@ -32,5 +39,5 @@ const js = `// 자동 생성 파일 (손으로 고치지 않기): node design/fo
 // 미리 구운 3D 젤리·거품·대포 그림. 키 = "종류|색|표정|귀"
 window.JELLY3D_SPRITES = ${JSON.stringify(out, null, 0).replace(/","/g, '",\n"')};
 `;
-fs.writeFileSync(path.join(root, 'sprites3d.js'), js);
+fs.writeFileSync(outFile, js);
 console.log(`\n${Object.keys(out).length}장, ${(bytes / 1024).toFixed(0)}KB`);

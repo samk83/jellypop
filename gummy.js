@@ -294,6 +294,9 @@ window.Gummy = (() => {
   function boss(x, y, r, { mood = 'angry', kind = 'mungchi' } = {}) {
     const col = BOSS_COLOR[kind] || BOSS_COLOR.mungchi;
     let g = `<ellipse cx="${x}" cy="${y}" rx="${r * 1.3}" ry="${r * 1.15}" fill="${light(col, 0.4)}" opacity="0.45" filter="url(#soft12)"/>`;
+    // 미리 구운 3D 보스(뿔·왕관·모자 포함). 몸이 작게 구워져 있어 그림을 3.13r 로 키우고 위로 0.384r 올린다
+    const t3 = tex3d('boss', { color: kind in BOSS_COLOR ? kind : 'mungchi', mood }, r * 3.13 * PX);
+    if (t3) return g + groundShadow(x, y + r * 0.9, r * 0.95, r * 0.2, 0.25) + image3d(t3, x - r * 1.565, y - r * 1.949, r * 3.13, r * 3.13);
     const horn = sx => `<path d="M${x + sx * r * 0.55} ${y - r * 0.75} Q${x + sx * r * 0.9} ${y - r * 1.05} ${x + sx * r * 0.75} ${y - r * 1.45} Q${x + sx * r * 0.95} ${y - r * 1.1} ${x + sx * r * 1.0} ${y - r * 0.6} Z" fill="${linear([[0, col], [1, dark(col, 0.45)]], 0, 0, 0, 1)}" opacity="0.9"/>`;
     if (kind === 'mungchi' || kind === 'syrup') g += horn(-1) + horn(1);
     if (kind === 'robot') {
@@ -324,6 +327,8 @@ window.Gummy = (() => {
   function nomnom(x, y, r, { mood = 'angry', mini = false, red = 0 } = {}) {
     const body = mix('#3b2a7a', '#8a1f4a', red), rim = mix('#7b5cd6', '#ff5f8a', red);
     let g = `<ellipse cx="${x}" cy="${y}" rx="${r * 1.35}" ry="${r * 1.2}" fill="${rim}" opacity="0.4" filter="url(#soft12)"/>`;
+    const t3 = tex3d('nom', { color: body, mood: mood === 'joy' ? 'happy' : mood, ears: mini }, r * 3.13 * PX);
+    if (t3) return g + groundShadow(x, y + r * 0.9, r * 0.9, r * 0.2, 0.25) + image3d(t3, x - r * 1.565, y - r * 1.949, r * 3.13, r * 3.13);
     const ear = sx => `<g filter="url(#glass)"><circle cx="${x + sx * r * 0.62}" cy="${y - r * 0.82}" r="${r * (mini ? 0.3 : 0.34)}" fill="${radial(light(body, 0.25), body, dark(body, 0.3), 0.4, 0.3, 0.8)}"/></g>`;
     g += ear(-1) + ear(1);
     const path = blobPath(x, y, r, r * 0.95);

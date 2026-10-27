@@ -5,12 +5,12 @@
 window.Jelly3D = (() => {
   const FRAG = `#version 300 es
 precision highp float;
-uniform vec2 uRes; uniform int uKind; uniform vec3 uCol; uniform float uMood; uniform float uEars;
+uniform vec2 uRes; uniform int uKind; uniform vec3 uCol; uniform float uMood; uniform float uEars; uniform int uAcc;
 out vec4 o;
 const vec3 SUN = normalize(vec3(-0.12, 0.70, -0.70));
 const vec3 KEY = normalize(vec3(0.55, 0.55, 0.65));
 const vec3 SUNC = vec3(1.0, 0.86, 0.58);
-const float RR = 3.0;
+float RR = 3.0;   // 보스·놈놈(uAcc>0)은 장식이 들어가게 몸을 조금 작게
 vec3 camPos;
 float hash3(vec3 p){ p = fract(p*0.3183099 + 0.1); p *= 17.0; return fract(p.x*p.y*p.z*(p.x+p.y+p.z)); }
 vec2 voro(vec3 p){ vec3 i=floor(p), f=fract(p); float d1=9.0, d2=9.0;
@@ -30,14 +30,43 @@ float jellyBody(vec3 p, float r, float ears){
     float a = -0.45; q.xy = mat2(cos(a),-sin(a),sin(a),cos(a))*q.xy; d = smin(d, sdEll(q, vec3(0.20*r, 0.30*r, 0.17*r)), 0.12*r); }
   return smax(d, -p.y, 0.06*r);
 }
-const vec3 FOOT = vec3(0.0, -2.7, 0.0);
+vec3 FOOT = vec3(0.0, -2.7, 0.0);
+float sdCap(vec3 p, vec3 a, vec3 b, float r){ vec3 pa=p-a, ba=b-a; float h=clamp(dot(pa,ba)/dot(ba,ba),0.0,1.0); return length(pa-ba*h)-r; }
+mat2 rot2(float a){ return mat2(cos(a),-sin(a),sin(a),cos(a)); }
+// 보스 장식 (q = 발 기준 좌표, r = 몸 반지름). 재질 번호: 96 금, 99 뿔(몸 색 짙게), 100 시럽, 101 캐러멜, 102 체리, 103 금속, 104 분홍 불빛, 105 줄기
+vec2 bossAcc(vec3 q, float r){
+  vec2 res = vec2(1e5, 0.0);
+  if(uAcc==1 || uAcc==2){ for(int s=0;s<2;s++){ float sx = s==0?-1.0:1.0; vec3 h = q - vec3(sx*0.50*r, 1.50*r, -0.05*r); h.xy = rot2(sx*0.55)*h.xy;
+      float d = sdRCone(h, 0.20*r, 0.035*r, 0.62*r); if(d<res.x) res = vec2(d, 99.0); } }
+  if(uAcc==1 || uAcc==5){ vec3 c = q - vec3(0.0, 1.80*r, 0.0);
+    float band = max(abs(length(c.xz) - 0.30*r) - 0.05*r, abs(c.y) - 0.11*r); band -= 0.01*r;
+    if(band<res.x) res = vec2(band, 96.0);
+    for(int i=0;i<5;i++){ float a = float(i)*1.2566 + 0.3; vec3 k = c - vec3(cos(a)*0.30*r, 0.08*r, sin(a)*0.30*r);
+      float d = sdRCone(k, 0.07*r, 0.015*r, 0.22*r); if(d<res.x) res = vec2(d, 96.0);
+      float gem = length(k - vec3(0.0, 0.25*r, 0.0)) - 0.045*r; if(gem<res.x) res = vec2(gem, 96.0); } }
+  if(uAcc==2 || uAcc==3){ vec3 e = q - vec3(0.0, 0.92*r, 0.0); float ang = atan(e.z, e.x);
+    float edge = (uAcc==3 ? 1.30 : 1.38)*r + (uAcc==3 ? 0.07*r*sin(ang*7.0) : 0.0);
+    float cap = max(sdEll(e, vec3(0.97*r, 1.0*r, 0.92*r)), edge - q.y);
+    if(uAcc==2){ for(int i=0;i<3;i++){ float dx = i==0?-0.48:(i==1?0.10:0.42); float len = i==1?0.30:0.42;
+        float z = 0.86*r*sqrt(max(0.0, 1.0 - dx*dx/0.9)); cap = smin(cap, sdCap(q, vec3(dx*r, 1.40*r, z*0.92), vec3(dx*r, (1.40-len)*r, z), 0.085*r), 0.08*r); } }
+    if(cap<res.x) res = vec2(cap, uAcc==2 ? 100.0 : 101.0); }
+  if(uAcc==3){ float ch = length(q - vec3(0.0, 2.02*r, 0.05*r)) - 0.19*r; if(ch<res.x) res = vec2(ch, 102.0);
+    float st = sdCap(q, vec3(0.0, 2.18*r, 0.05*r), vec3(0.16*r, 2.42*r, 0.0), 0.025*r); if(st<res.x) res = vec2(st, 105.0); }
+  if(uAcc==4){ float an = sdCap(q, vec3(0.0, 1.75*r, 0.0), vec3(0.0, 2.30*r, 0.0), 0.045*r); if(an<res.x) res = vec2(an, 103.0);
+    float led = length(q - vec3(0.0, 2.38*r, 0.0)) - 0.13*r; if(led<res.x) res = vec2(led, 104.0);
+    for(int s=0;s<2;s++){ float sx = s==0?-1.0:1.0; float b = sdRBox(q - vec3(sx*1.0*r, 0.85*r, 0.0), vec3(0.12*r, 0.22*r, 0.16*r), 0.05*r); if(b<res.x) res = vec2(b, 103.0); } }
+  return res;
+}
 float eyeR(){ return 0.25*RR; }
 vec3 eyePos(float side){ vec3 f = jFwd(FOOT), rt = normalize(cross(vec3(0,1,0), f)); return FOOT + rt*side*0.34*RR + vec3(0, 1.06*RR, 0) + f*0.66*RR; }
-bool hasEyes(){ return uKind==0 && (uMood < 0.5 || uMood > 1.5); }
+bool hasEyes(){ return uKind==0 && uAcc < 5 && (uMood < 0.5 || uMood > 1.5); }
 vec2 map(vec3 p){
   vec2 res = vec2(1e5, 0.0);
   if(uKind==0){
-    res = vec2(jellyBody(p - FOOT, RR, uEars), 10.0);
+    float jb = jellyBody(p - FOOT, RR, uEars);
+    if(uAcc>=5){ vec3 q = p - FOOT; q.x = abs(q.x); jb = smin(jb, length(q - vec3(0.60*RR, 1.62*RR, -0.05*RR)) - 0.30*RR, 0.10*RR); }   // 놈놈 둥근 귀
+    res = vec2(jb, 10.0);
+    if(uAcc>0){ vec2 ac = bossAcc(p - FOOT, RR); if(ac.x < res.x) res = ac; }
     if(hasEyes()) for(int s=0;s<2;s++){ float de = length(p-eyePos(s==0?-1.0:1.0))-eyeR(); if(de<res.x) res=vec2(de, 20.0+float(s)); }
   } else if(uKind==1){ res = vec2(length(p) - RR, 15.0); }
   else if(uKind==2){
@@ -107,6 +136,22 @@ vec3 faceDecor(vec3 col, vec3 p, vec3 n, vec3 c, float r){
   vec3 f = jFwd(c), rt = normalize(cross(vec3(0,1,0), f));
   vec3 q = p - c; float u = dot(q, rt)/r, w = q.y/r;
   if(dot(n, f) < 0.2) return col;
+  if(uAcc >= 5){ // 놈놈: 어두운 가면 + 빛나는 분홍 눈
+    float mk = length(vec2(u, (w - 0.98)*1.18));
+    col = mix(col, vec3(0.012,0.004,0.035), 0.88*smoothstep(0.66, 0.60, mk));
+    vec3 pinkc = vec3(1.0,0.42,0.80);
+    for(int s=0;s<2;s++){ float sx = s==0?-1.0:1.0; vec2 e = vec2(u - sx*0.28, w - 1.04);
+      if(uMood < 1.5){ float a = abs(length(e + vec2(0.0, 0.10)) - 0.14); if(a < 0.035 && e.y > -0.06) col = pinkc*1.6; }
+      else { float tilt = (uMood > 2.5 ? -0.30 : 0.30) * sx; vec2 ee = vec2(e.x, e.y - tilt*e.x);
+        float al = length(ee*vec2(1.0/0.17, 1.0/0.095));
+        col += pinkc*0.9*smoothstep(1.9, 1.0, al);
+        if(al < 1.0) col = mix(vec3(1.0,0.82,0.93), pinkc, smoothstep(0.2, 1.0, al))*1.5;
+        if(length(e) < 0.045) col = vec3(1.6); } }
+    if(uMood > 1.5 && uMood < 2.5){ float m = abs(length(vec2(u, w - 0.60)) - 0.12); if(m < 0.025 && w > 0.66) col = pinkc*1.4; }
+    else if(uMood > 2.5){ vec2 m = vec2(u, w - 0.70); if(abs(m.x) < 0.16 && m.y < 0.02 - abs(m.x)*0.1 && m.y > -0.05 + 0.25*abs(abs(m.x)-0.08)) col = pinkc*1.4; }
+    else { float m = abs(length(vec2(u, w - 0.80)) - 0.12); if(m < 0.025 && w < 0.74) col = pinkc*1.4; }
+    return col;
+  }
   float ch = min(length(vec2(u+0.60, w-0.80)*vec2(1.0,1.5)), length(vec2(u-0.60, w-0.80)*vec2(1.0,1.5)));
   col = mix(col, vec3(1.0,0.12,0.18), 0.55*smoothstep(0.16, 0.02, ch));
   if(uMood < 1.5){ float sm = abs(length(vec2(u, w - 0.90)) - 0.13); if(sm < 0.024 && w < 0.84) col = ink(col, 0.92); }
@@ -136,6 +181,13 @@ vec3 candy(vec3 p, vec3 n, vec3 rd, float id){
     if(uKind==2){ if(sin(atan(p.z,p.x)*2.0 + p.y*1.6) > 0.55) alb = mix(alb, vec3(1.0,0.97,0.95), 0.85); if(length(p.xz) < 0.9 && p.y > 1.9) alb = uCol*0.35; } }
   else if(id < 96.5){ alb = vec3(1.0,0.78,0.30); spec = 1.4; rough = 90.0; }
   else if(id < 97.5){ alb = vec3(0.62,0.40,0.95); }
+  else if(id > 98.5 && id < 99.5){ alb = uCol*0.45; spec = 0.9; rough = 60.0; }
+  else if(id > 99.5 && id < 100.5){ alb = vec3(1.0,0.62,0.16); spec = 1.8; rough = 110.0; }
+  else if(id > 100.5 && id < 101.5){ alb = vec3(0.62,0.30,0.08); spec = 1.6; rough = 100.0; }
+  else if(id > 101.5 && id < 102.5){ alb = vec3(1.0,0.12,0.25); spec = 1.8; rough = 120.0; }
+  else if(id > 102.5 && id < 103.5){ alb = vec3(0.78,0.84,0.95); spec = 1.6; rough = 120.0; }
+  else if(id > 103.5 && id < 104.5){ return vec3(1.0,0.40,0.62)*1.8; }
+  else if(id > 104.5 && id < 105.5){ alb = vec3(0.25,0.56,0.22); }
   else { alb = vec3(1.0,0.93,0.80); spec = 0.6; rough = 50.0; }
   alb = pow(alb, vec3(2.2));
   float dK = max(dot(n, KEY), 0.0), dS = max(dot(n, SUN), 0.0);
@@ -146,6 +198,7 @@ vec3 candy(vec3 p, vec3 n, vec3 rd, float id){
 }
 void main(){
   vec2 uv = (2.0*gl_FragCoord.xy - uRes) / uRes.y;
+  if(uAcc > 0){ RR = 2.3; FOOT = vec3(0.0, -3.0, 0.0); }
   float a = uKind==5 ? 0.0 : 0.12;
   vec3 rd = normalize(vec3(0, -sin(a), -cos(a)));
   vec3 ro = vec3(uv*3.6, 0.0) + vec3(0, 20.0*sin(a), 20.0*cos(a));
@@ -206,7 +259,7 @@ void main(){
       const b = gl.createBuffer(); gl.bindBuffer(gl.ARRAY_BUFFER, b);
       gl.bufferData(gl.ARRAY_BUFFER, new Float32Array([-1, -1, 3, -1, -1, 3]), gl.STATIC_DRAW);
       gl.enableVertexAttribArray(0); gl.vertexAttribPointer(0, 2, gl.FLOAT, false, 0, 0);
-      for (const k of ['uRes', 'uKind', 'uCol', 'uMood', 'uEars']) U[k] = gl.getUniformLocation(prog, k);
+      for (const k of ['uRes', 'uKind', 'uCol', 'uMood', 'uEars', 'uAcc']) U[k] = gl.getUniformLocation(prog, k);
       state = true;
     } catch (e) { console.warn('Jelly3D off:', e.message); state = false; }
     return state;
@@ -219,17 +272,17 @@ void main(){
     const n = parseInt(m[1], 16); return [(n >> 16) / 255, (n >> 8 & 255) / 255, (n & 255) / 255];
   }
   // 그림 한 장 굽기 → dataURL (같은 요청은 저장해 두고 재사용)
-  function bake(kind, { color = '#ff7fae', mood = 'happy', ears = false } = {}, px = 192) {
+  function bake(kind, { color = '#ff7fae', mood = 'happy', ears = false, acc = 0 } = {}, px = 192) {
     if (!init()) return null;
     const col = rgb(color); if (!col) return null;
-    const size = bucket(px), key = [kind, String(color).toLowerCase(), mood, ears ? 1 : 0, size].join('|');
+    const size = bucket(px), key = [kind, String(color).toLowerCase(), mood, ears ? 1 : 0, acc, size].join('|');
     if (cache[key] !== undefined) return cache[key];
     if (gl.isContextLost()) { state = false; return null; }
     try {
       cv.width = size; cv.height = size;
       gl.viewport(0, 0, size, size); gl.clearColor(0, 0, 0, 0); gl.clear(gl.COLOR_BUFFER_BIT);
       gl.uniform2f(U.uRes, size, size); gl.uniform1i(U.uKind, KIND[kind]); gl.uniform3f(U.uCol, col[0], col[1], col[2]);
-      gl.uniform1f(U.uMood, MOOD[mood] !== undefined ? MOOD[mood] : 0); gl.uniform1f(U.uEars, ears ? 1 : 0);
+      gl.uniform1f(U.uMood, MOOD[mood] !== undefined ? MOOD[mood] : 0); gl.uniform1f(U.uEars, ears ? 1 : 0); gl.uniform1i(U.uAcc, acc);
       gl.drawArrays(gl.TRIANGLES, 0, 3);
       if (gl.isContextLost()) { state = false; return null; }
       let url = cv.toDataURL('image/webp', 0.92);

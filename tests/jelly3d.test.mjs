@@ -47,6 +47,10 @@ console.log('3D 그림 굽기');
   r.out.forEach(o => check(`${o.k}: 그림이 나옴 (가운데는 칠해지고 모서리는 투명)`, o.ok && o.opaque > 0.05 && o.clear > 0.1 && o.corner === 0, JSON.stringify(o)));
   check('색 대소문자 상관없이 미리 구운 그림을 찾음', r.again);
   check('잘못된 색이면 null (SVG 그림으로 대체)', r.bad === null);
+  check('보스 4종·노놈·꼬마 놈놈도 미리 구운 3D 그림 (뿔·왕관·모자·가면 포함)', await page.evaluate(() =>
+    ['mungchi', 'syrup', 'pudding', 'robot'].every(kind => ['angry', 'worried', 'o'].every(mood => Gummy.boss(0, 0, 28, { kind, mood }).includes('<image'))) &&
+    ['angry', 'worried', 'happy'].every(mood => Gummy.nomnom(0, 0, 30, { mood }).includes('<image') && Gummy.nomnom(0, 0, 16, { mood, mini: true }).includes('<image')) &&
+    ['angry', 'worried'].every(mood => Gummy.nomnom(0, 0, 30, { mood, red: 0.7 }).includes('<image'))));
   check('목록에 없는 그림이면 null (SVG 그림으로 대체)', await page.evaluate(() => Jelly3D.bake('jelly', { color: '#123456' }) === null));
   check('Art.jelly 가 3D 그림(<image>)을 씀', await page.evaluate(() => Gummy.jelly(0, 0, 20, '#ff5f8a', {}).includes('<image')));
   check('갇힌 친구 거품 = 3D 젤리 + 투명 거품', await page.evaluate(() => (Gummy.bubble(0, 0, 18, '#ff5f8a', { trapped: '#4fdcc4' }).match(/<image/g) || []).length === 2));
