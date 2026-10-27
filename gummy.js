@@ -368,6 +368,23 @@ window.Gummy = (() => {
     if (kind === 'm') return `<path d="M${x - r * 0.75} ${y - r * 0.35} Q${x - r * 0.7} ${y - r * 1.15} ${x} ${y - r * 1.15} Q${x + r * 0.7} ${y - r * 1.15} ${x + r * 0.75} ${y - r * 0.35} Q${x} ${y - r * 0.15} ${x - r * 0.75} ${y - r * 0.35} Z" fill="${radial('#ffd1dc', '#ff5f7a', '#c8244a', 0.4, 0.3, 0.8)}"/><circle cx="${x - r * 0.35}" cy="${y - r * 0.7}" r="${r * 0.13}" fill="#fff"/><circle cx="${x + r * 0.2}" cy="${y - r * 0.85}" r="${r * 0.1}" fill="#fff"/><circle cx="${x + r * 0.45}" cy="${y - r * 0.5}" r="${r * 0.09}" fill="#fff"/>`;
     if (kind === 'u') return `<path d="M${x - r * 0.9} ${y - r * 0.3} Q${x - r * 0.8} ${y - r * 0.95} ${x} ${y - r * 0.95} Q${x + r * 0.8} ${y - r * 0.95} ${x + r * 0.9} ${y - r * 0.3} Q${x + r * 0.55} ${y - r * 0.05} ${x + r * 0.35} ${y - r * 0.32} Q${x} ${y - r * 0.05} ${x - r * 0.35} ${y - r * 0.32} Q${x - r * 0.55} ${y - r * 0.05} ${x - r * 0.9} ${y - r * 0.3} Z" fill="${linear([[0, '#c9752a'], [1, '#8a4512']], 0, 0, 0, 1)}" opacity="0.9"/><ellipse cx="${x - r * 0.3}" cy="${y - r * 0.72}" rx="${r * 0.22}" ry="${r * 0.08}" fill="#fff" opacity="0.7"/>`;
     if (kind === 'g') return `<rect x="${x - r * 0.12}" y="${y - r * 0.98}" width="${r * 0.24}" height="${r * 1.96}" fill="#ff4f8b" opacity="0.9"/><rect x="${x - r * 0.98}" y="${y - r * 0.12}" width="${r * 1.96}" height="${r * 0.24}" fill="#ff4f8b" opacity="0.9"/><path d="M${x} ${y - r * 0.85} Q${x - r * 0.6} ${y - r * 1.35} ${x - r * 0.55} ${y - r * 0.8} Q${x - r * 0.3} ${y - r * 0.7} ${x} ${y - r * 0.85} Q${x + r * 0.6} ${y - r * 1.35} ${x + r * 0.55} ${y - r * 0.8} Q${x + r * 0.3} ${y - r * 0.7} ${x} ${y - r * 0.85} Z" fill="#ff7fae" stroke="#c2457a" stroke-width="1"/>`;
+    if (kind === 'z') {
+      // 폭탄: 주황 테두리 + 금색 뚜껑 + 굵은 심지 + 큰 불꽃
+      const cx = x + r * 0.5, cy = y - r * 0.92;
+      return `<circle cx="${x}" cy="${y}" r="${r * 0.97}" fill="none" stroke="#ff8c3a" stroke-width="${r * 0.12}" opacity="0.85"/>` +
+        `<rect x="${cx - r * 0.3}" y="${cy - r * 0.2}" width="${r * 0.6}" height="${r * 0.4}" rx="${r * 0.1}" fill="${linear([[0, '#fff0b3'], [1, '#d18a00']], 0, 0, 0, 1)}" stroke="#8a5a00" stroke-width="1.2" transform="rotate(35 ${cx} ${cy})"/>` +
+        `<path d="M${cx + r * 0.16} ${cy - r * 0.2} Q${cx + r * 0.6} ${cy - r * 0.5} ${cx + r * 0.36} ${cy - r * 0.78}" stroke="#7a4a2a" stroke-width="${r * 0.14}" fill="none" stroke-linecap="round"/>` +
+        `<circle cx="${cx + r * 0.36}" cy="${cy - r * 0.78}" r="${r * 0.42}" fill="#ffb347" opacity="0.6" filter="url(#soft6)"/>` +
+        starSvg(cx + r * 0.36, cy - r * 0.78, r * 0.36, '#ffe27a', '#ff5f3a');
+    }
+    if (kind === 'q') {
+      // 랜덤: 무지개 테두리 + 하얀 동그라미 속 큰 물음표 + 반짝이
+      return `<circle cx="${x}" cy="${y}" r="${r * 0.93}" fill="none" stroke="${linear([[0, '#ff7aa5'], [0.25, '#ffd23f'], [0.5, '#5ed46a'], [0.75, '#4fb4ff'], [1, '#a76bff']], 0, 0, 1, 1)}" stroke-width="${r * 0.2}"/>` +
+        `<circle cx="${x}" cy="${y}" r="${r * 0.72}" fill="${radial('#ffffff', '#ffffff', '#efe4ff', 0.4, 0.35, 0.9)}"/>` +
+        `<text x="${x}" y="${y + r * 0.42}" text-anchor="middle" font-family="Baloo 2, Arial, sans-serif" font-weight="800" font-size="${r * 1.25}" fill="${linear([[0, '#ff5fa8'], [1, '#7a3fe0']], 0, 0, 0, 1)}">?</text>` +
+        `<ellipse cx="${x - r * 0.36}" cy="${y - r * 0.44}" rx="${r * 0.22}" ry="${r * 0.1}" fill="#fff" opacity="0.95" transform="rotate(-35 ${x - r * 0.36} ${y - r * 0.44})"/>` +
+        sparkle(x + r * 0.62, y - r * 0.64, r * 0.28, '#ffe27a') + sparkle(x - r * 0.7, y + r * 0.52, r * 0.2, '#ff9fc4');
+    }
     if (kind === 'f') return `<circle cx="${x}" cy="${y + r * 0.1}" r="${r * 0.55}" fill="#fff6a8" opacity="0.8" filter="url(#soft6)"/><circle cx="${x}" cy="${y + r * 0.1}" r="${r * 0.22}" fill="#fffbe0"/><ellipse cx="${x - r * 0.3}" cy="${y - r * 0.2}" rx="${r * 0.22}" ry="${r * 0.12}" fill="#fff" opacity="0.8" transform="rotate(30 ${x - r * 0.3} ${y - r * 0.2})"/><ellipse cx="${x + r * 0.3}" cy="${y - r * 0.2}" rx="${r * 0.22}" ry="${r * 0.12}" fill="#fff" opacity="0.8" transform="rotate(-30 ${x + r * 0.3} ${y - r * 0.2})"/>`;
     return '';
   }

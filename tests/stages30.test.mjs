@@ -118,6 +118,95 @@ function botPlay(stageNo) {
   await page.close();
 }
 
+// 1-2) 폭탄 거품 · 랜덤 거품 (0.10.0)
+{
+  console.log('폭탄 거품 · 랜덤 거품');
+  const page = await browser.newPage();
+  const errors = [];
+  page.on('pageerror', e => errors.push(e.message));
+  await page.goto(url + '?seed=11');
+  await page.evaluate(() => { window.__jp.reset(); window.__jp.P.seenIntro = true; });
+  const r = await page.evaluate(() => {
+    const j = window.__jp, { Board } = j, out = {};
+    const rows = ['rybgprybgp', 'ybgprybgp', 'gprybgpYrb', 'prybgpryb', 'ybgprybgpr'];
+    // 폭탄: 쏜 거품이 닿으면 둘레가 색 상관없이 터짐, 갇힌 친구도 풀려남
+    let b = Board.fromRows(rows, 10, ['..........', '.........', '..........', '.........', '.......z..']);
+    out.bombColors = [...Board.colorsOnBoard(b)].sort().join('');
+    out.bombNoMatch = Board.matches(b.rows[4][7], 'r');
+    let p = Board.place(b, 5, 7, 'r');
+    out.bombPop = p.popped.length; out.bombs = p.bombs;
+    out.bombMixed = new Set(p.popped.map(q => q.cell.c)).size;
+    out.bombFriend = [...p.popped, ...p.dropped].some(q => q.cell.friend !== undefined);
+    // 폭탄 연쇄: 범위 안 다른 폭탄도 터짐
+    b = Board.fromRows(rows, 10, ['..........', '.........', '....z.....', '.........', '....z.....']);
+    p = Board.place(b, 5, 4, 'g');
+    out.chain = p.bombs;
+    // 폭탄을 쏘면 붙은 자리에서 터짐 (쿠키·시럽·얼음도 함께)
+    b = Board.fromRows(rows, 10, ['..........', '.........', '..........', '.........', '..ksi.....']);
+    p = Board.place(b, 5, 3, 'z');
+    out.shotBomb = p.bombs === 1 && ['k', 's', 'i'].every(k => p.popped.some(q => q.cell.k === k));
+    // 같은 색 3개로 폭탄을 묶어도 짝은 안 됨 (닿아야 터짐) → 떨어진 폭탄은 그냥 떨어짐
+    b = Board.fromRows(['rr........', 'z........'], 10, ['..........', 'z........']);
+    p = Board.place(b, 0, 2, 'r');
+    out.bombDrop = p.bombs === 0 && p.dropped.some(q => q.cell.k === 'z');
+    // 랜덤: 닿으면 터지며 효과 1개
+    b = Board.fromRows(rows, 10, ['..........', '.........', '..........', '.........', '...q......']);
+    out.qColors = [...Board.colorsOnBoard(b)].includes('q');
+    p = Board.place(b, 5, 3, 'b');
+    out.qHit = p.randoms.length === 1 && !b.rows[4][3];
+    // 좋은 효과 60% · 나쁜 효과 40% (1000번 뽑기)
+    j.seedRandom(3); let good = 0; const ids = new Set();
+    for (let i = 0; i < 1000; i++) { const e = j.pickLucky(); ids.add(e.id); if (e.good) good++; }
+    out.good = good; out.kinds = ids.size;
+    // 효과 하나씩 실제 게임에 적용
+    j.startStage(14); j.closeCard();
+    const G = () => j.G, at = Board.pos(G().b, 3, 3), eff = id => j.LUCKY.find(e => e.id === id);
+    j.applyLucky(eff('bomb'), at); out.effBomb = G().queue[0] === 'z';
+    j.applyLucky(eff('rainbow'), at); out.effRainbow = G().queue[0] === 'w';
+    j.applyLucky(eff('firefly'), at); out.effFly = G().hz.aimBoost === 3;
+    G().hz.dropT = 2; j.applyLucky(eff('time'), at); out.effTime = G().hz.dropT === G().hz.cfg.dropSec;
+    j.applyLucky(eff('fog'), at); out.effFog = !!G().hz.cloud;
+    const y0 = G().y0Target; j.applyLucky(eff('ceil'), at); out.effCeil = G().y0Target > y0;
+    const friendBefore = JSON.stringify(G().b.rows.flat().filter(c => c && c.friend !== undefined));
+    j.applyLucky(eff('mix'), Board.pos(G().b, 2, 5));
+    out.effMixFriend = JSON.stringify(G().b.rows.flat().filter(c => c && c.friend !== undefined)) === friendBefore;
+    // 실제로 쏜 거품이 랜덤 거품에 붙으면 효과가 나옴 (14스테이지 맨 아래 줄 랜덤 바로 밑)
+    j.startStage(14); j.closeCard(); G().lucky = [];
+    const q = Board.pos(G().b, 7, 4);
+    G().state = 'flying'; j.land({ x: q.x, y: q.y + j.ROW_H, c: 'r' });
+    out.landLucky = G().lucky.length;
+    // 쏜 폭탄 거품이 대포에서 날아가 터짐
+    j.startStage(4); j.closeCard();
+    G().queue[0] = 'z'; j.setAngle(-Math.PI / 2); j.shoot(); j.advance();
+    out.flyBomb = G().score > 0;
+    // 스테이지 배치 · 첫 등장 설명 카드 (월드 1인 4스테이지에서도)
+    out.zAt = j.STAGES.filter(s => (s.kinds || []).join('').includes('z')).map(s => s.id).join(',');
+    out.qAt = j.STAGES.filter(s => (s.kinds || []).join('').includes('q')).map(s => s.id).join(',');
+    j.reset(); j.P.seenIntro = true; j.startStage(4);
+    out.card4 = !document.getElementById('hzCard').hidden && document.getElementById('hzList').textContent.includes('폭탄 거품');
+    j.closeCard(); j.startStage(4); out.card4again = document.getElementById('hzCard').hidden;
+    j.startStage(14); out.card14 = document.getElementById('hzList').textContent.includes('랜덤 거품');
+    return out;
+  });
+  check('폭탄·랜덤 거품은 쏠 색에 들어가지 않고 짝도 안 됨', !r.bombColors.includes('z') && !r.bombNoMatch && !r.qColors, r.bombColors);
+  check('폭탄: 닿으면 둘레 거품이 색 상관없이 터짐(1.8칸 안, 맨 아래 줄 폭탄이면 9개)', r.bombs === 1 && r.bombPop >= 9 && r.bombMixed >= 4, r.bombPop + '/' + r.bombMixed);
+  check('폭탄: 범위 안 갇힌 친구는 풀려남', r.bombFriend);
+  check('폭탄: 범위 안 다른 폭탄은 연쇄로 터짐', r.chain === 2, r.chain);
+  check('폭탄을 쏘면 붙은 자리에서 터짐 (쿠키·시럽·얼음도)', r.shotBomb);
+  check('폭탄: 닿지 않고 떨어지면 그냥 떨어짐', r.bombDrop);
+  check('랜덤: 쏜 거품이 닿으면 터지고 효과 1개', r.qHit);
+  check('랜덤: 좋은 효과 약 60% (1000번 중 550~650), 7종 모두 나옴', r.good >= 550 && r.good <= 650 && r.kinds === 7, r.good + ',' + r.kinds);
+  check('랜덤 효과: 폭탄·무지개·반딧불·시간 충전', r.effBomb && r.effRainbow && r.effFly && r.effTime, JSON.stringify(r));
+  check('랜덤 효과: 안개·천장 한 칸', r.effFog && r.effCeil);
+  check('랜덤 효과: 색 섞기는 갇힌 친구를 건드리지 않음', r.effMixFriend);
+  check('게임 중 랜덤 거품에 붙이면 효과가 나옴', r.landLucky === 1, r.landLucky);
+  check('대포에서 쏜 폭탄 거품이 날아가 터짐', r.flyBomb);
+  check('폭탄 배치 4·10·20·25·28, 랜덤 배치 14·17·22·26·29', r.zAt === '4,10,20,25,28' && r.qAt === '14,17,22,26,29', r.zAt + ' / ' + r.qAt);
+  check('첫 등장 설명 카드: 4스테이지 폭탄(한 번만), 14스테이지 랜덤', r.card4 && r.card4again && r.card14);
+  check('폭탄·랜덤 검사 중 페이지 에러 없음', errors.length === 0, errors.join(' | '));
+  await page.close();
+}
+
 // 2) 스테이지 표 · 방해 요소가 정해진 스테이지에서만 켜짐 · 예고
 {
   console.log('스테이지 표 · 방해 요소 · 예고');

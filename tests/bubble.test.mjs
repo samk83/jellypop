@@ -19,7 +19,7 @@ const browser = await chromium.launch(process.env.CHROMIUM ? { executablePath: p
 // 자동 플레이: 각도를 촘촘히 바꿔 가며 가장 좋은 한 발을 고른다 (대포 속 친구와 맨 앞 친구 둘 다 따져 봄)
 function botPlay(stageNo) {
   const j = window.__jp;
-  j.startStage(stageNo);
+  j.startStage(stageNo); j.closeCard();   // 4스테이지는 폭탄 거품 설명 카드가 먼저 나온다
   const G0 = () => j.G;
   let guard = 0;
   while (G0().state === 'aim' && guard++ < 200) {

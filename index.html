@@ -412,7 +412,10 @@ const COLORS = {
   p: { base: '#a76bff', light: '#e4d2ff', dark: '#6526c4' },
   o: { base: '#ff8c3a', light: '#ffe0c4', dark: '#c45a0a' },
   w: { base: '#ffffff', light: '#ffffff', dark: '#c9b8ff' },   // 무지개(수정) — 그림은 따로
+  z: { base: '#4a4466', light: '#ffb347', dark: '#2a2440' },   // 폭탄 거품 (색 없음, 닿으면 주변이 터짐)
+  q: { base: '#f2eaff', light: '#ffe27a', dark: '#a76bff' },   // 랜덤 거품 (닿으면 좋은/나쁜 효과 무작위)
 };
+const BLAST2 = (1.8 * D) ** 2;    // 폭탄 범위: 거품 중심 사이 거리 1.8칸 안 (이웃 6개 + 그 바깥 6개)
 
 // 스테이지 표(30개)·방해 요소 설명은 stages.js
 const { STAGES, WORLDS, INFO: HZ_INFO, keysOf } = window.JellyStages;
@@ -464,6 +467,7 @@ const Board = {
   // 특수 칸 만들기: kind → 칸 (c: 색, k: 종류). 수정 = 색 'w'(아무 색과 짝), 쿠키·방해 거품 = 색 없는 solid
   cell(color, kind) {
     if (kind === 'c') return { c: 'w', k: 'c' };
+    if (kind === 'z' || kind === 'q') return { c: kind, k: kind };   // 폭탄·랜덤: 색이 없어 짝이 안 되고, 쏜 거품이 닿으면 발동
     if (kind === 'k' || kind === 'n') return { c: kind, k: kind, solid: true };
     const cell = { c: color };
     if (kind && kind !== '.') cell.k = kind;
@@ -485,9 +489,10 @@ const Board = {
     return b;
   },
   // 짝이 될 수 있는 칸: 같은 색이거나 수정. 쿠키·얼음은 짝이 안 됨
-  matches(n, color) { return !!n && !n.solid && n.k !== 'i' && (n.c === color || n.c === 'w'); },
+  matches(n, color) { return !!n && !n.solid && n.k !== 'i' && !Board.trigger(n) && (n.c === color || n.c === 'w'); },
+  trigger(n) { return !!n && (n.k === 'z' || n.k === 'q'); },
   group(b, r, c) {
-    const start = Board.get(b, r, c); if (!start || start.solid || start.k === 'i') return [];
+    const start = Board.get(b, r, c); if (!start || start.solid || start.k === 'i' || Board.trigger(start)) return [];
     const color = start.c;
     const seen = new Set([r + ',' + c]), out = [[r, c]], stack = [[r, c]];
     while (stack.length) {
@@ -515,7 +520,7 @@ const Board = {
     return out;
   },
   // 판에 남은 "쏠 수 있는 색" (수정·쿠키·방해 거품은 빼고)
-  colorsOnBoard(b) { const s = new Set(); b.rows.forEach(row => row.forEach(cell => cell && !cell.solid && cell.c !== 'w' && s.add(cell.c))); return s; },
+  colorsOnBoard(b) { const s = new Set(); b.rows.forEach(row => row.forEach(cell => cell && !cell.solid && cell.c !== 'w' && !Board.trigger(cell) && s.add(cell.c))); return s; },
   count(b) { let n = 0; b.rows.forEach(row => row.forEach(cell => cell && n++)); return n; },
   lowestY(b) { let y = -1; b.rows.forEach((row, r) => row.forEach((cell, c) => { if (cell) y = Math.max(y, Board.pos(b, r, c).y); })); return y; },
   // 붙을 칸 찾기: 부딪힌 자리에서 가장 가까운 빈칸 (천장 줄이거나 이웃이 있는 칸)
@@ -553,7 +558,7 @@ const Board = {
   // 무지개 거품: 붙은 자리에서 가장 크게 이어지는 이웃 색으로 바뀐다 (이웃에 색이 없으면 수정으로 남음)
   bestColor(b, r, c) {
     let best = 'w', size = 0;
-    const cand = new Set(Board.neighbors(b, r, c).map(([y, x]) => Board.get(b, y, x)).filter(n => n && !n.solid && n.c !== 'w').map(n => n.c));
+    const cand = new Set(Board.neighbors(b, r, c).map(([y, x]) => Board.get(b, y, x)).filter(n => n && !n.solid && n.c !== 'w' && !Board.trigger(n)).map(n => n.c));
     for (const col of cand) {
       b.rows[r][c] = { c: col };
       const n = Board.group(b, r, c).length;
@@ -563,19 +568,52 @@ const Board = {
     return best;
   },
   // 놓기 + 터뜨리기 + 떨어뜨리기 (판을 바꾸고 결과를 돌려줌)
+  // 폭탄 터뜨리기: 폭탄 자리에서 1.8칸 안의 칸 전부(색·종류 상관없이). 범위 안 폭탄은 이어서 터진다 → 터질 칸 'r,c' 집합
+  blast(b, starts) {
+    const hit = new Set(), queue = [...starts], done = new Set();
+    while (queue.length) {
+      const [r, c] = queue.shift(), key = r + ',' + c;
+      if (done.has(key)) continue;
+      done.add(key); hit.add(key);
+      const p = Board.pos(b, r, c);
+      b.rows.forEach((row, y) => row.forEach((cell, x) => {
+        if (!cell) return;
+        const q = Board.pos(b, y, x);
+        if ((q.x - p.x) ** 2 + (q.y - p.y) ** 2 > BLAST2) return;
+        hit.add(y + ',' + x);
+        if (cell.k === 'z' && !done.has(y + ',' + x)) queue.push([y, x]);
+      }));
+    }
+    return hit;
+  },
   place(b, r, c, color) {
     Board.ensureRow(b, r);
     if (color === 'w') color = Board.bestColor(b, r, c);
-    b.rows[r][c] = color === 'w' ? { c: 'w', k: 'c' } : { c: color };
-    const group = Board.group(b, r, c);
-    const out = { popped: [], dropped: [], unstuck: [], thawed: [], recolored: [], wobbled: [], color };
-    if (group.length >= 3) {
-      // 끈적 거품은 시럽만 벗겨지고 남는다
-      group.forEach(([y, x]) => {
+    b.rows[r][c] = color === 'w' ? { c: 'w', k: 'c' } : color === 'z' ? { c: 'z', k: 'z' } : { c: color };
+    const group = color === 'z' ? [] : Board.group(b, r, c);
+    const out = { popped: [], dropped: [], unstuck: [], thawed: [], recolored: [], wobbled: [], color, bombs: 0, randoms: [] };
+    // 쏜 거품이 닿은 폭탄(쏜 거품이 폭탄이면 그 자리)과 랜덤 거품
+    const near0 = Board.neighbors(b, r, c).filter(([y, x]) => Board.trigger(Board.get(b, y, x)));
+    const bombs = near0.filter(([y, x]) => b.rows[y][x].k === 'z');
+    if (color === 'z') bombs.push([r, c]);
+    const blast = bombs.length ? Board.blast(b, bombs) : new Set();
+    near0.filter(([y, x]) => b.rows[y][x].k === 'q').forEach(([y, x]) => blast.add(y + ',' + x));
+    if (group.length >= 3 || blast.size) {
+      const seen = new Set();
+      // 끈적 거품은 시럽만 벗겨지고 남는다 (폭탄에는 시럽째 터짐)
+      if (group.length >= 3) group.forEach(([y, x]) => {
         const cell = b.rows[y][x];
+        if (blast.has(y + ',' + x)) return;
+        seen.add(y + ',' + x);
         if (cell.k === 's') { delete cell.k; out.unstuck.push({ r: y, c: x }); }
         else out.popped.push({ r: y, c: x, cell });
       });
+      blast.forEach(k => {
+        if (seen.has(k)) return;
+        const [y, x] = k.split(',').map(Number), cell = b.rows[y][x];
+        if (cell) out.popped.push({ r: y, c: x, cell });
+      });
+      out.bombs = out.popped.filter(p => p.cell.k === 'z').length;
       out.popped.forEach(p => { b.rows[p.r][p.c] = null; });
       // 터진 자리 옆: 얼음은 녹고, 버섯은 이웃 색을 바꾼다
       const near = new Set();
@@ -583,7 +621,7 @@ const Board = {
       near.forEach(k => { const [y, x] = k.split(',').map(Number), n = Board.get(b, y, x); if (n && n.k === 'i') { delete n.k; out.thawed.push({ r: y, c: x }); } });
       out.popped.filter(p => p.cell.k === 'm').forEach(p => Board.neighbors(b, p.r, p.c).forEach(([y, x]) => {
         const n = Board.get(b, y, x);
-        if (n && !n.solid && n.c !== 'w' && n.friend === undefined && n.k !== 'i' && n.c !== p.cell.c) { n.c = p.cell.c; out.recolored.push({ r: y, c: x }); }
+        if (n && !n.solid && n.c !== 'w' && n.friend === undefined && n.k !== 'i' && !Board.trigger(n) && n.c !== p.cell.c) { n.c = p.cell.c; out.recolored.push({ r: y, c: x }); }
       }));
       out.dropped = Board.floating(b).map(([y, x]) => ({ r: y, c: x, cell: b.rows[y][x] }));
       out.dropped.forEach(d => { b.rows[d.r][d.c] = null; });
@@ -595,6 +633,7 @@ const Board = {
       });
     }
     out.gifts = [...out.popped, ...out.dropped].filter(p => p.cell.k === 'g').length;
+    out.randoms = [...out.popped, ...out.dropped].filter(p => p.cell.k === 'q').map(p => ({ r: p.r, c: p.c }));
     out.fireflies = [...out.popped, ...out.dropped].filter(p => p.cell.k === 'f').length;
     while (b.rows.length && b.rows[b.rows.length - 1].every(x => !x)) b.rows.pop();
     return out;
@@ -624,7 +663,7 @@ const Board = {
   stealable(b) {
     const out = [];
     b.rows.forEach((row, r) => row.forEach((cell, c) => {
-      if (!cell || cell.solid || cell.friend !== undefined) return;
+      if (!cell || cell.solid || cell.friend !== undefined || Board.trigger(cell)) return;   // 폭탄·랜덤은 안 훔침
       b.rows[r][c] = null;
       if (!Board.floating(b).length) out.push([r, c]);
       b.rows[r][c] = cell;
@@ -667,7 +706,7 @@ function randomColor() { const a = boardColors(); return a[Math.floor(rand() * a
 function fillQueue() { const want = 6; while (G.queue.length < want) G.queue.push(randomColor()); G.queue.length = Math.min(G.queue.length, want); }
 function refreshQueueColors() {
   const s = Board.colorsOnBoard(G.b); if (!s.size) return;
-  G.queue = G.queue.map(c => c === 'w' || s.has(c) ? c : randomColor());
+  G.queue = G.queue.map(c => c === 'w' || c === 'z' || s.has(c) ? c : randomColor());
 }
 function warn(text) { G.hz.warn = { text, t: 0 }; }
 const nomActive = act => { const n = G && G.hz.nom; return !!n && n.act === act && (n.state === 'block' || n.state === 'hover' || n.state === 'fly'); };
@@ -761,6 +800,11 @@ function land(m) {
     else if (d >= 4) showToast('우르르 쿵!'); else if (n >= 6) showToast('굉장해요!');
     if (res.gifts && G.queue.length) { G.queue[0] = 'w'; showToast('선물 상자! 무지개 거품'); }
     if (res.fireflies) { G.hz.aimBoost = 3; showToast('반딧불! 3발 동안 조준선이 길어요'); }
+    if (res.bombs) {
+      res.popped.filter(p => p.cell.k === 'z').forEach(p => { const q = Board.pos(b, p.r, p.c); burst(q.x, q.y, '#ffb347', 18); burst(q.x, q.y, '#ff5f3a', 10); });
+      G.impact = Math.max(G.impact || 0, .4); showToast(res.bombs > 1 ? '연쇄 폭발! 펑펑!' : '폭탄 펑!');
+    }
+    res.randoms.forEach(p => applyLucky(pickLucky(), Board.pos(b, p.r, p.c)));
     sfx('pop', n); if (d) setTimeout(() => sfx('drop', d), 120);
     try { navigator.vibrate && navigator.vibrate(n >= 5 ? 30 : 12); } catch (e) {}
   } else {
@@ -771,6 +815,43 @@ function land(m) {
   }
   G.state = 'settle'; G.settleT = n ? .45 : .12;
   updateHud();
+}
+
+// 랜덤 거품: 좋은 효과 4가지(60%) · 나쁜 효과 3가지(40%) 중 하나가 나온다
+const LUCKY = [
+  { id: 'bomb', good: true, text: '랜덤알: 다음 거품이 폭탄!' },
+  { id: 'rainbow', good: true, text: '랜덤알: 다음 거품이 무지개!' },
+  { id: 'firefly', good: true, text: '랜덤알: 반딧불! 3발 동안 조준선이 길어요' },
+  { id: 'time', good: true, text: '랜덤알: 시간 충전!' },
+  { id: 'fog', good: false, text: '랜덤알: 앗, 안개가 꼈어요!' },
+  { id: 'ceil', good: false, text: '랜덤알: 앗, 천장이 한 칸!' },
+  { id: 'mix', good: false, text: '랜덤알: 앗, 주변 색이 뒤섞였어요!' },
+];
+function pickLucky() { const good = rand() < .6, list = LUCKY.filter(e => e.good === good); return list[Math.floor(rand() * list.length)]; }
+function applyLucky(e, at) {
+  const h = G.hz;
+  if (e.id === 'bomb' && G.queue.length) G.queue[0] = 'z';
+  else if (e.id === 'rainbow' && G.queue.length) G.queue[0] = 'w';
+  else if (e.id === 'firefly') h.aimBoost = 3;
+  else if (e.id === 'time') { h.dropT = h.cfg.dropSec; if (h.clock !== null && h.clock > 0 && !h.timeUp) h.clock += 5; }
+  else if (e.id === 'fog') { if (h.cloud && !h.cloud.leaving) h.cloud.left = Math.max(h.cloud.left, 5); else spawnCloud({ last: 5, rows: 3 }); }   // 이번 발 끝에서 1 줄어 4발
+  else if (e.id === 'ceil') lowerCeiling(1, e.text);
+  else if (e.id === 'mix') {
+    // 터진 자리 주변 보통 거품만 색이 바뀐다 (갇힌 친구·특수 거품은 그대로)
+    const pal = boardColors();
+    G.b.rows.forEach((row, r) => row.forEach((cell, c) => {
+      if (!cell || cell.k || cell.solid || cell.friend !== undefined) return;
+      const q = Board.pos(G.b, r, c);
+      if ((q.x - at.x) ** 2 + (q.y - at.y) ** 2 > BLAST2) return;
+      cell.c = pal[Math.floor(rand() * pal.length)]; burst(q.x, q.y, '#fff', 3);
+    }));
+    refreshQueueColors();
+  }
+  burst(at.x, at.y, e.good ? '#ffe27a' : '#a99bd0', 14);
+  G.texts.push({ x: at.x, y: at.y - 14, text: e.good ? '행운!' : '꽝!', life: 1.2, color: e.good ? '#ffe27a' : '#d9c8ff' });
+  if (e.id !== 'ceil') showToast(e.text);
+  sfx(e.good ? 'rescue' : 'boss');
+  G.lucky = (G.lucky || []).concat(e.id);   // 테스트용 기록
 }
 
 function rescue(idx, at) {
@@ -1013,7 +1094,7 @@ const MASCOT = { x: CANNON.bx - 74 * CS, y: CANNON.by - 15 * CS, r: 27 };
 
 // 스프라이트 정의: key → { body, box(anchor 포함) }
 const SPR = {
-  bubble: c => ({ body: c === 'w' ? Art.crystalBubble(0, 0, R) : c === 'k' ? Art.cookie(0, 0, R) : c === 'n' ? Art.junkBubble(0, 0, R) : Art.bubble(0, 0, R, COLORS[c].base), box: { x: -R * 1.3, y: -R * 1.3, w: R * 2.6, h: R * 2.6 } }),
+  bubble: c => ({ body: c === 'w' ? Art.crystalBubble(0, 0, R) : c === 'k' ? Art.cookie(0, 0, R) : c === 'n' ? Art.junkBubble(0, 0, R) : c === 'z' || c === 'q' ? Art.bubble(0, 0, R, COLORS[c].base) + Art.bubbleExtra(0, 0, R, c) : Art.bubble(0, 0, R, COLORS[c].base), box: c === 'z' ? { x: -R * 1.3, y: -R * 1.9, w: R * 2.6, h: R * 3.2 } : { x: -R * 1.3, y: -R * 1.3, w: R * 2.6, h: R * 2.6 } }),
   bubx: (c, k) => ({ body: Art.bubble(0, 0, R, COLORS[c].base) + Art.bubbleExtra(0, 0, R, k), box: { x: -R * 1.3, y: -R * 1.5, w: R * 2.6, h: R * 2.8 } }),
   nom: mood => ({ body: Art.nomnom(0, 0, 16, { mood, mini: true }), box: { x: -26, y: -32, w: 52, h: 56 } }),
   friend: (c, fc) => ({ body: Art.bubble(0, 0, R, COLORS[c].base, { trapped: fc }), box: { x: -R * 1.3, y: -R * 1.3, w: R * 2.6, h: R * 2.6 } }),
@@ -1304,8 +1385,9 @@ function warmSprites(st) {
   if (window.Jelly3D && Jelly3D.ok()) bgImage(st.world || 1, () => spriteReady());
   else Art.sprite('bg-' + st.theme, () => SPR.bg(st.theme), dpr, spriteReady);
   for (const c of st.colors) { Art.sprite('bub-' + c, () => SPR.bubble(c), dpr, spriteReady); Art.sprite('jel-' + COLORS[c].base + '-10-happy', () => SPR.jelly(COLORS[c].base, 10, {}), dpr, spriteReady); }
-  for (const c of 'wkn') Art.sprite('bub-' + c, () => SPR.bubble(c), dpr, spriteReady);
-  const kinds = new Set((st.kinds || []).join('').replace(/[.ck]/g, ''));
+  for (const c of 'wknz') Art.sprite('bub-' + c, () => SPR.bubble(c), dpr, spriteReady);
+  if ((st.kinds || []).join('').includes('q')) Art.sprite('bub-q', () => SPR.bubble('q'), dpr, spriteReady);
+  const kinds = new Set((st.kinds || []).join('').replace(/[.ckzq]/g, ''));
   if (st.boss && st.boss.sticky) kinds.add('s');
   kinds.forEach(k => { for (const c of st.colors) Art.sprite('bx-' + c + k, () => SPR.bubx(c, k), dpr, spriteReady); });
   if (keysOf(st).some(k => k.startsWith('nom'))) for (const m of ['angry', 'worried']) Art.sprite('nom-' + m, () => SPR.nom(m), dpr, spriteReady);
@@ -2066,7 +2148,8 @@ function startStage(n) {
   warmSprites(G.st);
   updateHud();
   // 새 방해 요소가 처음 나오면 설명 카드 (월드 2부터). 카드를 보는 동안 시계는 멈춘다
-  const fresh = G.st.world > 1 ? keysOf(G.st).filter(k => !P.seenHz[k]) : [];
+  // 폭탄·랜덤 거품은 월드 1(4스테이지)부터 나오니 월드 1에서도 카드를 보여 준다
+  const fresh = keysOf(G.st).filter(k => !P.seenHz[k] && (G.st.world > 1 || 'zq'.includes(k)));
   if (fresh.length) showHzCard(fresh);
   else { $('hzCard').hidden = true; $('tip').innerHTML = G.st.tip; $('tip').classList.remove('hide'); }
   showToast('스테이지 ' + n);
@@ -2076,6 +2159,7 @@ function hzIcon(art) {
   return cachedArt('hzic-' + art, () => {
     if ('smugfi'.includes(art)) return Art.img(Art.bubble(0, 0, R, COLORS.b.base) + Art.bubbleExtra(0, 0, R, art), bx);
     if (art === 'c') return Art.img(Art.crystalBubble(0, 0, R), bx);
+    if (art === 'z' || art === 'q') return Art.img(SPR.bubble(art).body, bx);
     if (art === 'k') return Art.img(Art.cookie(0, 0, R), bx);
     if (art === 'nom') return Art.img(Art.nomnom(0, 0, 18, { mini: true }), { x: -28, y: -32, w: 56, h: 56 });
     if (art === 'cloud') return Art.img(Art.cloud(0, 0, .6), { x: -36, y: -26, w: 72, h: 50 });
@@ -2085,6 +2169,8 @@ function hzIcon(art) {
 function showHzCard(keys) {
   G.paused = true;
   $('tip').classList.add('hide');
+  // 도움 거품(수정·선물·반딧불·폭탄·랜덤)만 새로 나오면 "새 거품" 제목
+  $('hzTitle').textContent = keys.every(k => 'cgfzq'.includes(k) && k.length === 1) ? '새로운 거품이 나타났어요!' : '새로운 방해가 나타났어요!';
   $('hzList').innerHTML = keys.map(k => { const f = HZ_INFO[k]; return `<div class="hzitem"><div class="ic">${hzIcon(f.art)}</div><div><b>${f.title}</b><p>${f.text}</p><p class="how">${f.how}</p></div></div>`; }).join('');
   $('hzCard').hidden = false;
   $('hzOk').onclick = () => {
@@ -2493,7 +2579,7 @@ requestAnimationFrame(frame);
 // 테스트용 손잡이 (화면에는 영향 없음)
 window.__jp = {
   get G() { return G; }, lowerCeiling, showBanner, P, STAGES, Board, R, ROW_H, W, H, PIVOT, DEADLINE,
-  startStage, rescue, showResult, aimLimit, music: () => Music.info(), voices: () => voiceCount, soundMode: () => soundMode, sfx, CS, shoot, swapQueue, setAngle, go, seedRandom,
+  startStage, rescue, showResult, land, LUCKY, pickLucky, applyLucky, seenHz: () => P.seenHz, aimLimit, music: () => Music.info(), voices: () => voiceCount, soundMode: () => soundMode, sfx, CS, shoot, swapQueue, setAngle, go, seedRandom,
   reset() { Object.assign(P, { stars: new Array(NST).fill(0), stickers: {}, seenIntro: false, at: 0, seenHz: {}, seenStory: {} }); saveP(); },
   story: () => window.JellyStory,
   // 설명 카드 닫기 · 생각하는 시간 흘려보내기(조준 중 시계가 흐름) · 놈놈이 대포를 막았는지
