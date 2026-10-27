@@ -2278,7 +2278,7 @@ function slideArt(kind) {
       b += sky(`<rect width="390" height="844" fill="${A.linear([[0, '#1d0f3a'], [0.5, '#5a3aa6'], [0.78, '#9b6fd8'], [0.8, '#2f7a4a'], [1, '#1f4a3a']])}"/>`);
       b += sky(A.starsSky(9, 70, [0, 0, 390, 560], .9));
       b += `<ellipse cx="195" cy="300" rx="150" ry="130" fill="#b47cff" opacity="0.35" filter="url(#soft24)"/>`;
-      b += A.boss(195, 300, 78);
+      b += A.nomnom(195, 300, 78, { mood: 'angry' });   // 습격한 건 노놈
       b += hill(195, 740, 330, 130, '#2f7a4a');
       b += A.bubble(80, 560, 40, AC.blue, { trapped: AC.blue }) + A.bubble(200, 600, 44, AC.yellow, { trapped: AC.yellow }) + A.bubble(315, 560, 40, AC.green, { trapped: AC.green });
       b += `<path d="M80,520 Q120,380 180,230" stroke="#d9b8ff" stroke-width="2" stroke-dasharray="4 8" fill="none" opacity="0.6"/><path d="M315,520 Q280,380 215,230" stroke="#d9b8ff" stroke-width="2" stroke-dasharray="4 8" fill="none" opacity="0.6"/>`;

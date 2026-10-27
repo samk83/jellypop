@@ -85,7 +85,7 @@ console.log('모든 스테이지: 필요한 3D 그림이 다 미리 구워져 �
   const errors = []; page.on('pageerror', e => errors.push(e.message));
   await page.goto(pathToFileURL(path.join(root, 'index.html')).href);
   check('주소에 아무것도 없어도 3D 켜짐 (기기 상관없이)', await page.evaluate(() => Jelly3D.ok() === true));
-  await page.evaluate(() => { window.__miss = new Set(); const b = Jelly3D.bake; Jelly3D.bake = (k, o = {}, px) => { const u = b(k, o, px); if (!u) __miss.add([k, o.color, o.mood, o.ears ? 1 : 0].join('|')); return u; }; });
+  await page.evaluate(() => { window.__miss = new Set(); const b = Jelly3D.bake; Jelly3D.bake = (k, o = {}, px) => { const u = b(k, o, px); if (!u) __miss.add([k, o.color, o.mood || 'happy', o.ears ? 1 : 0].join('|')); return u; }; });
   let worst = 0;
   for (let n = 1; n <= 30; n++) {
     const ms = await page.evaluate(n => { const t = performance.now(); window.__jp.startStage(n); return performance.now() - t; }, n);
@@ -134,6 +134,17 @@ console.log('모든 스테이지: 필요한 3D 그림이 다 미리 구워져 �
   check('결과·타이틀·프롤로그·지도·스티커 북·스토리 컷신도 3D 그림이 모두 있음', moreMiss.length === 0, moreMiss.join(', '));
   check('WebGL을 한 번도 켜지 않음', await page.evaluate(() => window.__gl === 0));
   check('콘솔 에러 없음', errors.length === 0, errors.join(' | '));
+  await page.close();
+}
+console.log('숲 배경 그림을 못 불러올 때 (판 풍경으로 대체)');
+{
+  const page = await ctx.newPage();
+  await page.route('**/assets/bg/*.webp', r => r.abort());
+  await page.goto(pathToFileURL(path.join(root, 'index.html')).href);
+  await page.evaluate(() => { window.__miss = new Set(); const b = Jelly3D.bake; Jelly3D.bake = (k, o = {}, px) => { const u = b(k, o, px); if (!u) __miss.add([k, o.color, o.mood || 'happy', o.ears ? 1 : 0].join('|')); return u; }; });
+  for (let n = 1; n <= 30; n++) { await page.evaluate(n => window.__jp.startStage(n), n); await page.waitForFunction(() => Gummy.pending() === 0, null, { timeout: 15000 }); }
+  const miss = await page.evaluate(() => [...__miss]);
+  check('판 풍경의 집·나무·버섯도 3D 그림이 모두 있음', miss.length === 0, miss.join(', '));
   await page.close();
 }
 console.log('3D 끔 (?3d=0)');

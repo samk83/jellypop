@@ -5,7 +5,7 @@
 window.Jelly3D = (() => {
   const FRAG = `#version 300 es
 precision highp float;
-uniform vec2 uRes; uniform int uKind; uniform vec3 uCol; uniform float uMood; uniform float uEars; uniform int uAcc;
+uniform vec2 uRes; uniform int uKind; uniform vec3 uCol; uniform vec3 uCol2; uniform float uMood; uniform float uEars; uniform int uAcc;
 out vec4 o;
 const vec3 SUN = normalize(vec3(-0.12, 0.70, -0.70));
 const vec3 KEY = normalize(vec3(0.55, 0.55, 0.65));
@@ -57,6 +57,40 @@ vec2 bossAcc(vec3 q, float r){
     for(int s=0;s<2;s++){ float sx = s==0?-1.0:1.0; float b = sdRBox(q - vec3(sx*1.0*r, 0.85*r, 0.0), vec3(0.12*r, 0.22*r, 0.16*r), 0.05*r); if(b<res.x) res = vec2(b, 103.0); } }
   return res;
 }
+// 지도 소품 (q = 땅 기준 좌표, 땅 = q.y 0). 재질: 106 벽(uCol2) 107 지붕(uCol) 108 문 109 창문 불빛 110 나무줄기 111 크림 112 버섯 갓 113 창틀 12 젤리 나뭇잎
+vec2 propMap(vec3 q){
+  vec2 res = vec2(1e5, 0.0);
+  if(uKind==6){   // 집: 둥근 벽 + 둥근 지붕 + 문 + 불 켜진 동그란 창 두 개
+    float w = sdRBox(q - vec3(0.0, 1.25, 0.0), vec3(1.7, 1.25, 1.3), 0.38); res = vec2(w, 106.0);
+    vec3 r = q - vec3(0.0, 2.35, 0.0);
+    float rf = smax(sdEll(r, vec3(2.08, 1.62, 1.62)), -r.y, 0.06); if(rf < res.x) res = vec2(rf, 107.0);
+    float kn = length(q - vec3(0.0, 4.02, 0.0)) - 0.26; if(kn < res.x) res = vec2(kn, 107.0);
+    vec3 dq = q - vec3(0.0, 0.0, 1.30); float door = sdRBox(dq - vec3(0.0, 0.62, 0.0), vec3(0.42, 0.62, 0.10), 0.10);
+    door = smin(door, max(length(dq.xy - vec2(0.0, 1.20)) - 0.42, abs(dq.z) - 0.10), 0.02); door = max(door, -q.y); if(door < res.x) res = vec2(door, 108.0);
+    for(int s=0;s<2;s++){ vec3 c = q - vec3(s==0?-1.02:1.02, 1.45, 1.32);
+      float g = max(length(c.xy) - 0.34, abs(c.z) - 0.06); if(g < res.x) res = vec2(g, 109.0);
+      float fr = length(vec2(length(c.xy) - 0.38, c.z)) - 0.07; if(fr < res.x) res = vec2(fr, 113.0); }
+  } else if(uKind==7){   // 나무: 줄기 + 젤리 나뭇잎 (uAcc 1 = 솜사탕 나무: 가늘고 흰 줄기 + 몽실몽실한 잎)
+    bool cot = uAcc == 1;
+    float tr = sdRCone(q, cot ? 0.26 : 0.40, cot ? 0.18 : 0.28, cot ? 3.0 : 2.2); res = vec2(tr, cot ? 111.0 : 110.0);
+    float lf;
+    if(cot){ vec3 c = q - vec3(0.0, 3.35, 0.0);
+      lf = length(c) - 1.15;
+      lf = smin(lf, length(c - vec3(-1.15, -0.25, 0.10)) - 0.85, 0.35); lf = smin(lf, length(c - vec3(1.20, -0.20, 0.05)) - 0.90, 0.35);
+      lf = smin(lf, length(c - vec3(-0.55, 0.65, -0.10)) - 0.80, 0.35); lf = smin(lf, length(c - vec3(0.60, 0.70, 0.00)) - 0.78, 0.35);
+      lf = smin(lf, length(c - vec3(-1.85, -0.40, 0.00)) - 0.50, 0.30); lf = smin(lf, length(c - vec3(1.90, -0.35, 0.00)) - 0.52, 0.30);
+    } else { vec3 c = q - vec3(0.0, 2.95, 0.0);
+      lf = length(c) - 1.60;
+      lf = smin(lf, length(c - vec3(-0.95, -0.40, 0.20)) - 1.05, 0.45); lf = smin(lf, length(c - vec3(0.98, -0.30, 0.10)) - 1.10, 0.45);
+      lf = smin(lf, length(c - vec3(0.10, 0.85, -0.10)) - 1.00, 0.45); }
+    if(lf < res.x) res = vec2(lf, 12.0);
+  } else {   // 버섯: 크림색 기둥 + 반질반질한 점박이 갓
+    float st = sdRCone(q, 0.78, 0.55, 1.8); res = vec2(st, 111.0);
+    vec3 c = q - vec3(0.0, 1.65, 0.0);
+    float cap = smax(sdEll(c, vec3(2.05, 1.40, 1.95)), -(c.y + 0.10), 0.25); if(cap < res.x) res = vec2(cap, 112.0);
+  }
+  return res;
+}
 float eyeR(){ return 0.25*RR; }
 vec3 eyePos(float side){ vec3 f = jFwd(FOOT), rt = normalize(cross(vec3(0,1,0), f)); return FOOT + rt*side*0.34*RR + vec3(0, 1.06*RR, 0) + f*0.66*RR; }
 bool hasEyes(){ return uKind==0 && uAcc < 5 && (uMood < 0.5 || uMood > 1.5); }
@@ -81,6 +115,7 @@ vec2 map(vec3 p){
     float d = sdRBox(q, vec3(3.0 - 0.25*clamp(q.y+0.7,0.0,1.4), 0.62, 1.2), 0.28); res = vec2(d, 95.0);
     float trim = sdRBox(q - vec3(0,-0.62,0), vec3(3.15, 0.16, 1.3), 0.14); if(trim<res.x) res=vec2(trim, 96.0);
   } else if(uKind==4){ res = vec2(length(p) - RR, 95.0); }
+  else if(uKind>=6){ res = propMap(p - FOOT); }
   else {
     float tire = length(vec2(length(p.xy)-2.3, p.z)) - 0.7; res = vec2(tire, 96.0);
     float disc = max(length(p.xy)-2.2, abs(p.z)-0.25); if(disc<res.x) res=vec2(disc, 98.0);
@@ -188,6 +223,14 @@ vec3 candy(vec3 p, vec3 n, vec3 rd, float id){
   else if(id > 102.5 && id < 103.5){ alb = vec3(0.78,0.84,0.95); spec = 1.6; rough = 120.0; }
   else if(id > 103.5 && id < 104.5){ return vec3(1.0,0.40,0.62)*1.8; }
   else if(id > 104.5 && id < 105.5){ alb = vec3(0.25,0.56,0.22); }
+  else if(id > 105.5 && id < 106.5){ alb = uCol2; spec = 0.7; rough = 60.0; }
+  else if(id > 106.5 && id < 107.5){ alb = uCol; spec = 1.6; rough = 110.0; }
+  else if(id > 107.5 && id < 108.5){ alb = uCol*0.62; spec = 0.8; }
+  else if(id > 108.5 && id < 109.5){ return vec3(1.0,0.86,0.48)*1.35 + vec3(0.25)*pow(max(dot(n,-rd),0.0),8.0); }
+  else if(id > 109.5 && id < 110.5){ alb = vec3(0.79,0.55,0.39); spec = 0.5; rough = 40.0; }
+  else if(id > 110.5 && id < 111.5){ alb = vec3(0.98,0.93,0.85); spec = 0.6; rough = 50.0; }
+  else if(id > 111.5 && id < 112.5){ alb = uCol; spec = 1.7; rough = 110.0; if(voro(p*1.15 + 3.0).x < 0.20 && n.y > -0.2) alb = vec3(1.0,0.98,0.95); }
+  else if(id > 112.5 && id < 113.5){ alb = uCol2*0.72; spec = 0.8; }
   else { alb = vec3(1.0,0.93,0.80); spec = 0.6; rough = 50.0; }
   alb = pow(alb, vec3(2.2));
   float dK = max(dot(n, KEY), 0.0), dS = max(dot(n, SUN), 0.0);
@@ -198,8 +241,8 @@ vec3 candy(vec3 p, vec3 n, vec3 rd, float id){
 }
 void main(){
   vec2 uv = (2.0*gl_FragCoord.xy - uRes) / uRes.y;
-  if(uAcc > 0){ RR = 2.3; FOOT = vec3(0.0, -3.0, 0.0); }
-  float a = uKind==5 ? 0.0 : 0.12;
+  if(uAcc > 0 && uKind == 0){ RR = 2.3; FOOT = vec3(0.0, -3.0, 0.0); }   // 보스·놈놈만 (나무의 uAcc는 솜사탕 나무 표시)
+  float a = uKind==5 ? 0.0 : uKind>=6 ? 0.32 : 0.12;   // 지도 소품은 위에서 조금 더 내려다봄
   vec3 rd = normalize(vec3(0, -sin(a), -cos(a)));
   vec3 ro = vec3(uv*3.6, 0.0) + vec3(0, 20.0*sin(a), 20.0*cos(a));
   camPos = ro - rd*100.0;
@@ -215,15 +258,15 @@ void main(){
   vec3 col;
   if(id >= 20.0 && id < 30.0) col = eyeShade(p, n, rd, eyePos(id < 20.5 ? -1.0 : 1.0), jFwd(FOOT));
   else if(id >= 10.0 && id < 20.0){
-    vec3 c = uKind==0 ? FOOT : vec3(0,-2.4,0);
-    col = shadeJelly(p, n, rd, uCol, c, RR);
+    vec3 c = uKind==0 ? FOOT : uKind==7 ? FOOT + vec3(0.0, uAcc==1 ? 2.6 : 2.2, 0.0) : vec3(0,-2.4,0);
+    col = shadeJelly(p, n, rd, uCol, c, uKind==7 ? 1.7 : RR);
     if(uKind==0) col = faceDecor(col, p, n, c, RR);
-    else if(uMood < 2.5) col = bubbleFace(col, p, n, RR);
+    else if(uKind==1 && uMood < 2.5) col = bubbleFace(col, p, n, RR);
   } else col = candy(p, n, rd, id);
   col = col / (1.0 + col*0.25);
   o = vec4(pow(clamp(col,0.0,1.0), vec3(0.4545)), cov);
 }`;
-  const KIND = { jelly: 0, bubble: 1, barrel: 2, base: 3, housing: 4, wheel: 5 };
+  const KIND = { jelly: 0, bubble: 1, barrel: 2, base: 3, housing: 4, wheel: 5, house: 6, tree: 7, mushroom: 8 };
   const MOOD = { happy: 0, joy: 1, worried: 2, angry: 3, none: 3, o: 2 };   // o(깜짝)은 걱정 얼굴로
   let gl = null, prog = null, cv = null, state = null, U = {};
   const cache = {};
@@ -259,7 +302,7 @@ void main(){
       const b = gl.createBuffer(); gl.bindBuffer(gl.ARRAY_BUFFER, b);
       gl.bufferData(gl.ARRAY_BUFFER, new Float32Array([-1, -1, 3, -1, -1, 3]), gl.STATIC_DRAW);
       gl.enableVertexAttribArray(0); gl.vertexAttribPointer(0, 2, gl.FLOAT, false, 0, 0);
-      for (const k of ['uRes', 'uKind', 'uCol', 'uMood', 'uEars', 'uAcc']) U[k] = gl.getUniformLocation(prog, k);
+      for (const k of ['uRes', 'uKind', 'uCol', 'uCol2', 'uMood', 'uEars', 'uAcc']) U[k] = gl.getUniformLocation(prog, k);
       state = true;
     } catch (e) { console.warn('Jelly3D off:', e.message); state = false; }
     return state;
@@ -272,16 +315,16 @@ void main(){
     const n = parseInt(m[1], 16); return [(n >> 16) / 255, (n >> 8 & 255) / 255, (n & 255) / 255];
   }
   // 그림 한 장 굽기 → dataURL (같은 요청은 저장해 두고 재사용)
-  function bake(kind, { color = '#ff7fae', mood = 'happy', ears = false, acc = 0 } = {}, px = 192) {
+  function bake(kind, { color = '#ff7fae', mood = 'happy', ears = false, acc = 0, col2 = '#ffffff' } = {}, px = 192) {
     if (!init()) return null;
-    const col = rgb(color); if (!col) return null;
-    const size = bucket(px), key = [kind, String(color).toLowerCase(), mood, ears ? 1 : 0, acc, size].join('|');
+    const col = rgb(color), c2 = rgb(col2); if (!col || !c2) return null;
+    const size = bucket(px), key = [kind, String(color).toLowerCase(), mood, ears ? 1 : 0, acc, String(col2).toLowerCase(), size].join('|');
     if (cache[key] !== undefined) return cache[key];
     if (gl.isContextLost()) { state = false; return null; }
     try {
       cv.width = size; cv.height = size;
       gl.viewport(0, 0, size, size); gl.clearColor(0, 0, 0, 0); gl.clear(gl.COLOR_BUFFER_BIT);
-      gl.uniform2f(U.uRes, size, size); gl.uniform1i(U.uKind, KIND[kind]); gl.uniform3f(U.uCol, col[0], col[1], col[2]);
+      gl.uniform2f(U.uRes, size, size); gl.uniform1i(U.uKind, KIND[kind]); gl.uniform3f(U.uCol, col[0], col[1], col[2]); gl.uniform3f(U.uCol2, c2[0], c2[1], c2[2]);
       gl.uniform1f(U.uMood, MOOD[mood] !== undefined ? MOOD[mood] : 0); gl.uniform1f(U.uEars, ears ? 1 : 0); gl.uniform1i(U.uAcc, acc);
       gl.drawArrays(gl.TRIANGLES, 0, 3);
       if (gl.isContextLost()) { state = false; return null; }

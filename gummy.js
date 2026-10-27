@@ -138,6 +138,9 @@ window.Gummy = (() => {
   function house(x, y, o = {}) {
     const s = o.s || 1, wall = o.wall || '#ffe1f0', roof = o.roof || '#ff8fb1', w = (o.w || 64) * s, h = (o.h || 52) * s, d = 22 * s;
     let g = groundShadow(x + 6 * s, y + 2, w * 0.8, h * 0.14, 0.3);
+    // 미리 구운 3D 집 (지붕 색·벽 색 조합별). 3D 그림 1칸 = 18.3s, 땅이 그림 중심보다 2.56칸 아래
+    const t3 = !o.w && !o.h && tex3d('house', { color: roof, mood: wall }, 132 * s * PX);
+    if (t3) return g + image3d(t3, x - 66 * s, y - 46.8 * s - 66 * s, 132 * s, 132 * s);
     g += `<g filter="url(#glass)"><rect x="${x - w / 2}" y="${y - h}" width="${w}" height="${h}" rx="${10 * s}" fill="${radial(light(wall, 0.3), wall, dark(wall, 0.1), 0.4, 0.3, 0.9)}" opacity="0.92"/></g>`;
     g += `<path d="M${x + w / 2 - 6 * s} ${y - h + 10 * s} Q${x + w / 2 + d} ${y - h + 2 * s} ${x + w / 2 + d - 4 * s} ${y - 6 * s} L${x + w / 2 - 6 * s} ${y} Z" fill="${dark(wall, 0.22)}" opacity="0.8"/>`;
     g += `<g filter="url(#glass)"><path d="M${x - w / 2 - 6 * s} ${y - h + 8 * s} Q${x} ${y - h - h * 0.9} ${x + w / 2 + 6 * s} ${y - h + 8 * s} Z" fill="${radial(light(roof, 0.4), roof, dark(roof, 0.2), 0.4, 0.4, 0.8)}" opacity="0.9"/></g>`;
@@ -151,6 +154,8 @@ window.Gummy = (() => {
   }
   function tree(x, y, s = 1, c = '#6fcf6a') {
     let g = groundShadow(x + 4 * s, y + 2, 20 * s, 5 * s, 0.25);
+    const t3 = tex3d('tree', { color: c }, 79 * s * PX);
+    if (t3) return g + image3d(t3, x - 39.5 * s, y - 28 * s - 39.5 * s, 79 * s, 79 * s);
     g += `<rect x="${x - 3 * s}" y="${y - 20 * s}" width="${6 * s}" height="${20 * s}" rx="${3 * s}" fill="#c98b63"/>`;
     g += `<g filter="url(#glass)"><circle cx="${x}" cy="${y - 36 * s}" r="${20 * s}" fill="${radial(light(c, 0.3), c, dark(c, 0.1), 0.45, 0.5, 0.75)}" opacity="0.9"/></g><ellipse cx="${x - 7 * s}" cy="${y - 45 * s}" rx="${6 * s}" ry="${3 * s}" fill="#fff" opacity="0.8" transform="rotate(-25 ${x - 7 * s} ${y - 45 * s})"/>`;
     return g;
@@ -409,12 +414,16 @@ window.Gummy = (() => {
   // ---------- 월드 2~5 배경 소품 ----------
   function mushroom(x, y, s = 1, cap = '#ff5f7a') {
     let g = groundShadow(x + 2 * s, y + 2, 16 * s, 4 * s, 0.25);
+    const t3 = tex3d('mushroom', { color: cap }, 79 * s * PX);
+    if (t3) return g + image3d(t3, x - 39.5 * s, y - 28 * s - 39.5 * s, 79 * s, 79 * s);
     g += `<path d="M${x - 6 * s} ${y} Q${x - 7 * s} ${y - 16 * s} ${x - 4 * s} ${y - 20 * s} L${x + 4 * s} ${y - 20 * s} Q${x + 7 * s} ${y - 16 * s} ${x + 6 * s} ${y} Z" fill="${linear([[0, '#fff8ee'], [1, '#e8d6c0']], 0, 0, 1, 0)}"/>`;
     g += `<g filter="url(#glass)"><path d="M${x - 20 * s} ${y - 16 * s} Q${x - 18 * s} ${y - 38 * s} ${x} ${y - 38 * s} Q${x + 18 * s} ${y - 38 * s} ${x + 20 * s} ${y - 16 * s} Q${x} ${y - 11 * s} ${x - 20 * s} ${y - 16 * s} Z" fill="${radial(light(cap, 0.35), cap, dark(cap, 0.15), 0.4, 0.3, 0.8)}" opacity="0.95"/></g>`;
     return g + `<circle cx="${x - 8 * s}" cy="${y - 28 * s}" r="${3 * s}" fill="#fff"/><circle cx="${x + 6 * s}" cy="${y - 31 * s}" r="${2.4 * s}" fill="#fff"/><circle cx="${x + 12 * s}" cy="${y - 22 * s}" r="${2 * s}" fill="#fff"/>`;
   }
   function cottonTree(x, y, s = 1, c = '#ffb3e0') {
     let g = groundShadow(x + 4 * s, y + 2, 20 * s, 5 * s, 0.25);
+    const t3 = tex3d('tree', { color: c, mood: 'cotton' }, 86 * s * PX);
+    if (t3) return g + image3d(t3, x - 43 * s, y - 31 * s - 43 * s, 86 * s, 86 * s);
     g += `<rect x="${x - 2.5 * s}" y="${y - 30 * s}" width="${5 * s}" height="${30 * s}" rx="${2.5 * s}" fill="#f6e6d2"/>`;
     return g + cloud(x, y - 44 * s, 0.75 * s, 0.98, light(c, 0.3), c);
   }
