@@ -114,18 +114,17 @@ console.log('모든 스테이지: 필요한 3D 그림이 다 미리 구워져 �
     const j = window.__jp, out = [];
     const loaded = async sel => { const im = document.querySelector(sel); if (!im) return false; if (!im.complete) await new Promise(r => { im.onload = im.onerror = r; }); return im.naturalWidth > 0; };
     j.P.stars = j.P.stars.map(() => 3);
-    for (let w = 0; w < 5; w++) { j.go('map'); for (let i = 0; i < 5; i++) { const b = document.getElementById('mapPrev'); if (!b.hidden) b.click(); } for (let i = 0; i < w; i++) document.getElementById('mapNext').click(); out.push(await loaded('#mapWorld img.bg3d')); }
+    for (let w = 0; w < 5; w++) { j.go('map'); for (let i = 0; i < 5; i++) { const b = document.getElementById('mapPrev'); if (!b.hidden) b.click(); } for (let i = 0; i < w; i++) document.getElementById('mapNext').click(); out.push(await loaded('#mapWorld img.scene') && document.querySelector('#mapWorld img.scene').src.includes('assets/map/w' + (w + 1) + '.webp')); j.mapScene(w); }
     j.go('title'); document.getElementById('storyBtn').click();
     for (let i = 0; i < 4; i++) { out.push(await loaded('#slides img.bg3d')); if (i < 3) document.getElementById('nextSlide').click(); }
     return out;
   });
-  check('지도 5장·프롤로그 4장에 3D 숲 배경이 깔림', bgOk.length === 9 && bgOk.every(Boolean), JSON.stringify(bgOk));
+  check('지도 5장(미리 구운 그림)·프롤로그 4장에 3D 숲 배경이 깔림', bgOk.length === 9 && bgOk.every(Boolean), JSON.stringify(bgOk));
   // 보스가 쓰러질 때 눈이 동그래진 3D 표정 (보스 5종)
   const downs = [];
   for (const n of [6, 12, 18, 24, 30]) {
     await page.evaluate(n => { const j = window.__jp; j.startStage(n); j.closeCard(); const G = j.G; G.bossHp = 0; G.state = 'settle'; G.settleT = 0; }, n);
-    await page.waitForTimeout(500);
-    downs.push(await page.evaluate(() => !!window.__jp.G.bossDown));
+    downs.push(await page.waitForFunction(() => window.__jp.G.bossDown != null, null, { timeout: 3000 }).then(() => true, () => false));
     await page.waitForFunction(() => Gummy.pending() === 0, null, { timeout: 15000 });
   }
   check('보스가 쓰러지면 쓰러짐 연출 시작 (5종)', downs.every(Boolean), JSON.stringify(downs));
@@ -134,6 +133,43 @@ console.log('모든 스테이지: 필요한 3D 그림이 다 미리 구워져 �
   check('결과·타이틀·프롤로그·지도·스티커 북·스토리 컷신도 3D 그림이 모두 있음', moreMiss.length === 0, moreMiss.join(', '));
   check('WebGL을 한 번도 켜지 않음', await page.evaluate(() => window.__gl === 0));
   check('콘솔 에러 없음', errors.length === 0, errors.join(' | '));
+  await page.close();
+}
+console.log('미리 구운 지도 그림');
+{
+  const page = await ctx.newPage();
+  await page.goto(pathToFileURL(path.join(root, 'index.html')).href);
+  // 지도 모양이나 소품 그림을 바꾸고 다시 굽지 않으면 실패 (design/forest/bake-map.mjs)
+  const diffs = await page.evaluate(async () => {
+    const load = src => new Promise((ok, no) => { const im = new Image(); im.onload = () => ok(im); im.onerror = no; im.src = src; });
+    const W = 195, H = 422, out = [];
+    for (let wi = 0; wi < 5; wi++) {
+      const a = document.createElement('canvas'), b = document.createElement('canvas'); a.width = b.width = W; a.height = b.height = H;
+      const ga = a.getContext('2d', { willReadFrequently: true }), gb = b.getContext('2d', { willReadFrequently: true });
+      const bg = await load(`assets/bg/w${wi + 1}.webp`), k = Math.max(W / bg.width, H / bg.height);
+      ga.drawImage(bg, (W - bg.width * k) * 0.5, (H - bg.height * k) * 0.45, bg.width * k, bg.height * k);
+      ga.drawImage(await load(/src="([^"]+)"/.exec(window.__jp.mapScene(wi))[1]), 0, 0, W, H);
+      gb.drawImage(await load(`assets/map/w${wi + 1}.webp`), 0, 0, W, H);
+      // 13×13 칸마다 평균 색 차이 → 가장 큰 칸 (소품 하나만 바뀌어도 잡힘)
+      const da = ga.getImageData(0, 0, W, H).data, db = gb.getImageData(0, 0, W, H).data, B = 13; let worst = 0;
+      for (let by = 0; by + B <= H; by += B) for (let bx = 0; bx + B <= W; bx += B) {
+        let sum = 0;
+        for (let y = by; y < by + B; y++) for (let x = bx; x < bx + B; x++) { const i = (y * W + x) * 4; sum += Math.abs(da[i] - db[i]) + Math.abs(da[i + 1] - db[i + 1]) + Math.abs(da[i + 2] - db[i + 2]); }
+        worst = Math.max(worst, sum / (B * B * 3));
+      }
+      out.push(+worst.toFixed(1));
+    }
+    return out;
+  });
+  check(`미리 구운 지도 그림 5장이 지금 지도 모양과 같음 (가장 다른 칸의 색 차이 12 미만: ${diffs.join(' · ')})`, diffs.every(d => d < 12), JSON.stringify(diffs));
+  await page.close();
+}
+{
+  const page = await ctx.newPage();
+  await page.route('**/assets/map/*.webp', r => r.abort());
+  await page.goto(pathToFileURL(path.join(root, 'index.html')).href);
+  await page.evaluate(() => window.__jp.go('map'));
+  check('미리 구운 지도 그림을 못 불러오면 숲 배경 + 길·소품을 그 자리에서 그림', await page.waitForFunction(() => !!document.querySelector('#mapWorld img.bg3d') && document.querySelectorAll('#mapWorld img.scene').length === 2, null, { timeout: 3000 }).then(() => true, () => false));
   await page.close();
 }
 console.log('숲 배경 그림을 못 불러올 때 (판 풍경으로 대체)');
@@ -155,7 +191,7 @@ console.log('3D 끔 (?3d=0)');
   check('?3d=0 이면 3D 꺼짐', await page.evaluate(() => Jelly3D.ok() === false));
   check('꺼지면 기존 구미 SVG 그림', await page.evaluate(() => !Gummy.jelly(0, 0, 20, '#ff5f8a', {}).includes('<image')));
   await page.evaluate(() => window.__jp.startStage(1)); await page.waitForTimeout(300);
-  check('꺼지면 지도에도 3D 숲 배경 없음', await page.evaluate(() => { window.__jp.go('map'); return !document.querySelector('#mapWorld img.bg3d'); }));
+  check('꺼지면 지도에도 3D 숲 배경 없음', await page.evaluate(() => { window.__jp.go('map'); return !document.querySelector('#mapWorld img.bg3d') && !document.querySelector('#mapWorld img[src*="assets/map"]'); }));
   check('꺼지면 판 바깥 숲 배경도 안 씀', await page.evaluate(() => !document.getElementById('play').classList.contains('f3d')));
   check('콘솔 에러 없음', errors.length === 0, errors.join(' | '));
 }

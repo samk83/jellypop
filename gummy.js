@@ -10,6 +10,8 @@ window.Gummy = (() => {
   // 3D 그림(jelly3d.js)이 켜져 있으면 그 그림을 <image>로 넣는다. 꺼져 있으면 null → 아래 SVG 그림을 그대로 쓴다
   const tex3d = (kind, opt, px) => (window.Jelly3D ? window.Jelly3D.bake(kind, opt, px) : null);
   const image3d = (href, x, y, w, h, extra = '') => `<image href="${href}" x="${x}" y="${y}" width="${w}" height="${h}" preserveAspectRatio="none" ${extra}/>`;
+  // 미리 구운 3D 지도 소품: u = 그림 1칸의 크기(px). 그림은 7.2칸 정사각형, 땅(발밑 y)은 그림 위에서 6.3칸 아래(가운데보다 2.7칸)
+  const prop3d = (kind, opt, x, y, u) => { const t3 = tex3d(kind, opt, 7.2 * u * PX); return t3 ? image3d(t3, x - 3.6 * u, y - 6.3 * u, 7.2 * u, 7.2 * u) : null; };
   const PX = 3;   // 3D 그림 해상도 기준 (화면 배율 3배 휴대폰)
 
   // ---------- 색 ----------
@@ -138,9 +140,9 @@ window.Gummy = (() => {
   function house(x, y, o = {}) {
     const s = o.s || 1, wall = o.wall || '#ffe1f0', roof = o.roof || '#ff8fb1', w = (o.w || 64) * s, h = (o.h || 52) * s, d = 22 * s;
     let g = groundShadow(x + 6 * s, y + 2, w * 0.8, h * 0.14, 0.3);
-    // 미리 구운 3D 집 (지붕 색·벽 색 조합별). 3D 그림 1칸 = 18.3s, 땅이 그림 중심보다 2.56칸 아래
+    // 미리 구운 3D 집 (지붕 색·벽 색 조합별). 3D 그림 1칸 = 18.3s, 땅이 그림 중심보다 2.7칸 아래
     const t3 = !o.w && !o.h && tex3d('house', { color: roof, mood: wall }, 132 * s * PX);
-    if (t3) return g + image3d(t3, x - 66 * s, y - 46.8 * s - 66 * s, 132 * s, 132 * s);
+    if (t3) return g + image3d(t3, x - 66 * s, y - 49.4 * s - 66 * s, 132 * s, 132 * s);
     g += `<g filter="url(#glass)"><rect x="${x - w / 2}" y="${y - h}" width="${w}" height="${h}" rx="${10 * s}" fill="${radial(light(wall, 0.3), wall, dark(wall, 0.1), 0.4, 0.3, 0.9)}" opacity="0.92"/></g>`;
     g += `<path d="M${x + w / 2 - 6 * s} ${y - h + 10 * s} Q${x + w / 2 + d} ${y - h + 2 * s} ${x + w / 2 + d - 4 * s} ${y - 6 * s} L${x + w / 2 - 6 * s} ${y} Z" fill="${dark(wall, 0.22)}" opacity="0.8"/>`;
     g += `<g filter="url(#glass)"><path d="M${x - w / 2 - 6 * s} ${y - h + 8 * s} Q${x} ${y - h - h * 0.9} ${x + w / 2 + 6 * s} ${y - h + 8 * s} Z" fill="${radial(light(roof, 0.4), roof, dark(roof, 0.2), 0.4, 0.4, 0.8)}" opacity="0.9"/></g>`;
@@ -155,7 +157,7 @@ window.Gummy = (() => {
   function tree(x, y, s = 1, c = '#6fcf6a') {
     let g = groundShadow(x + 4 * s, y + 2, 20 * s, 5 * s, 0.25);
     const t3 = tex3d('tree', { color: c }, 79 * s * PX);
-    if (t3) return g + image3d(t3, x - 39.5 * s, y - 28 * s - 39.5 * s, 79 * s, 79 * s);
+    if (t3) return g + image3d(t3, x - 39.5 * s, y - 29.6 * s - 39.5 * s, 79 * s, 79 * s);
     g += `<rect x="${x - 3 * s}" y="${y - 20 * s}" width="${6 * s}" height="${20 * s}" rx="${3 * s}" fill="#c98b63"/>`;
     g += `<g filter="url(#glass)"><circle cx="${x}" cy="${y - 36 * s}" r="${20 * s}" fill="${radial(light(c, 0.3), c, dark(c, 0.1), 0.45, 0.5, 0.75)}" opacity="0.9"/></g><ellipse cx="${x - 7 * s}" cy="${y - 45 * s}" rx="${6 * s}" ry="${3 * s}" fill="#fff" opacity="0.8" transform="rotate(-25 ${x - 7 * s} ${y - 45 * s})"/>`;
     return g;
@@ -253,6 +255,8 @@ window.Gummy = (() => {
   }
   function castle(x, y, s = 1, c = '#c3a6f2', { night = false } = {}) {
     let g = groundShadow(x, y + 4 * s, 110 * s, 14 * s, 0.35);
+    const p3 = prop3d('castle', { color: c, mood: night ? 'night' : 'day' }, x, y, 33 * s);
+    if (p3) return g + p3;
     g += tower(x - 62 * s, y - 20 * s, 26 * s, 70 * s, dark(c, 0.1), { s }) + tower(x + 62 * s, y - 20 * s, 26 * s, 70 * s, dark(c, 0.1), { s });
     g += `<rect x="${x - 78 * s}" y="${y - 62 * s}" width="${156 * s}" height="${62 * s}" fill="${linear([[0, light(c, 0.2)], [1, c]], 0, 0, 0, 1)}"/>`;
     for (let i = 0; i < 9; i++) { const bx = x - 78 * s + i * (156 * s / 8.5); g += `<rect x="${bx}" y="${y - 72 * s}" width="${10 * s}" height="${11 * s}" fill="${light(c, 0.15)}"/>`; }
@@ -267,6 +271,8 @@ window.Gummy = (() => {
   }
   function fountain(x, y, s = 1) {
     let g = groundShadow(x, y + 4 * s, 34 * s, 9 * s, 0.3);
+    const p3 = prop3d('fountain', { color: '#6ec6ff' }, x, y, 14.5 * s);
+    if (p3) return g + p3;
     g += `<ellipse cx="${x}" cy="${y}" rx="${32 * s}" ry="${11 * s}" fill="#cfd3e6"/><ellipse cx="${x}" cy="${y - 5 * s}" rx="${32 * s}" ry="${11 * s}" fill="${linear([[0, '#fbfcff'], [1, '#d8dcee']], 0, 0, 0, 1)}"/>`;
     g += `<ellipse cx="${x}" cy="${y - 5 * s}" rx="${26 * s}" ry="${8 * s}" fill="${radial('#bfe9ff', '#6ec6ff', '#3fa7f0', 0.4, 0.3, 0.8)}"/>`;
     g += `<rect x="${x - 3 * s}" y="${y - 30 * s}" width="${6 * s}" height="${26 * s}" fill="${linear([[0, '#fff'], [1, '#c9cde0']], 0, 0, 1, 0)}"/><ellipse cx="${x}" cy="${y - 30 * s}" rx="${9 * s}" ry="${3 * s}" fill="#e8ebf5"/>`;
@@ -275,6 +281,8 @@ window.Gummy = (() => {
     return g;
   }
   function lamp(x, y, s = 1, on = true) {
+    const p3 = on && prop3d('lamp', { color: '#5a3f8f' }, x, y, 11 * s);
+    if (p3) return p3 + `<circle cx="${x}" cy="${y - 38 * s}" r="${12 * s}" fill="#ffd36a" opacity="0.45" filter="url(#soft12)"/>`;
     let g = `<path d="M${x - 2 * s} ${y} L${x - 1.5 * s} ${y - 34 * s} L${x + 1.5 * s} ${y - 34 * s} L${x + 2 * s} ${y} Z" fill="#5a3f8f"/><ellipse cx="${x}" cy="${y}" rx="${4 * s}" ry="${1.6 * s}" fill="#4a2c86"/>`;
     g += `<rect x="${x - 5 * s}" y="${y - 44 * s}" width="${10 * s}" height="${11 * s}" rx="${2 * s}" fill="${on ? '#ffe8a3' : '#dfe6ff'}"/><path d="M${x - 6 * s} ${y - 44 * s} L${x} ${y - 49 * s} L${x + 6 * s} ${y - 44 * s} Z" fill="#5a3f8f"/>`;
     if (on) g += `<circle cx="${x}" cy="${y - 38 * s}" r="${12 * s}" fill="#ffd36a" opacity="0.55" filter="url(#soft12)"/>`;
@@ -282,6 +290,8 @@ window.Gummy = (() => {
   }
   function windmill(x, y, s = 1) {
     let g = groundShadow(x + 6 * s, y + 2, 26 * s, 7 * s, 0.3);
+    const p3 = prop3d('windmill', { color: '#ff9fb8' }, x, y, 16 * s);
+    if (p3) return g + p3;
     g += `<path d="M${x - 16 * s} ${y} L${x - 10 * s} ${y - 60 * s} L${x + 10 * s} ${y - 60 * s} L${x + 16 * s} ${y} Z" fill="${linear([[0, '#fff6ec'], [1, '#dcc8b2']], 0, 0, 1, 0)}"/>`;
     g += `<path d="M${x - 13 * s} ${y - 58 * s} Q${x} ${y - 78 * s} ${x + 13 * s} ${y - 58 * s} Z" fill="${linear([[0, '#ff9fb8'], [1, '#e66a8f']], 0, 0, 0, 1)}"/>`;
     g += `<rect x="${x - 3 * s}" y="${y - 30 * s}" width="${6 * s}" height="${10 * s}" rx="${2 * s}" fill="#ffe8a3"/>`;
@@ -415,7 +425,7 @@ window.Gummy = (() => {
   function mushroom(x, y, s = 1, cap = '#ff5f7a') {
     let g = groundShadow(x + 2 * s, y + 2, 16 * s, 4 * s, 0.25);
     const t3 = tex3d('mushroom', { color: cap }, 79 * s * PX);
-    if (t3) return g + image3d(t3, x - 39.5 * s, y - 28 * s - 39.5 * s, 79 * s, 79 * s);
+    if (t3) return g + image3d(t3, x - 39.5 * s, y - 29.6 * s - 39.5 * s, 79 * s, 79 * s);
     g += `<path d="M${x - 6 * s} ${y} Q${x - 7 * s} ${y - 16 * s} ${x - 4 * s} ${y - 20 * s} L${x + 4 * s} ${y - 20 * s} Q${x + 7 * s} ${y - 16 * s} ${x + 6 * s} ${y} Z" fill="${linear([[0, '#fff8ee'], [1, '#e8d6c0']], 0, 0, 1, 0)}"/>`;
     g += `<g filter="url(#glass)"><path d="M${x - 20 * s} ${y - 16 * s} Q${x - 18 * s} ${y - 38 * s} ${x} ${y - 38 * s} Q${x + 18 * s} ${y - 38 * s} ${x + 20 * s} ${y - 16 * s} Q${x} ${y - 11 * s} ${x - 20 * s} ${y - 16 * s} Z" fill="${radial(light(cap, 0.35), cap, dark(cap, 0.15), 0.4, 0.3, 0.8)}" opacity="0.95"/></g>`;
     return g + `<circle cx="${x - 8 * s}" cy="${y - 28 * s}" r="${3 * s}" fill="#fff"/><circle cx="${x + 6 * s}" cy="${y - 31 * s}" r="${2.4 * s}" fill="#fff"/><circle cx="${x + 12 * s}" cy="${y - 22 * s}" r="${2 * s}" fill="#fff"/>`;
@@ -423,7 +433,7 @@ window.Gummy = (() => {
   function cottonTree(x, y, s = 1, c = '#ffb3e0') {
     let g = groundShadow(x + 4 * s, y + 2, 20 * s, 5 * s, 0.25);
     const t3 = tex3d('tree', { color: c, mood: 'cotton' }, 86 * s * PX);
-    if (t3) return g + image3d(t3, x - 43 * s, y - 31 * s - 43 * s, 86 * s, 86 * s);
+    if (t3) return g + image3d(t3, x - 43 * s, y - 32.2 * s - 43 * s, 86 * s, 86 * s);
     g += `<rect x="${x - 2.5 * s}" y="${y - 30 * s}" width="${5 * s}" height="${30 * s}" rx="${2.5 * s}" fill="#f6e6d2"/>`;
     return g + cloud(x, y - 44 * s, 0.75 * s, 0.98, light(c, 0.3), c);
   }
@@ -432,6 +442,8 @@ window.Gummy = (() => {
   }
   function crystalRock(x, y, s = 1, c = '#9fd8ff') {
     let g = groundShadow(x, y + 2, 22 * s, 5 * s, 0.3);
+    const p3 = prop3d('crystal', { color: c }, x, y, 12 * s);
+    if (p3) return g + p3 + `<circle cx="${x}" cy="${y - 20 * s}" r="${18 * s}" fill="${c}" opacity="0.25" filter="url(#soft12)"/>`;
     [[-10, 26, -12], [0, 40, 0], [11, 30, 14]].forEach(([dx, h, rot]) => {
       g += `<g transform="rotate(${rot} ${x + dx * s} ${y})"><path d="M${x + dx * s - 6 * s} ${y} L${x + dx * s - 6 * s} ${y - h * s * 0.7} L${x + dx * s} ${y - h * s} L${x + dx * s + 6 * s} ${y - h * s * 0.7} L${x + dx * s + 6 * s} ${y} Z" fill="${linear([[0, light(c, 0.5)], [0.5, c], [1, dark(c, 0.25)]], 0, 0, 1, 0)}" opacity="0.92"/><path d="M${x + dx * s - 2 * s} ${y - 4 * s} L${x + dx * s - 2 * s} ${y - h * s * 0.65}" stroke="#fff" stroke-width="${1.5 * s}" opacity="0.8"/></g>`;
     });
@@ -439,11 +451,15 @@ window.Gummy = (() => {
   }
   function puddingHill(x, y, s = 1, c = '#ffd36a') {
     let g = groundShadow(x, y + 2, 60 * s, 10 * s, 0.3);
+    const p3 = prop3d('pudding', { color: c }, x, y, 25 * s);
+    if (p3) return g + p3;
     g += `<g filter="url(#glass)"><path d="M${x - 58 * s} ${y} L${x - 44 * s} ${y - 70 * s} Q${x} ${y - 82 * s} ${x + 44 * s} ${y - 70 * s} L${x + 58 * s} ${y} Z" fill="${radial(light(c, 0.35), c, dark(c, 0.12), 0.4, 0.3, 0.85)}" opacity="0.95"/></g>`;
     g += `<path d="M${x - 46 * s} ${y - 62 * s} L${x - 44 * s} ${y - 70 * s} Q${x} ${y - 82 * s} ${x + 44 * s} ${y - 70 * s} L${x + 46 * s} ${y - 62 * s} Q${x + 36 * s} ${y - 52 * s} ${x + 30 * s} ${y - 60 * s} Q${x + 22 * s} ${y - 40 * s} ${x + 12 * s} ${y - 58 * s} Q${x} ${y - 52 * s} ${x - 14 * s} ${y - 58 * s} Q${x - 26 * s} ${y - 44 * s} ${x - 32 * s} ${y - 60 * s} Q${x - 40 * s} ${y - 54 * s} ${x - 46 * s} ${y - 62 * s} Z" fill="${linear([[0, '#b8651e'], [1, '#7a3a0e']], 0, 0, 0, 1)}" opacity="0.92"/>`;
     return g + `<ellipse cx="${x - 22 * s}" cy="${y - 70 * s}" rx="${12 * s}" ry="${3 * s}" fill="#fff" opacity="0.6"/>`;
   }
   function gear(x, y, r, c = '#c9d3ea') {
+    const t3 = tex3d('gear', { color: c }, 4.5 * r * PX);   // 가운데 기준 (그림 1칸 = r/1.6)
+    if (t3) return image3d(t3, x - 2.25 * r, y - 2.25 * r, 4.5 * r, 4.5 * r);
     let teeth = ''; for (let i = 0; i < 8; i++) teeth += `<rect x="${x - r * 0.16}" y="${y - r * 1.18}" width="${r * 0.32}" height="${r * 0.4}" rx="${r * 0.06}" fill="${dark(c, 0.15)}" transform="rotate(${i * 45} ${x} ${y})"/>`;
     return teeth + `<g filter="url(#gelSmall)"><circle cx="${x}" cy="${y}" r="${r}" fill="${radial(light(c, 0.4), c, dark(c, 0.2), 0.4, 0.3, 0.8)}"/></g><circle cx="${x}" cy="${y}" r="${r * 0.32}" fill="${dark(c, 0.35)}"/>`;
   }
@@ -466,17 +482,23 @@ window.Gummy = (() => {
   }
   function giftBox(x, y, s = 1, c = '#4fb4ff') {
     let g = groundShadow(x + 3 * s, y + 2, 18 * s, 4 * s, 0.25);
+    const p3 = prop3d('gift', { color: c }, x, y, 11.5 * s);
+    if (p3) return g + p3;
     g += `<g filter="url(#gelSmall)"><rect x="${x - 15 * s}" y="${y - 26 * s}" width="${30 * s}" height="${26 * s}" rx="${4 * s}" fill="${radial(light(c, 0.35), c, dark(c, 0.15), 0.4, 0.3, 0.8)}"/></g>`;
     return g + `<rect x="${x - 3 * s}" y="${y - 26 * s}" width="${6 * s}" height="${26 * s}" fill="#fff" opacity="0.85"/><path d="M${x} ${y - 26 * s} Q${x - 12 * s} ${y - 38 * s} ${x - 10 * s} ${y - 26 * s} Z M${x} ${y - 26 * s} Q${x + 12 * s} ${y - 38 * s} ${x + 10 * s} ${y - 26 * s} Z" fill="#fff" opacity="0.9"/>`;
   }
   function pot(x, y, s = 1) {
     let g = groundShadow(x, y + 3, 60 * s, 10 * s, 0.35);
+    const p3 = prop3d('pot', { color: '#ff5f8a' }, x, y, 26 * s);
+    if (p3) return g + p3;
     g += `<path d="M${x - 56 * s} ${y - 70 * s} Q${x - 60 * s} ${y} ${x} ${y} Q${x + 60 * s} ${y} ${x + 56 * s} ${y - 70 * s} Z" fill="${linear([[0, '#9aa3c0'], [0.4, '#5d6688'], [1, '#2f3552']], 0, 0, 1, 0)}"/>`;
     g += `<ellipse cx="${x}" cy="${y - 70 * s}" rx="${58 * s}" ry="${12 * s}" fill="#c9d3ea"/><ellipse cx="${x}" cy="${y - 70 * s}" rx="${50 * s}" ry="${9 * s}" fill="${radial('#ffb3e0', '#ff5f8a', '#a8245a', 0.5, 0.5, 0.8)}"/>`;
     for (let i = 0; i < 4; i++) g += `<circle cx="${x - 30 * s + i * 20 * s}" cy="${y - 74 * s - (i % 2) * 6 * s}" r="${(5 + (i % 2) * 3) * s}" fill="#ffd1e8" opacity="0.85"/>`;
     return g + `<path d="M${x + 40 * s} ${y - 80 * s} L${x + 70 * s} ${y - 140 * s}" stroke="#e8d6c0" stroke-width="${8 * s}" stroke-linecap="round"/><ellipse cx="${x + 72 * s}" cy="${y - 146 * s}" rx="${10 * s}" ry="${14 * s}" fill="#e8d6c0"/>`;
   }
   function mirror(x, y, s = 1) {
+    const p3 = prop3d('mirror', { color: '#ffe08a' }, x, y, 16 * s);
+    if (p3) return groundShadow(x, y + 2, 22 * s, 5 * s, 0.25) + p3;
     return `<ellipse cx="${x}" cy="${y - 40 * s}" rx="${24 * s}" ry="${38 * s}" fill="${linear([[0, '#ffe08a'], [1, '#c9861f']], 0, 0, 1, 1)}"/><ellipse cx="${x}" cy="${y - 40 * s}" rx="${19 * s}" ry="${32 * s}" fill="${linear([[0, '#e8f6ff'], [0.5, '#b8c8ff'], [1, '#d8c8ff']], 0, 0, 1, 1)}"/><path d="M${x - 10 * s} ${y - 60 * s} L${x + 2 * s} ${y - 66 * s} M${x - 12 * s} ${y - 48 * s} L${x + 8 * s} ${y - 58 * s}" stroke="#fff" stroke-width="${2.5 * s}" stroke-linecap="round" opacity="0.9"/><rect x="${x - 4 * s}" y="${y - 4 * s}" width="${8 * s}" height="${6 * s}" fill="#c9861f"/>`;
   }
   // 분홍 사탕 대포 (조각별). x,y = 받침 가운데. 포신은 따로 돌려 그리므로 분리.

@@ -2445,6 +2445,8 @@ function mapArtWorld(wi, f3d) {
   b += A.sparkle(60, 230, 9) + A.sparkle(330, 250, 8, '#ffe27a') + A.sparkle(120, 470, 7) + A.sparkle(300, 560, 7, '#ffe27a');
   return A.img(b, { x: 0, y: 0, w: MAP_W, h: MAP_H, lx: 100, ly: -120 }, 'class="scene"');
 }
+// 미리 구운 지도 그림을 못 불러오면: 3D 숲 그림 위에 길·소품을 그 자리에서 그린다 (그것도 안 되면 숲 없이)
+window.mapBakedFailed = (img, wi) => { img.outerHTML = `<img class="scene bg3d" alt="" draggable="false" src="assets/bg/w${wi + 1}.webp" onerror="this.remove()">` + cachedArt('map' + wi + '-3d', () => mapArtWorld(wi, true)); };
 function coinImg(r, state, color) { return Art.img(Art.coin(0, 0, r, { state, color }), { x: -r * 1.4, y: -r * 1.2, w: r * 2.8, h: r * 2.4 }); }
 function unlockedCount() { let n = 1; for (let i = 0; i < NST; i++) if (P.stars[i] > 0) n = i + 2; return Math.min(n, NST); }
 let walkFrom = null, mapAnim = 0, mapView = null;
@@ -2467,9 +2469,9 @@ function renderMap() {
   let oy = Math.min(0, Math.max(fh - wh, (fh - footH - labelH) - nBottom * k));
   if (nTop * k + oy < headH) oy = Math.min(0, Math.max(fh - wh, headH - nTop * k));
   world.style.left = ox + 'px'; world.style.top = oy + 'px'; world.style.width = ww + 'px'; world.style.height = wh + 'px';
-  const f3d = !!(window.Jelly3D && Jelly3D.ok());   // 3D 숲 그림을 맨 아래 깔고, 길·칸·소품은 그 위에
-  world.innerHTML = (f3d ? `<img class="scene bg3d" alt="" draggable="false" src="assets/bg/w${wi + 1}.webp" onerror="this.remove()">` : '') +
-    cachedArt('map' + wi + (f3d ? '-3d' : ''), () => mapArtWorld(wi, f3d)) +
+  // 3D가 켜지면 미리 구워 둔 지도 그림 한 장(숲 배경 + 길·소품, design/forest/bake-map.mjs)만 붙인다 → 처음 열 때 그림 그리기 없음
+  const f3d = !!(window.Jelly3D && Jelly3D.ok());
+  world.innerHTML = (f3d ? `<img class="scene" alt="" draggable="false" src="assets/map/w${wi + 1}.webp" onerror="mapBakedFailed(this, ${wi})">` : cachedArt('map' + wi, () => mapArtWorld(wi, false))) +
     `<svg class="village" id="mapPath" viewBox="0 0 ${MAP_W} ${MAP_H}" preserveAspectRatio="none" aria-hidden="true"><path id="roadLine" d="M${ROAD_PTS.map(p => p[0].toFixed(1) + ' ' + p[1].toFixed(1)).join(' L')}" fill="none" stroke="none"/></svg>`;
   const pct = (x, y, node) => { node.style.left = x / MAP_W * 100 + '%'; node.style.top = y / MAP_H * 100 + '%'; };
   const sizes = [28, 26, 24, 22, 20, 18];
@@ -2632,6 +2634,7 @@ window.__jp = {
   startStage, rescue, showResult, land, hazardsAfterShot, unlockAudio, boom, audioReady: () => !!audio, LUCKY, pickLucky, applyLucky, seenHz: () => P.seenHz, aimLimit, music: () => Music.info(), voices: () => voiceCount, soundMode: () => soundMode, sfx, CS, shoot, swapQueue, setAngle, go, seedRandom,
   reset() { Object.assign(P, { stars: new Array(NST).fill(0), stickers: {}, seenIntro: false, at: 0, seenHz: {}, seenStory: {} }); saveP(); },
   story: () => window.JellyStory,
+  mapScene: wi => mapArtWorld(wi, true),   // 지도 그림 굽기 도구용 (design/forest/bake-map.mjs)
   // 설명 카드 닫기 · 생각하는 시간 흘려보내기(조준 중 시계가 흐름) · 놈놈이 대포를 막았는지
   closeCard() { if (!$('hzCard').hidden) $('hzOk').click(); },
   think(sec) { let n = 0; while (G && G.state === 'aim' && n++ < sec * 30) update(1 / 30); return G && G.state; },

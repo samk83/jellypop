@@ -27,6 +27,8 @@ for (const [key, size] of Object.entries(keys)) {
       // house|지붕 색|벽 색|0, tree|잎 색|happy 또는 cotton(솜사탕 나무)|0, mushroom|갓 색|happy|0
       : kind === 'house' ? Jelly3D.bake('house', { color, col2: mood }, size * 2)
       : kind === 'tree' ? Jelly3D.bake('tree', { color, acc: mood === 'cotton' ? 1 : 0 }, size * 2)
+      // castle|색|day 또는 night|0, fountain·windmill·lamp|기본 색|happy|0, crystal·gift|색|happy|0
+      : kind === 'castle' ? Jelly3D.bake('castle', { color, acc: mood === 'night' ? 1 : 0 }, size * 2)
       : Jelly3D.bake(kind, { color, mood, ears: ears === '1' }, size * 2);
     if (!big) throw new Error('bake failed ' + kind + color);
     const im = new Image(); im.src = big; await im.decode();

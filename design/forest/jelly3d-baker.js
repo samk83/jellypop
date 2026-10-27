@@ -84,6 +84,97 @@ vec2 propMap(vec3 q){
       lf = smin(lf, length(c - vec3(-0.95, -0.40, 0.20)) - 1.05, 0.45); lf = smin(lf, length(c - vec3(0.98, -0.30, 0.10)) - 1.10, 0.45);
       lf = smin(lf, length(c - vec3(0.10, 0.85, -0.10)) - 1.00, 0.45); }
     if(lf < res.x) res = vec2(lf, 12.0);
+  } else if(uKind==9){   // 성 (그림 1칸 = 33s): 가운데 성벽 + 톱니 + 아치 문, 안쪽 탑 2 + 바깥 탑 2 (원뿔 지붕·깃발). uAcc 1 = 밤
+    vec3 k = q - vec3(0.0, 0.94, -0.35);
+    float wall = sdRBox(k, vec3(2.36, 0.94, 0.62), 0.06); res = vec2(wall, 114.0);
+    vec3 cr = q - vec3(0.0, 1.98, 0.17); cr.x = mod(cr.x + 0.14, 0.56) - 0.14;
+    float cren = max(sdRBox(cr, vec3(0.14, 0.12, 0.10), 0.03), abs(q.x) - 2.36); if(cren < res.x) res = vec2(cren, 114.0);
+    vec3 dq = q - vec3(0.0, 0.0, 0.29); float arch = max(min(sdRBox(dq - vec3(0.0, 0.45, 0.0), vec3(0.58, 0.45, 0.06), 0.02), length(dq.xy - vec2(0.0, 0.9)) - 0.58), abs(dq.z) - 0.06);
+    arch = max(arch, -q.y); if(arch < res.x) res = vec2(arch, 115.0);
+    for(int i=0;i<4;i++){ float sx = (i==0||i==2) ? -1.0 : 1.0; bool outer = i >= 2;
+      float tx = outer ? 2.91 : 1.88, tr = outer ? 0.52 : 0.39, th = outer ? 2.55 : 2.73, tz = outer ? 0.05 : -0.55;
+      vec3 t = q - vec3(sx*tx, 0.0, tz);
+      float body = max(length(t.xz) - tr, abs(t.y - th*0.5) - th*0.5); if(body < res.x) res = vec2(body, 114.0);
+      float ring = max(length(t.xz) - tr*1.14, abs(t.y - th - 0.10) - 0.12); if(ring < res.x) res = vec2(ring, 114.0);
+      float roof = sdRCone(t - vec3(0.0, th + 0.20, 0.0), tr*1.18, 0.02, tr*2.3); if(roof < res.x) res = vec2(roof, 122.0);
+      vec3 w = t - vec3(0.0, th*0.62, tr*0.92); float win = sdRBox(w, vec3(0.07, 0.15, 0.12), 0.05); if(win < res.x) res = vec2(win, 109.0);
+      if(outer){ float pole = sdCap(t, vec3(0.0, th + 0.20 + tr*2.3, 0.0), vec3(0.0, th + 0.20 + tr*2.3 + 0.45, 0.0), 0.025); if(pole < res.x) res = vec2(pole, 120.0);
+        float flag = sdRBox(t - vec3(sx*0.20, th + 0.20 + tr*2.3 + 0.36, 0.0), vec3(0.20, 0.09, 0.02), 0.02); if(flag < res.x) res = vec2(flag, 116.0); } }
+  } else if(uKind==10){   // 분수 (1칸 = 14.5s): 돌 받침 + 젤리 물 + 기둥 + 위 접시 + 물줄기
+    float bowl = max(length(q.xz) - 2.2, abs(q.y - 0.22) - 0.22); bowl = smin(bowl, length(vec2(length(q.xz) - 2.05, q.y - 0.45)) - 0.17, 0.08); res = vec2(bowl, 117.0);
+    float water = max(length(q.xz) - 1.92, abs(q.y - 0.42) - 0.06); if(water < res.x) res = vec2(water, 12.0);
+    float col = sdRCone(q, 0.26, 0.17, 2.1); if(col < res.x) res = vec2(col, 117.0);
+    float dish = max(length(q.xz - vec2(0.0)) - 0.66, abs(q.y - 2.12) - 0.08); dish = smin(dish, length(vec2(length(q.xz) - 0.60, q.y - 2.2)) - 0.07, 0.04); if(dish < res.x) res = vec2(dish, 117.0);
+    float spray = length(q - vec3(0.0, 2.55, 0.0)) - 0.24;
+    for(int i=0;i<4;i++){ float a = float(i)*1.5708 + 0.7854; vec3 dir = vec3(cos(a), 0.0, sin(a));
+      spray = smin(spray, sdCap(q, vec3(0.0, 2.62, 0.0) + dir*0.25, vec3(0.0, 2.80, 0.0) + dir*0.75, 0.15), 0.18);
+      spray = smin(spray, sdCap(q, vec3(0.0, 2.80, 0.0) + dir*0.75, vec3(0.0, 2.30, 0.0) + dir*1.05, 0.13), 0.15);
+      spray = smin(spray, length(q - (vec3(0.0, 1.95, 0.0) + dir*1.12)) - 0.11, 0.12); }
+    spray = smin(spray, length(q - vec3(0.0, 2.75, 0.0)) - 0.32, 0.15);
+    if(spray < res.x) res = vec2(spray, 12.0);
+  } else if(uKind==11){   // 풍차 (1칸 = 16s): 크림색 몸통 + 분홍 둥근 지붕 + 노란 문 + 날개 4장
+    float body = sdRCone(q, 1.0, 0.64, 3.7); res = vec2(body, 111.0);
+    float roof = smax(sdEll(q - vec3(0.0, 3.62, 0.0), vec3(0.86, 0.72, 0.86)), -(q.y - 3.62), 0.04); if(roof < res.x) res = vec2(roof, 118.0);
+    float door = max(min(sdRBox(q - vec3(0.0, 0.40, 0.86), vec3(0.24, 0.40, 0.10), 0.05), length(q.xy - vec2(0.0, 0.80)) - 0.24), abs(q.z - 0.86) - 0.12); door = max(door, -q.y); if(door < res.x) res = vec2(door, 119.0);
+    float win = max(length(q.xy - vec2(0.0, 2.0)) - 0.20, abs(q.z - 0.78) - 0.10); if(win < res.x) res = vec2(win, 119.0);
+    vec3 h = q - vec3(0.0, 3.85, 0.92);
+    float hub = length(h) - 0.24; if(hub < res.x) res = vec2(hub, 120.0);
+    for(int i=0;i<4;i++){ vec3 b = h; b.xy = rot2(-(float(i)*1.5708 + 0.35))*b.xy;
+      float spar = sdRBox(b - vec3(0.0, 1.0, 0.0), vec3(0.05, 0.95, 0.04), 0.02); if(spar < res.x) res = vec2(spar, 121.0);
+      float sail = sdRBox(b - vec3(0.20, 1.12, 0.02), vec3(0.17, 0.78, 0.025), 0.03); if(sail < res.x) res = vec2(sail, i==0||i==2 ? 121.0 : 118.0); }
+  } else if(uKind==12){   // 가로등 (1칸 = 11s): 보라 기둥 + 불 켜진 등 + 지붕
+    float base = max(length(q.xz) - 0.42, abs(q.y - 0.08) - 0.08); res = vec2(base, 120.0);
+    float post = sdRCone(q, 0.20, 0.13, 3.0); if(post < res.x) res = vec2(post, 120.0);
+    float glass = sdRBox(q - vec3(0.0, 3.48, 0.0), vec3(0.42, 0.48, 0.42), 0.12); if(glass < res.x) res = vec2(glass, 109.0);
+    vec3 cq = q - vec3(0.0, 3.48, 0.0); cq.xz = abs(cq.xz) - vec2(0.44);
+    float bars = sdRBox(cq, vec3(0.06, 0.52, 0.06), 0.03); bars = min(bars, sdRBox(q - vec3(0.0, 2.98, 0.0), vec3(0.52, 0.06, 0.52), 0.04));
+    if(bars < res.x) res = vec2(bars, 120.0);
+    float roof = smin(smax(sdEll(q - vec3(0.0, 4.02, 0.0), vec3(0.66, 0.50, 0.66)), -(q.y - 4.02), 0.03), sdRBox(q - vec3(0.0, 4.02, 0.0), vec3(0.58, 0.05, 0.58), 0.04), 0.05); if(roof < res.x) res = vec2(roof, 120.0);
+    float knob = length(q - vec3(0.0, 4.56, 0.0)) - 0.11; if(knob < res.x) res = vec2(knob, 120.0);
+  } else if(uKind==13){   // 수정 바위 (1칸 = 12s): 끝이 뾰족한 육각 수정 3개 (젤리 유리)
+    float d = 1e5;
+    for(int i=0;i<3;i++){ float dx = i==0 ? -0.83 : (i==1 ? 0.0 : 0.92), h = i==0 ? 2.17 : (i==1 ? 3.33 : 2.5), a = i==0 ? 0.21 : (i==1 ? 0.0 : -0.24), r = i==1 ? 0.55 : 0.46;
+      vec3 c = q - vec3(dx, 0.0, i==1 ? -0.15 : 0.1); c.xy = rot2(a)*c.xy;
+      float hx = max(abs(c.x)*0.866 + abs(c.z)*0.5, abs(c.z));
+      float cr = max(max(hx - r, c.y + 1.1*hx - h), -c.y - 0.2);
+      d = smin(d, cr, 0.05); }
+    res = vec2(d, 12.0);
+  } else if(uKind==14){   // 선물 상자 (1칸 = 11.5s): 반질반질한 상자 + 흰 리본 + 나비 매듭
+    vec3 b = q - vec3(0.0, 1.13, 0.0);
+    float box = sdRBox(b, vec3(1.30, 1.13, 1.10), 0.22); res = vec2(box, 107.0);
+    float shell = sdRBox(b, vec3(1.34, 1.17, 1.14), 0.24);
+    float rib = max(shell, min(abs(b.x) - 0.26, abs(b.z) - 0.26)); if(rib < res.x) res = vec2(rib, 121.0);
+    for(int s=0;s<2;s++){ float sx = s==0 ? -1.0 : 1.0; vec3 l = q - vec3(sx*0.48, 2.52, 0.0); l.xy = rot2(sx*0.45)*l.xy;
+      float loop = length(vec2(length(l.xy*vec2(0.85, 1.25)) - 0.40, l.z)) - 0.13; if(loop < res.x) res = vec2(loop, 121.0); }
+    float knot = length(q - vec3(0.0, 2.42, 0.0)) - 0.22; if(knot < res.x) res = vec2(knot, 121.0);
+  } else if(uKind==15){   // 톱니바퀴 (가운데 기준, 1칸 = r/1.6): 앞을 보는 두꺼운 원판 + 톱니 8개 + 가운데 구멍
+    vec3 g = q - vec3(0.0, 2.7, 0.0); float ang = atan(g.y, g.x), rr = length(g.xy);
+    float sect = mod(ang + 0.3927, 0.7854) - 0.3927; vec2 tq = vec2(cos(sect), sin(sect))*rr;
+    float disc = max(rr - 1.6, abs(g.z) - 0.42);
+    float tooth = max(sdRBox(vec3(tq.x - 1.78, tq.y, g.z), vec3(0.32, 0.26, 0.36), 0.08), 0.0); disc = smin(disc, tooth, 0.06);
+    disc = smax(disc, -(rr - 0.50), 0.05); disc = smax(disc, -max(abs(rr - 1.05) - 0.22, -(g.z - 0.30)), 0.04);
+    res = vec2(disc, 107.0);
+  } else if(uKind==16){   // 거울 (1칸 = 16s): 세로 타원 금테 + 반짝이는 거울 + 받침
+    vec3 m = q - vec3(0.0, 2.5, 0.0); vec2 e = m.xy*vec2(1.0, 1.5/2.4);
+    float frame = max(abs(length(e) - 1.38) - 0.17, abs(m.z) - 0.20); frame = min(frame, length(vec2(length(e) - 1.38, m.z)) - 0.20);
+    res = vec2(frame, 96.0);
+    float glass = max(length(e) - 1.24, abs(m.z) - 0.06); if(glass < res.x) res = vec2(glass, 123.0);
+    float stand = sdRBox(q - vec3(0.0, 0.10, 0.0), vec3(0.65, 0.10, 0.35), 0.08); stand = min(stand, sdCap(q, vec3(0.0, 0.1, 0.0), vec3(0.0, 0.5, 0.0), 0.12)); if(stand < res.x) res = vec2(stand, 96.0);
+  } else if(uKind==17){   // 마녀 냄비 (1칸 = 26s): 둥근 쇠 냄비 + 분홍 젤리 물 + 국자
+    vec3 b = q - vec3(0.0, 1.35, 0.0);
+    float pot = smax(sdEll(b, vec3(2.20, 1.40, 1.90)), b.y - 1.30, 0.08); pot = smax(pot, -sdEll(b - vec3(0.0, 0.10, 0.0), vec3(2.0, 1.25, 1.70)), 0.04); res = vec2(pot, 124.0);
+    float rim = length(vec2(length(b.xz*vec2(1.0, 2.20/1.90)) - 2.12, b.y - 1.30)) - 0.16; if(rim < res.x) res = vec2(rim, 117.0);
+    float soup = max(sdEll(b - vec3(0.0, 0.10, 0.0), vec3(2.0, 1.25, 1.70)), b.y - 1.10); 
+    for(int i=0;i<4;i++){ float bx = -1.15 + float(i)*0.77; soup = smin(soup, length(b - vec3(bx, 1.18 + float(i%2)*0.16, 0.2*float(i%3) - 0.2)) - (0.19 + float(i%2)*0.10), 0.10); }
+    if(soup < res.x) res = vec2(soup, 12.0);
+    float spoon = sdCap(q, vec3(1.25, 2.20, -0.2), vec3(2.70, 5.30, -0.4), 0.15); spoon = smin(spoon, sdEll(q - vec3(2.78, 5.55, -0.4), vec3(0.38, 0.52, 0.18)), 0.08); if(spoon < res.x) res = vec2(spoon, 111.0);
+  } else if(uKind==18){   // 푸딩 언덕 (1칸 = 25s): 젤리 푸딩 + 흘러내리는 캐러멜 모자
+    float rad = mix(2.10, 1.62, clamp(q.y/2.65, 0.0, 1.0)); float body = max((length(q.xz) - rad)*0.97, abs(q.y - 1.30) - 1.30) ; body = max(body, -q.y); res = vec2(body - 0.05, 12.0);
+    vec3 c = q - vec3(0.0, 2.75, 0.0); float ang = atan(c.z, c.x);
+    float capEdge = 2.20 + 0.18*sin(ang*7.0);
+    float cap = max(sdEll(c - vec3(0.0, -0.75, 0.0), vec3(1.78, 1.25, 1.78)), capEdge - q.y);
+    for(int i=0;i<4;i++){ float a = 0.45 + float(i)*0.75; vec3 d = vec3(cos(a), 0.0, sin(a)); cap = smin(cap, sdCap(q, d*1.70 + vec3(0.0, 2.35, 0.0), d*1.80 + vec3(0.0, 1.75 - 0.25*float(i%2), 0.0), 0.15), 0.12); }
+    if(cap < res.x) res = vec2(cap, 101.0);
   } else {   // 버섯: 크림색 기둥 + 반질반질한 점박이 갓
     float st = sdRCone(q, 0.78, 0.55, 1.8); res = vec2(st, 111.0);
     vec3 c = q - vec3(0.0, 1.65, 0.0);
@@ -231,6 +322,17 @@ vec3 candy(vec3 p, vec3 n, vec3 rd, float id){
   else if(id > 110.5 && id < 111.5){ alb = vec3(0.98,0.93,0.85); spec = 0.6; rough = 50.0; }
   else if(id > 111.5 && id < 112.5){ alb = uCol; spec = 1.7; rough = 110.0; if(voro(p*1.15 + 3.0).x < 0.20 && n.y > -0.2) alb = vec3(1.0,0.98,0.95); }
   else if(id > 112.5 && id < 113.5){ alb = uCol2*0.72; spec = 0.8; }
+  else if(id > 113.5 && id < 114.5){ alb = mix(uCol, vec3(1.0), 0.18); spec = 0.6; rough = 50.0; }
+  else if(id > 114.5 && id < 115.5){ alb = uAcc==1 ? vec3(0.10,0.06,0.24) : vec3(0.55,0.34,0.22); spec = 0.5; }
+  else if(id > 115.5 && id < 116.5){ alb = vec3(1.0,0.37,0.54); spec = 1.2; }
+  else if(id > 116.5 && id < 117.5){ alb = vec3(0.95,0.95,1.0); spec = 0.9; rough = 70.0; }
+  else if(id > 117.5 && id < 118.5){ alb = vec3(1.0,0.58,0.70); spec = 1.5; rough = 100.0; }
+  else if(id > 118.5 && id < 119.5){ alb = vec3(1.0,0.88,0.58); spec = 0.8; }
+  else if(id > 119.5 && id < 120.5){ alb = vec3(0.36,0.25,0.58); spec = 1.2; rough = 90.0; }
+  else if(id > 120.5 && id < 121.5){ alb = vec3(1.0); spec = 1.0; rough = 80.0; }
+  else if(id > 121.5 && id < 122.5){ alb = mix(uCol, vec3(0.35,0.18,0.57), 0.4); spec = 1.4; rough = 100.0; }
+  else if(id > 123.5 && id < 124.5){ alb = vec3(0.38,0.42,0.58); spec = 1.5; rough = 90.0; }
+  else if(id > 122.5 && id < 123.5){ vec3 rf = reflect(rd, n); return mix(vec3(0.80,0.88,1.0), vec3(1.0,0.86,0.95), 0.5 + 0.5*rf.x) * (0.85 + 0.35*smoothstep(0.2, 0.9, rf.y)) + vec3(1.2)*smoothstep(0.93, 0.97, dot(rf, normalize(vec3(-0.5, 0.6, 0.6)))); }
   else { alb = vec3(1.0,0.93,0.80); spec = 0.6; rough = 50.0; }
   alb = pow(alb, vec3(2.2));
   float dK = max(dot(n, KEY), 0.0), dS = max(dot(n, SUN), 0.0);
@@ -258,15 +360,15 @@ void main(){
   vec3 col;
   if(id >= 20.0 && id < 30.0) col = eyeShade(p, n, rd, eyePos(id < 20.5 ? -1.0 : 1.0), jFwd(FOOT));
   else if(id >= 10.0 && id < 20.0){
-    vec3 c = uKind==0 ? FOOT : uKind==7 ? FOOT + vec3(0.0, uAcc==1 ? 2.6 : 2.2, 0.0) : vec3(0,-2.4,0);
-    col = shadeJelly(p, n, rd, uCol, c, uKind==7 ? 1.7 : RR);
+    vec3 c = uKind==0 ? FOOT : uKind==7 ? FOOT + vec3(0.0, uAcc==1 ? 2.6 : 2.2, 0.0) : uKind==10 ? FOOT + vec3(0.0, 1.0, 0.0) : uKind==13 ? FOOT + vec3(0.0, 1.4, 0.0) : uKind==17 ? FOOT + vec3(0.0, 2.3, 0.0) : uKind==18 ? FOOT + vec3(0.0, 1.2, 0.0) : vec3(0,-2.4,0);
+    col = shadeJelly(p, n, rd, uKind==10 ? vec3(0.43,0.78,1.0) : uCol, c, uKind==7 ? 1.7 : uKind==10 ? 1.4 : uKind==13 ? 1.2 : uKind==17 ? 1.0 : uKind==18 ? 1.9 : RR);
     if(uKind==0) col = faceDecor(col, p, n, c, RR);
     else if(uKind==1 && uMood < 2.5) col = bubbleFace(col, p, n, RR);
   } else col = candy(p, n, rd, id);
   col = col / (1.0 + col*0.25);
   o = vec4(pow(clamp(col,0.0,1.0), vec3(0.4545)), cov);
 }`;
-  const KIND = { jelly: 0, bubble: 1, barrel: 2, base: 3, housing: 4, wheel: 5, house: 6, tree: 7, mushroom: 8 };
+  const KIND = { jelly: 0, bubble: 1, barrel: 2, base: 3, housing: 4, wheel: 5, house: 6, tree: 7, mushroom: 8, castle: 9, fountain: 10, windmill: 11, lamp: 12, crystal: 13, gift: 14, gear: 15, mirror: 16, pot: 17, pudding: 18 };
   const MOOD = { happy: 0, joy: 1, worried: 2, angry: 3, none: 3, o: 2 };   // o(깜짝)은 걱정 얼굴로
   let gl = null, prog = null, cv = null, state = null, U = {};
   const cache = {};
