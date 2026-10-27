@@ -108,22 +108,28 @@ img{-webkit-user-drag:none}
 
 /* 프롤로그 */
 #intro{padding:0}
-.slide{position:absolute;inset:0;display:flex;flex-direction:column;justify-content:flex-end;
-  padding:calc(env(safe-area-inset-top) + 16px) 18px calc(env(safe-area-inset-bottom) + 22px)}
+.slide{position:absolute;inset:0;cursor:pointer}
 .slide .scene{position:absolute;inset:0;overflow:hidden}
 .slide .scene img{position:absolute;inset:0;width:100%;height:100%;object-fit:cover;object-position:center 60%}
 .slide .scene img.bg3d{object-position:center 40%}
-.slide .caption{position:relative;background:rgba(255,255,255,.92);border:2px solid #ffb3d1;border-radius:18px;padding:14px 16px;font-size:16px;line-height:1.55;color:var(--ink);
-  box-shadow:0 8px 20px rgba(42,11,78,.18)}
-.slide .caption b{display:block;font-family:var(--font-display);font-weight:900;color:#ff4f8b;font-size:19px;margin-bottom:2px}
-.slide .say{position:relative;align-self:flex-start;background:#fff;color:#5a2d91;border-radius:16px;padding:9px 13px;margin-bottom:12px;font-size:15px;max-width:85%;font-weight:700;
-  box-shadow:0 6px 14px rgba(42,11,78,.2)}
-.slide .say::after{content:"";position:absolute;left:18px;bottom:-9px;border:6px solid transparent;border-top-color:#fff;border-bottom:0}
-.slide .say.dark{background:#3a1d6e;color:#ffd1e6;border:2px solid #ff4f8f}
-.slide .say.dark::after{border-top-color:#3a1d6e}
-.slide .say i{display:block;font-style:normal;font-family:var(--font-display);font-size:13px;color:#ff4f8b}
+/* 해설은 위쪽 반투명 띠, 대사는 캐릭터 옆 작은 말풍선 — 그림(숲·젤리)을 가리지 않게 */
+.slide .narr{position:absolute;left:14px;right:14px;top:calc(env(safe-area-inset-top) + 58px);background:rgba(255,255,255,.72);-webkit-backdrop-filter:blur(6px);backdrop-filter:blur(6px);
+  border-radius:14px;padding:7px 12px 8px;font-size:14px;line-height:1.45;color:var(--ink);box-shadow:0 4px 12px rgba(42,11,78,.12);word-break:keep-all;animation:narrIn .5s ease both}
+.slide .narr b{display:block;font-family:var(--font-display);font-weight:900;color:#ff4f8b;font-size:16px}
+.slide .say{position:absolute;left:12px;top:0;max-width:min(260px,calc(100% - 24px));width:max-content;background:rgba(255,255,255,.93);color:#5a2d91;border-radius:16px;padding:7px 12px 8px;font-size:15px;line-height:1.4;font-weight:700;
+  box-shadow:0 6px 14px rgba(42,11,78,.22);word-break:keep-all;visibility:hidden;--tx:30px}
+.slide .say.on{visibility:visible;animation:sayPop .45s cubic-bezier(.3,1.5,.5,1) .35s both}
+.slide .say::after{content:"";position:absolute;left:var(--tx);margin-left:-7px;bottom:-9px;border:7px solid transparent;border-top-color:rgba(255,255,255,.93);border-bottom:0}
+.slide .say.below::after{bottom:auto;top:-9px;border-top:0;border-bottom:7px solid rgba(255,255,255,.93)}
+.slide .say.dark{background:rgba(58,29,110,.92);color:#ffd1e6;border:2px solid #ff4f8f}
+.slide .say.dark::after{border-top-color:rgba(58,29,110,.92)}
+.slide .say.dark.below::after{border-top-color:transparent;border-bottom-color:rgba(58,29,110,.92)}
+.slide .say i{display:block;font-style:normal;font-family:var(--font-display);font-size:12px;color:#ff4f8b}
+@keyframes sayPop{from{opacity:0;transform:scale(.6)}to{opacity:1;transform:scale(1)}}
+@keyframes narrIn{from{opacity:0;transform:translateY(-8px)}to{opacity:1;transform:none}}
+@media (prefers-reduced-motion:reduce){.slide .say.on,.slide .narr{animation:none}}
 .intro-bar{position:absolute;top:calc(env(safe-area-inset-top) + 10px);right:12px;display:flex;gap:8px;z-index:2}
-.intro-next{position:relative;margin-top:14px;align-self:stretch}
+.intro-next{position:absolute;right:14px;bottom:calc(env(safe-area-inset-bottom) + 18px);min-height:50px;padding:0 24px;font-size:18px;opacity:.95}
 .dots{position:absolute;top:calc(env(safe-area-inset-top) + 26px);left:18px;display:flex;gap:6px;z-index:2}
 .dots i{width:8px;height:8px;border-radius:50%;background:rgba(122,45,94,.3)}.dots i.on{background:#ff4f8b}
 
@@ -222,21 +228,25 @@ img{-webkit-user-drag:none}
   background:linear-gradient(180deg,#fff0f6 0%,#ff8fbd 45%,#ff6fa3 50%,#ff3f8a 100%);-webkit-background-clip:text;background-clip:text;color:transparent;
   filter:drop-shadow(0 2px 0 #4a1d7a) drop-shadow(0 2px 0 #4a1d7a) drop-shadow(0 6px 10px rgba(42,11,78,.35))}
 .toast.show{opacity:1;transform:translate(-50%,-50%) scale(1) rotate(-2deg)}
-.tip{position:absolute;left:14px;right:14px;bottom:33%;background:#fff;color:#5a2d91;border-radius:16px;padding:10px 14px;font-size:15px;font-weight:700;
-  text-align:center;pointer-events:none;transition:opacity .3s;box-shadow:0 8px 18px rgba(42,11,78,.22)}
-.tip::after{content:"";position:absolute;left:50%;bottom:-8px;margin-left:-6px;border:6px solid transparent;border-top-color:#fff;border-bottom:0}
+/* 첫 판 안내: 말랑이 머리 위 작은 반투명 말풍선 (판·조준선을 가리지 않게 왼쪽 아래, 몇 초 뒤 저절로 사라짐) */
+.tip{position:absolute;left:10px;bottom:21%;max-width:min(52%,210px);background:rgba(255,255,255,.86);color:#5a2d91;border-radius:14px;padding:7px 11px;font-size:13px;line-height:1.4;font-weight:700;
+  text-align:left;word-break:keep-all;pointer-events:none;transition:opacity .4s;box-shadow:0 6px 14px rgba(42,11,78,.2)}
+.tip::after{content:"";position:absolute;left:86px;bottom:-8px;margin-left:-6px;border:7px solid transparent;border-top-color:rgba(255,255,255,.86);border-bottom:0}
 .tip b{font-family:var(--font-display);font-weight:900;color:#ff4f8b}
 .tip.hide{opacity:0}
-.hzcard{position:fixed;left:12px;right:12px;top:14%;max-width:420px;margin:0 auto;background:linear-gradient(#fff,#fff4fa);color:#5a2d91;border-radius:22px;padding:14px 14px 12px;z-index:6;
-  box-shadow:0 10px 30px rgba(42,11,78,.35),inset 0 0 0 3px #ffd1e8;max-height:76%;overflow:auto}
-.hzcard h3{margin:0 0 8px;font:900 18px var(--font-body);color:#ff4f8b;text-align:center}
-.hzitem{display:flex;gap:10px;align-items:center;padding:8px 4px;border-top:1px dashed #f5b8d6}
-.hzitem .ic{flex:none;width:56px;height:56px;border-radius:16px;background:#fff0f7;display:grid;place-items:center;font-size:26px;overflow:hidden}
-.hzitem .ic img{width:56px;height:auto}
+/* 새 거품·방해 설명: 화면 아래쪽 말랑이 말풍선 (위쪽 거품 판이 그대로 보이게) */
+.hzcard{position:fixed;left:12px;right:12px;bottom:calc(env(safe-area-inset-bottom) + 150px);max-width:420px;margin:0 auto;background:rgba(255,255,255,.9);-webkit-backdrop-filter:blur(4px);backdrop-filter:blur(4px);color:#5a2d91;border-radius:20px;padding:10px 12px 10px;z-index:6;
+  box-shadow:0 8px 22px rgba(42,11,78,.3),inset 0 0 0 2px #ffd1e8;animation:sayPop .4s cubic-bezier(.3,1.5,.5,1) both;transform-origin:70px 100%}
+.hzcard::after{content:"";position:absolute;left:76px;margin-left:-8px;bottom:-9px;border:9px solid transparent;border-top-color:rgba(255,255,255,.9);border-bottom:0}
+#hzList{max-height:max(90px,calc(46vh - 110px));overflow:auto}
+.hzcard h3{margin:0 0 4px;font:900 16px var(--font-body);color:#ff4f8b;text-align:center}
+.hzitem{display:flex;gap:10px;align-items:center;padding:6px 2px;border-top:1px dashed #f5b8d6}
+.hzitem .ic{flex:none;width:46px;height:46px;border-radius:16px;background:#fff0f7;display:grid;place-items:center;font-size:26px;overflow:hidden}
+.hzitem .ic img{width:46px;height:auto}
 .hzitem b{display:block;font:900 15px var(--font-body);color:#5a2d91}
 .hzitem p{margin:2px 0 0;font-size:13px;line-height:1.35;color:#6a4a8a}
 .hzitem p.how{color:#c2245a;font-weight:800}
-.hzcard .btn{display:block;width:100%;margin-top:8px;min-height:48px}
+.hzcard .btn{display:block;width:100%;margin-top:6px;min-height:46px}
 .world-banner{position:fixed;inset:0;display:grid;place-items:center;z-index:30;pointer-events:none;background:radial-gradient(circle,rgba(255,255,255,.85),rgba(255,209,232,.6) 60%,rgba(90,45,145,.5));animation:wbIn 2.2s ease forwards}
 .world-banner div{text-align:center;font:900 34px var(--font-body);color:#fff;text-shadow:0 3px 0 #c2457a,0 6px 12px rgba(42,11,78,.4);animation:wobble 1s ease 2}
 .world-banner small{display:block;font:800 18px var(--font-num);color:#ffd54a;text-shadow:0 2px 0 #7a2d5e}
@@ -2282,7 +2292,10 @@ const calmMotion = window.matchMedia ? matchMedia('(prefers-reduced-motion: redu
 setInterval(() => { if (current === 'play' && (BANNER.items || []).length > 1 && !document.hidden && !bannerHold && !calmMotion.matches) showBanner(bannerIdx + 1); }, (BANNER.every || 5) * 1000);
 let toastTimer;
 function showToast(text) { const el = $('toast'); el.textContent = text; el.classList.add('show'); clearTimeout(toastTimer); toastTimer = setTimeout(() => el.classList.remove('show'), 900); }
-function hideTip() { $('tip').classList.add('hide'); }
+let tipTimer;
+function hideTip() { clearTimeout(tipTimer); $('tip').classList.add('hide'); }
+// 판 안내는 6초 뒤 저절로 사라진다 (첫 발을 쏴도 바로 사라짐)
+function showTip() { $('tip').innerHTML = G.st.tip; $('tip').classList.remove('hide'); clearTimeout(tipTimer); tipTimer = setTimeout(hideTip, 6000); }
 function updateHud() {
   if (!G) return;
   $('hudStage').textContent = T('스테이지 ') + G.st.id + (G.st.boss ? T(' · 보스') : '');
@@ -2306,7 +2319,7 @@ function startStage(n) {
   // 폭탄·랜덤 거품은 월드 1(4스테이지)부터 나오니 월드 1에서도 카드를 보여 준다
   const fresh = keysOf(G.st).filter(k => !P.seenHz[k] && (G.st.world > 1 || 'zq'.includes(k)));
   if (fresh.length) showHzCard(fresh);
-  else { $('hzCard').hidden = true; $('tip').innerHTML = G.st.tip; $('tip').classList.remove('hide'); }
+  else { $('hzCard').hidden = true; showTip(); }
   showToast(T('스테이지 ') + n);
 }
 function hzIcon(art) {
@@ -2323,15 +2336,14 @@ function hzIcon(art) {
 }
 function showHzCard(keys) {
   G.paused = true;
-  $('tip').classList.add('hide');
+  hideTip();
   // 도움 거품(수정·선물·반딧불·폭탄·랜덤)만 새로 나오면 "새 거품" 제목
   $('hzTitle').textContent = keys.every(k => 'cgfzq'.includes(k) && k.length === 1) ? T('새로운 거품이 나타났어요!') : T('새로운 방해가 나타났어요!');
   $('hzList').innerHTML = keys.map(k => { const f = HZ_INFO[k]; return `<div class="hzitem"><div class="ic">${hzIcon(f.art)}</div><div><b>${f.title}</b><p>${f.text}</p><p class="how">${f.how}</p></div></div>`; }).join('');
   $('hzCard').hidden = false;
   $('hzOk').onclick = () => {
     keys.forEach(k => { P.seenHz[k] = true; }); saveP();
-    $('hzCard').hidden = true; if (G) G.paused = false;
-    $('tip').innerHTML = G.st.tip; $('tip').classList.remove('hide');
+    $('hzCard').hidden = true; if (G) { G.paused = false; showTip(); }
     canvas.focus({ preventScroll: true });
   };
   setTimeout(() => $('hzOk').focus({ preventScroll: true }), 60);
@@ -2383,11 +2395,11 @@ $('bookBtn1').onclick = () => { bookReturn = 'title'; go('book'); };
 const SLIDES = [
   { bg: 'linear-gradient(#ffd1e8,#fff6e8 60%,#7fdc9a)', title: T('평화로운 젤리마을'), text: T('말랑말랑한 젤리들이 사는 행복한 젤리마을. 오늘도 모두 신나게 놀아요.'), art: 'village' },
   { bg: 'linear-gradient(#2a1660,#5a3aa6 60%,#1d0f3a)', title: T('노놈의 습격'), text: T('하늘이 보랏빛으로 어두워지고, 마법 거품이 친구들을 하나씩 감싸 데려가요.'),
-    say: [T('노놈'), T('냠냠! 말랑한 젤리는 전부 내 디저트야!'), true], art: 'attack' },
+    say: [T('노놈'), T('냠냠! 말랑한 젤리는 전부 내 디저트야!'), true], at: [195, 388], below: true, art: 'attack' },
   { bg: 'linear-gradient(#d9c8ff,#f3eaff 60%,#c9f3d6)', title: T('혼자 남은 말랑이'), text: T('텅 빈 마을에 남겨진 건 말랑이 하나뿐이었어요.'),
-    say: [T('말랑이'), T('다들 어디 간 거야…? 아니, 내가 구할 거야!')], art: 'alone' },
+    say: [T('말랑이'), T('다들 어디 간 거야…? 아니, 내가 구할 거야!')], at: [195, 522], art: 'alone' },
   { bg: 'linear-gradient(#ffd1e8,#fff6e8 60%,#7fdc9a)', title: T('신비한 거품 대포'), text: T('창고에서 핸들이 달린 거품 대포를 찾았어요. 친구들이 줄을 서서 도와주면 거품을 쏠 수 있어요!'),
-    say: [T('말랑이'), T('이걸로 거품을 맞히면 친구들이 풀려날 거야!')], art: 'cannon' },
+    say: [T('말랑이'), T('이걸로 거품을 맞히면 친구들이 풀려날 거야!')], at: [112, 566], art: 'cannon' },
 ];
 // 프롤로그 장면마다 깔 3D 숲 그림 (낮 마을 → 밤 습격 → 안개 낀 빈 마을 → 다시 낮)
 const SLIDE_BG3D = { village: 'title', attack: 'w3', alone: 'w4', cannon: 'w1' };
@@ -2444,13 +2456,31 @@ function startIntro() { slideIdx = 0; sceneReady(() => { go('intro'); renderSlid
 function renderSlide() {
   const s = SLIDES[slideIdx];
   $('dots').innerHTML = SLIDES.map((_, i) => `<i class="${i === slideIdx ? 'on' : ''}"></i>`).join('');
-  const say = s.say ? `<div class="say ${s.say[2] ? 'dark' : ''}"><i>${s.say[0]}</i>${s.say[1]}</div>` : '';
-  $('slides').innerHTML = `<div class="slide" style="background:${s.bg}"><div class="scene">${slideArt(s.art)}</div>
-    ${say}<div class="caption"><b>${s.title}</b>${s.text}</div>
-    <button class="btn intro-next" id="nextSlide">${slideIdx < SLIDES.length - 1 ? T('다음') : T('모험 시작!')}</button></div>`;
-  $('nextSlide').onclick = () => { if (slideIdx < SLIDES.length - 1) { slideIdx++; renderSlide(); } else endIntro(); };
+  const say = s.say ? `<div class="say ${s.say[2] ? 'dark' : ''} ${s.below ? 'below' : ''}" id="slideSay"><i>${s.say[0]}</i>${s.say[1]}</div>` : '';
+  $('slides').innerHTML = `<div class="slide" id="slideBox" style="background:${s.bg}"><div class="scene">${slideArt(s.art)}</div>
+    <div class="narr"><b>${s.title}</b>${s.text}</div>${say}
+    <button class="btn intro-next" id="nextSlide">${slideIdx < SLIDES.length - 1 ? T('다음') + ' ▶' : T('모험 시작!')}</button></div>`;
+  const next = () => { if (slideIdx < SLIDES.length - 1) { slideIdx++; renderSlide(); } else endIntro(); };
+  $('nextSlide').onclick = e => { e.stopPropagation(); next(); };
+  $('slideBox').onclick = next;   // 화면 어디를 눌러도 다음 장면
+  placeSay();
   $('nextSlide').focus({ preventScroll: true });
 }
+// 말풍선 꼬리가 캐릭터를 가리키게: 그림은 390×844를 화면에 cover(가운데, 세로 60%)로 깔았으니 같은 계산으로 화면 좌표를 구한다
+function placeSay() {
+  const s = SLIDES[slideIdx], el = $('slideSay'), box = $('slideBox');
+  if (el && !s.at) el.classList.add('on');
+  if (!el || !box || !s.at) return;
+  const w = box.clientWidth, h = box.clientHeight, k = Math.max(w / 390, h / 844);
+  const x = (w - 390 * k) / 2 + s.at[0] * k, y = (h - 844 * k) * 0.6 + s.at[1] * k;
+  const bw = el.offsetWidth, bh = el.offsetHeight, left = Math.min(Math.max(12, x - Math.min(60, bw / 2)), w - bw - 12);
+  el.style.left = left + 'px';
+  el.style.top = (s.below ? y + 10 : y - bh - 10) + 'px';
+  el.style.setProperty('--tx', Math.min(Math.max(18, x - left), bw - 18) + 'px');
+  el.style.transformOrigin = `${x - left}px ${s.below ? '0' : '100%'}`;
+  el.classList.add('on');
+}
+window.addEventListener('resize', () => { if (current === 'intro') placeSay(); });
 function endIntro() { P.seenIntro = true; saveP(); go('map'); }
 $('skipBtn').onclick = endIntro;
 
