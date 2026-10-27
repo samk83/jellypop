@@ -798,7 +798,8 @@ function land(m) {
     G.texts.push({ x: p0.x, y: p0.y, text: '+' + (n * 10 + d * 20 + u * 10), life: 1 });
     if (u && !n) showToast('시럽이 벗겨졌어요!');
     else if (d >= 4) showToast('우르르 쿵!'); else if (n >= 6) showToast('굉장해요!');
-    if (res.gifts && G.queue.length) { G.queue[0] = 'w'; showToast('선물 상자! 무지개 거품'); }
+    // 선물 상자: 다음 거품이 무지개(60%) 또는 폭탄(40%)
+    if (res.gifts && G.queue.length) { const bomb = rand() < .4; G.queue[0] = bomb ? 'z' : 'w'; showToast(bomb ? '선물 상자! 폭탄 거품' : '선물 상자! 무지개 거품'); }
     if (res.fireflies) { G.hz.aimBoost = 3; showToast('반딧불! 3발 동안 조준선이 길어요'); }
     if (res.bombs) {
       res.popped.filter(p => p.cell.k === 'z').forEach(p => { const q = Board.pos(b, p.r, p.c); burst(q.x, q.y, '#ffb347', 18); burst(q.x, q.y, '#ff5f3a', 10); });
@@ -1701,6 +1702,28 @@ function drawBoss(t) {
   ctx.fillStyle = '#fff'; ctx.font = '800 11px "Baloo 2", sans-serif'; ctx.textAlign = 'right'; ctx.fillText(G.bossHp + '/' + G.st.boss.hp, 322, 16);
 }
 
+// 줄 선 폭탄 젤리: 머리 위 심지 + 깜빡이는 불꽃 / 무지개 젤리: 둘레 무지개 고리
+function drawQueueFuse(x, y, s, t) {
+  const r = 10 * s, cx = x + r * .45, cy = y - r * .95;
+  ctx.save();
+  ctx.fillStyle = '#e9a52a'; ctx.strokeStyle = '#8a5a00'; ctx.lineWidth = 1;
+  ctx.translate(cx, cy); ctx.rotate(.6); roundRect(-r * .28, -r * .18, r * .56, r * .36, r * .1); ctx.fill(); ctx.stroke(); ctx.rotate(-.6); ctx.translate(-cx, -cy);
+  ctx.strokeStyle = '#7a4a2a'; ctx.lineWidth = Math.max(1.5, r * .16); ctx.lineCap = 'round';
+  ctx.beginPath(); ctx.moveTo(cx + r * .12, cy - r * .16); ctx.quadraticCurveTo(cx + r * .6, cy - r * .5, cx + r * .35, cy - r * .85); ctx.stroke();
+  const f = .75 + Math.sin(t * 22) * .25, sx = cx + r * .35, sy = cy - r * .85;
+  ctx.fillStyle = 'rgba(255,179,71,.55)'; ctx.beginPath(); ctx.arc(sx, sy, r * .55 * f, 0, 7); ctx.fill();
+  ctx.fillStyle = '#ffe27a'; ctx.beginPath(); ctx.arc(sx, sy, r * .26 * f, 0, 7); ctx.fill();
+  ctx.restore();
+}
+function drawQueueRainbow(x, y, s, t) {
+  const r = 12 * s, g = ctx.createConicGradient ? ctx.createConicGradient(t * 2, x, y) : null;
+  ctx.save();
+  if (g) { ['#ff7aa5', '#ffd23f', '#5ed46a', '#4fb4ff', '#a76bff', '#ff7aa5'].forEach((c, i) => g.addColorStop(i / 5, c)); ctx.strokeStyle = g; }
+  else ctx.strokeStyle = '#c9b8ff';
+  ctx.lineWidth = 2.2; ctx.globalAlpha = .9; ctx.beginPath(); ctx.ellipse(x, y + 1, r, r * .9, 0, 0, 7); ctx.stroke();
+  ctx.restore();
+}
+
 function drawCannonArea(t, dt) {
   // 대포 아래 풀밭 그림자
   ctx.fillStyle = 'rgba(47,122,74,.28)'; ctx.beginPath(); ctx.ellipse(170, FLOOR_Y + 52, 130, 16, 0, 0, 7); ctx.fill();
@@ -1741,7 +1764,10 @@ function drawCannonArea(t, dt) {
     const pos = queuePos(i + G.queueShift);
     const hop = i === 1 ? Math.abs(Math.sin(t * 4)) * 4 : Math.abs(Math.sin(t * 3 + i)) * 2;
     const s = i === 1 ? 1 : .86 - i * .03;
-    drawJellySprite(COLORS[G.queue[i]].base, 10, {}, pos.x, pos.y - hop - (G.queueShift > 0 ? Math.sin(G.queueShift * Math.PI) * 10 : 0), s);
+    const qy = pos.y - hop - (G.queueShift > 0 ? Math.sin(G.queueShift * Math.PI) * 10 : 0);
+    drawJellySprite(COLORS[G.queue[i]].base, 10, {}, pos.x, qy, s);
+    if (G.queue[i] === 'z') drawQueueFuse(pos.x, qy, s, t);
+    else if (G.queue[i] === 'w') drawQueueRainbow(pos.x, qy, s, t);
   }
   if (show >= 1 && G.state !== 'done') {
     const p = queuePos(1);

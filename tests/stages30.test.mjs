@@ -186,6 +186,15 @@ function botPlay(stageNo) {
     out.card4 = !document.getElementById('hzCard').hidden && document.getElementById('hzList').textContent.includes('폭탄 거품');
     j.closeCard(); j.startStage(4); out.card4again = document.getElementById('hzCard').hidden;
     j.startStage(14); out.card14 = document.getElementById('hzList').textContent.includes('랜덤 거품');
+    // 선물 상자: 다음 거품이 무지개 또는 폭탄 (40판)
+    const gift = { z: 0, w: 0 };
+    for (let k = 0; k < 40; k++) {
+      j.startStage(23); j.closeCard(); j.seedRandom(100 + k);
+      G().b = Board.fromRows(['bb........'], G().b.y0, ['g.........']);
+      const gp = Board.pos(G().b, 0, 2); G().state = 'flying'; j.land({ x: gp.x, y: gp.y, c: 'b' });
+      gift[G().queue[0]] = (gift[G().queue[0]] || 0) + 1;
+    }
+    out.gift = gift;
     // 보스 18·24·30은 거품 줄에 랜덤 거품을 섞어 던짐 (lucky 확률)
     out.luckyBoss = j.STAGES.filter(s => s.boss && s.boss.lucky).map(s => s.id).join(',');
     out.keys18 = j.keysOf(j.STAGES[17]).includes('q');
@@ -199,6 +208,7 @@ function botPlay(stageNo) {
     out.boomOk = boomOk;
     return out;
   });
+  check('선물 상자: 다음 거품이 무지개 또는 폭탄 (둘 다 나옴, 다른 것은 안 나옴)', r.gift.z > 0 && r.gift.w > 0 && r.gift.z + r.gift.w === 40, JSON.stringify(r.gift));
   check('보스 18·24·30만 랜덤 거품을 섞어 던지고, 18에서 설명 카드 대상', r.luckyBoss === '18,24,30' && r.keys18, r.luckyBoss);
   check('보스가 던지는 줄마다 랜덤 거품 1개 (확률 100%로 4번 → 4개)', r.thrown === 4, r.thrown);
   check('폭발 전용 효과음이 에러 없이 남 (연쇄면 여러 번)', r.boomOk === true, r.boomOk);
