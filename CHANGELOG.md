@@ -13,6 +13,7 @@
 - 못 한 것: 이 클라우드에서는 Android SDK·Mac이 없어 APK/AAB·아이폰 빌드는 직접 해 보지 못함(설정·플러그인 연결까지만 확인)
 
 ## 0.11.0 — 2026-10-27 · 영어판 + 언어 전환 (JellyDock 런칭 준비, Owner "영어판 만든 뒤 런칭")
+- **JellyDock 런칭** (2026-10-27, Owner "일단 젤리독에 런칭해줘"): https://jellydock.com/jellypop/ 에 0.11.0 공개(Beta), 소개 페이지 https://jellydock.com/apps/jelly-pop
 - **영어판**: 화면·안내 카드·토스트·스테이지 30개 이름과 팁·방해 설명 25종·프롤로그·스토리 컷신 30개·배너까지 영어 번역(459문구). 캐릭터 영어 이름: 말랑이 Mallang, 노놈 Nonom, 놈놈 Nomnom, 보스 Lumpy·Stickum·Pudding Golem·Clank, 친구 30명(Fluffy, Splashy …)
 - **언어 고르기**: 주소 `?lang=en|ko` → 저장된 선택(`jellypop2.lang`) → 브라우저 언어(한국어면 한국어, 그 밖은 영어). 타이틀 오른쪽 위 **English / 한국어** 버튼으로 바꾸면 저장되고 다시 열림
 - 구조: `i18n.js`(엔진, `T('한국어 {n}', { n })`, 정적 HTML은 `JellyI18n.apply()`), `lang-en.js`(영어 사전, 키 = 한국어 원문). 다른 파일에서 문구 추가는 `JellyI18n.add({...})`
