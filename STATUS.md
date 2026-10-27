@@ -3,6 +3,8 @@
 단일 진실 원본(모든 스레드 현황). 스레드는 시작·단위 완료·종료 시 자기 행을 갱신한다.
 상태값: TODO / IN PROGRESS / BLOCKED / REVIEW / DONE
 
+> 작업 흐름: `main`에서 기능 브랜치 → `npm test` 통과 → push → `gh pr create` → 검토 → Merge → main 동기화. GitHub Actions 사용 안 함. 자세히: [docs/GITHUB-POLICY.md](docs/GITHUB-POLICY.md)
+
 | 스레드명 | 상태 | 진행 | 마지막 갱신 | 다음 할 일 | Owner 액션 필요 |
 |---|---|---|---|---|---|
 | setup-harness | DONE | 하네스 0.5.0 설치, 훅·승인 목록 설정 | 2026-10-20 | — | 없음 |
@@ -18,3 +20,4 @@
 | play-screen-mockup-v2 | REVIEW | 0.8.0 게임 적용 완료: 발사 수 제한 없앰 → 시간 천장 타임어택(흔들림·한 칸 하강), 위쪽 배너(banner.js)·시간 게이지, 말랑이 통통한 두 팔. 테스트 통과, 리뷰어 7건 반영 | 2026-10-26 | Owner 실기기 피드백 반영 | 휴대폰에서 천장 속도·흔들림 확인, 배너 내용 결정 |
 | retro-bgm | REVIEW | 0.9.0 레트로 칩튠 배경음악 + 0.10.6 휴대폰 소리 안 나는 문제 고침(터치 때마다 소리 다시 깨우기·무음 스위치 우회·🔇 소리 켜기 안내) | 2026-10-27 | Owner 휴대폰 확인 | 휴대폰에서 링크 새로 열고 화면 한 번 누른 뒤 소리 나는지 확인 |
 | bomb-random-bubble | REVIEW | 0.10.3 폭탄 거품(닿으면 둘레 색 무관 펑·연쇄, 전용 폭발음)·랜덤 거품(좋은 4종 60%/나쁜 3종 40%), 보스 18·24·30 랜덤알, 선물 상자 폭탄 40%, 줄 선 폭탄·무지개 표시. 테스트 stages30 97·bubble 85·game 52·story 28·jelly3d 44 통과 | 2026-10-27 | Owner 실기기 피드백 반영 | 휴대폰에서 4·14·18·23스테이지 해 보기(폭탄 범위·폭발음·꽝 비율) |
+| github-policy | DONE | GitHub 운영 정책 적용: Actions 워크플로 없음 확인, docs/GITHUB-POLICY.md 추가, claude/jellypop-game → main PR로 합침, 테스트 85/101/52/52/28 통과 | 2026-10-27 | 이후 모든 작업은 기능 브랜치 → PR → Merge | 없음 |
