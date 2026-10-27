@@ -11,7 +11,7 @@ window.JellyMonetize = (() => {
   'use strict';
   // 게임 화면에 넣는 문구의 영어 (i18n.js 사전에 추가 — 정적 HTML 은 게임 시작 때 자동 번역, 나중에 넣는 글자는 T())
   if (window.JellyI18n && window.JellyI18n.add) window.JellyI18n.add({
-    '▶ 이어하기': '▶ Continue', '▶ 광고 보고 이어하기': '▶ Watch an ad to continue', '천장이 3칸 올라가요': 'Ceiling goes up 3 rows', '시간 +20초': '+20 seconds',
+    '▶ 이어하기': '▶ Continue', '▶ 광고 보고 이어하기': '▶ Watch an ad to continue', '천장이 3칸 올라가요': 'Ceiling goes up 3 rows', '아래쪽 거품을 치워요': 'Clears the bottom bubbles', '시간 +20초': '+20 seconds',
     '이어서 해 봐요!': 'Keep going!', '후원 팩': 'Supporter Pack', '🎁 후원 팩': '🎁 Supporter Pack', '구매 복원': 'Restore purchases', '닫기': 'Close',
     '구매했어요': 'Purchased', '구매하기': 'Buy',
     "구매는 스토어 계정으로 결제돼요. 한 번 사면 다시 설치해도 '구매 복원'으로 돌아와요.": 'Purchases are billed to your store account. Use “Restore purchases” after reinstalling.',
@@ -38,8 +38,8 @@ window.JellyMonetize = (() => {
     return String(l).slice(0, 2) === 'en' ? 'en' : 'ko';
   };
   const T = {
-    ko: { adLoading: '광고를 불러오는 중…', adFail: '지금은 광고를 볼 수 없어요. 잠시 후 다시 해 봐요.', mockAd: '광고 자리 (시험)', mockSub: '진짜 광고는 계정 연결 후 나와요', buyFail: '결제를 마치지 못했어요.', bought: '고마워요! 후원 팩이 적용됐어요.', restored: '구매 내역을 불러왔어요.', nothing: '복원할 구매가 없어요.' },
-    en: { adLoading: 'Loading ad…', adFail: 'No ad available right now. Try again soon.', mockAd: 'Ad placeholder (test)', mockSub: 'Real ads appear after accounts are connected', buyFail: 'The purchase was not completed.', bought: 'Thank you! Supporter Pack is active.', restored: 'Purchases restored.', nothing: 'No purchases to restore.' },
+    ko: { adLoading: '광고를 불러오는 중…', adFail: '지금은 광고를 볼 수 없어요. 잠시 후 다시 해 봐요.', mockAd: '광고 자리 (시험)', mockSub: '진짜 광고는 계정 연결 후 나와요', buyFail: '결제를 마치지 못했어요.', pending: '스토어에서 결제를 확인하고 있어요. 잠시 후 자동으로 적용돼요.', bought: '고마워요! 후원 팩이 적용됐어요.', restored: '구매 내역을 불러왔어요.', nothing: '복원할 구매가 없어요.' },
+    en: { adLoading: 'Loading ad…', adFail: 'No ad available right now. Try again soon.', mockAd: 'Ad placeholder (test)', mockSub: 'Real ads appear after accounts are connected', buyFail: 'The purchase was not completed.', pending: 'The store is confirming your purchase. It will apply shortly.', bought: 'Thank you! Supporter Pack is active.', restored: 'Purchases restored.', nothing: 'No purchases to restore.' },
   };
   const t = k => T[lang()][k];
 
@@ -161,11 +161,18 @@ window.JellyMonetize = (() => {
         if (!offer) return false;
         const err = await store.order(offer);
         if (err) return false;
-        // approved 콜백에서 지급된다. 잠깐 기다렸다 결과를 알려 준다
+        // approved 콜백에서 지급된다. 잠깐 기다렸다 결과를 알려 준다 (늦게 승인되면 'pending' → 나중에 지급되면 화면이 바뀜)
         for (let i = 0; i < 40 && !has('own:' + id); i++) await new Promise(r => setTimeout(r, 250));
-        return has('own:' + id);
+        return has('own:' + id) ? true : 'pending';
       },
-      restore: async () => { if (!store) return 0; await store.restorePurchases(); let n = 0; CFG.products.forEach(p => { if (store.owned(p.id)) { grant(p.id); n++; } }); return n; },
+      restore: async () => {
+        if (!store) return 0;
+        const before = CFG.products.filter(p => has('own:' + p.id)).length;
+        await store.restorePurchases();
+        CFG.products.forEach(p => { if (store.owned(p.id)) grant(p.id); });
+        await new Promise(r => setTimeout(r, 1500));   // 복원된 거래는 approved 콜백으로도 들어온다
+        return CFG.products.filter(p => has('own:' + p.id)).length - before;
+      },
     };
   }
 
@@ -229,6 +236,7 @@ window.JellyMonetize = (() => {
     },
     canShop() { return !!provider && CFG.enabled && provider.canBuy(); },
     products: () => init().then(() => provider.products()),
+    // true = 구매 완료 · 'pending' = 스토어 확인 중(곧 적용) · false = 취소·실패
     async buy(id) { await init(); try { return await provider.buy(id); } catch (e) { console.warn('[monetize] buy', e); return false; } },
     async restore() { await init(); try { return await provider.restore(); } catch (e) { return 0; } },
     showBanner() { return provider && provider.showBanner && CFG.admob.bannerOnMap && !has('noads') ? provider.showBanner().catch(() => {}) : Promise.resolve(); },

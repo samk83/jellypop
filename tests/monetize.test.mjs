@@ -245,12 +245,14 @@ async function loseStage(page, n = 1) {
 {
   console.log('오프라인 실행 (로컬 웹 서버)');
   const types = { '.html': 'text/html; charset=utf-8', '.js': 'text/javascript', '.webmanifest': 'application/manifest+json', '.png': 'image/png', '.webp': 'image/webp', '.json': 'application/json' };
+  let bump = false;   // true 면 stages.js 끝에 새 줄을 붙여 '새 버전 배포'를 흉내 낸다
   const server = http.createServer((req, res) => {
     let p = decodeURIComponent(new URL(req.url, 'http://x').pathname);
     if (p.endsWith('/')) p += 'index.html';
     const f = path.join(root, p);
     if (!f.startsWith(root) || !fs.existsSync(f) || fs.statSync(f).isDirectory()) { res.writeHead(404); return res.end(); }
     res.writeHead(200, { 'content-type': types[path.extname(f)] || 'application/octet-stream' });
+    if (bump && p.endsWith('/stages.js')) return res.end(fs.readFileSync(f, 'utf8') + '\n// deployed-v2\n');
     fs.createReadStream(f).pipe(res);
   });
   await new Promise(r => server.listen(0, '127.0.0.1', r));
@@ -264,6 +266,10 @@ async function loseStage(page, n = 1) {
   const cached = await page.evaluate(async () => { const ks = await caches.keys(); const c = await caches.open(ks.find(k => k.startsWith('jellypop-'))); return (await c.keys()).length; });
   check('게임 파일 저장됨', cached >= 14, String(cached));
   await page.reload(); // 서비스 워커가 페이지를 관리하게
+  bump = true;
+  await page.reload();
+  const fresh = await page.evaluate(() => fetch('stages.js').then(r => r.text()).then(t => t.includes('deployed-v2')));
+  check('새로 배포한 스크립트를 바로 받는다(옛 저장본과 안 섞임)', fresh);
   await ctx.setOffline(true);
   await page.reload();
   await page.waitForSelector('#startBtn', { state: 'visible', timeout: 5000 });

@@ -1,5 +1,17 @@
 # CHANGELOG
 
+## 0.12.0 — 2026-10-27 · 수익화(보상형 광고·후원 팩) + 설치형 웹앱 + 안드로이드·아이폰·토스 앱 프로젝트 (Owner "수익화 전략 짜서 실행, 런치할 수 있는 곳은 다 런치")
+- **수익화 전략**: `docs/MONETIZATION.md`(수익 모델·플랫폼 수수료 비교·우선순위 웹→Google Play→토스→App Store·예상 수익 계산식·Owner 할 일), `docs/LAUNCH.md`(플랫폼별 올리는 방법)
+- **광고 보고 이어하기**: 실패 화면 초록 버튼 → 보상형 광고를 끝까지 보면 같은 판 계속(천장 3칸 올림, 바닥 선과 여유가 생길 때까지·시작 높이까지만, 그래도 닿으면 아래 거품만 걷고 갇힌 친구는 구출 / 시간 끝이면 +20초). 한 판에 1번. 광고 보는 동안·앱이 뒤로 가면 소리 멈춤
+- **말랑이 후원 팩**(₩3,300 / $2.99, 한 번 구매): 광고 없이 이어하기 + 배너 광고 없음. 타이틀 🎁 후원 팩 → 상점 창(구매·구매 복원)
+- 광고·결제 모듈 `monetize.js` + 설정 `monetize-config.js`: 실행 위치를 스스로 알아봄(웹/안드로이드·아이폰 앱(AdMob + cordova-plugin-purchase)/토스 미니앱/시험 `?monetize=mock`/없음). 계정 ID가 없으면 광고·상점 버튼이 숨음(지금 상태)
+- **설치형 웹앱(PWA)**: `manifest.webmanifest`·`sw.js`(오프라인 실행)·`icons/`. 게임 파일 바꾸면 `sw.js` VERSION 올리기
+- **안드로이드·아이폰 앱**: `app/` Capacitor 8 프로젝트(`com.jellydock.jellypop`, 세로 고정, AdMob 테스트 앱 ID, 젤리팝 아이콘·시작 화면). 아이폰은 결제 플러그인 때문에 CocoaPods
+- **토스 앱인토스 미니앱**: `app/toss/`(SDK 3.9.0, 리워드 광고 `loadFullScreenAd/showFullScreenAd`, 결제 `IAP.createOneTimePurchaseOrder`·대기 주문 지급·구매 내역 복원, 뒤로 가기 → 끝낼까요? 확인). `npm run build` → `jellypop.ait`(1.7MB) 생성 확인
+- **스토어 자료**: `store/LISTING.md`(이름·설명·키워드 한/영, 데이터 보안·개인정보 라벨·등급 설문 답), `store/icons/`(Play 512·App Store 1024·토스 600), `store/screenshots/`(한/영 × 6.7인치 1290×2796·Play 1080×2340 5장씩, `npm run shots`), `privacy.html`(개인정보처리방침 한/영 초안, 연락처는 Owner 입력)
+- 테스트: 새 `tests/monetize.test.mjs`(57: 기본 숨김, 가짜 광고 이어하기·한 판 1번·+20초, 영어 화면, 가짜 결제·복원, 가짜 Capacitor AdMob·스토어, 가짜 토스, PWA 파일·오프라인 실행·새 배포 즉시 반영), 새 `tests/app.test.mjs`(21, `npm run test:app`). i18n 테스트가 monetize.js 영어 문구도 검사. bubble 85·stages30 101·game 52·story 28·i18n 19 통과, jelly3d 51/52(숲 배경 1건은 main에서도 같은 실패)
+- 못 한 것: 이 클라우드에서는 Android SDK·Mac이 없어 APK/AAB·아이폰 빌드는 직접 해 보지 못함(설정·플러그인 연결까지만 확인)
+
 ## 0.11.0 — 2026-10-27 · 영어판 + 언어 전환 (JellyDock 런칭 준비, Owner "영어판 만든 뒤 런칭")
 - **영어판**: 화면·안내 카드·토스트·스테이지 30개 이름과 팁·방해 설명 25종·프롤로그·스토리 컷신 30개·배너까지 영어 번역(459문구). 캐릭터 영어 이름: 말랑이 Mallang, 노놈 Nonom, 놈놈 Nomnom, 보스 Lumpy·Stickum·Pudding Golem·Clank, 친구 30명(Fluffy, Splashy …)
 - **언어 고르기**: 주소 `?lang=en|ko` → 저장된 선택(`jellypop2.lang`) → 브라우저 언어(한국어면 한국어, 그 밖은 영어). 타이틀 오른쪽 위 **English / 한국어** 버튼으로 바꾸면 저장되고 다시 열림

@@ -4,17 +4,22 @@
 import { loadFullScreenAd, showFullScreenAd, IAP, graniteEvent, Screen } from '@apps-in-toss/web-framework';
 
 const loaded = {};
+const WAIT = 8000;   // 토스가 아무 대답이 없을 때 기다리는 최대 시간 (버튼이 계속 막히지 않게)
 const supported = f => { try { return !!(f && f.isSupported && f.isSupported()); } catch (e) { return false; } };
 
 // 광고 미리 불러오기 (토스 심사 기준: 광고는 미리 로드해 두고 바로 보여 준다)
 function preload(adGroupId) {
   if (!adGroupId || !supported(loadFullScreenAd)) return Promise.resolve(false);
   return new Promise(res => {
-    loadFullScreenAd({
+    let stop = null, done = false;
+    const end = v => { if (done) return; done = true; clearTimeout(t); if (stop) try { stop(); } catch (e) { /* noop */ } res(v); };
+    const t = setTimeout(() => end(false), WAIT);
+    stop = loadFullScreenAd({
       options: { adGroupId },
-      onEvent: e => { if (e.type === 'loaded') { loaded[adGroupId] = true; res(true); } },
-      onError: () => res(false),
+      onEvent: e => { if (e.type === 'loaded') { loaded[adGroupId] = true; end(true); } },
+      onError: () => end(false),
     });
+    if (done && stop) try { stop(); } catch (e) { /* noop */ }
   });
 }
 
@@ -24,11 +29,13 @@ async function showRewarded(adGroupId) {
   if (!loaded[adGroupId] && !(await preload(adGroupId))) return false;
   loaded[adGroupId] = false;
   return new Promise(res => {
-    let earned = false, done = false;
-    const end = v => { if (done) return; done = true; res(v); preload(adGroupId); };
-    showFullScreenAd({
+    let earned = false, done = false, stop = null, shown = false;
+    const end = v => { if (done) return; done = true; clearTimeout(t); if (stop) try { stop(); } catch (e) { /* noop */ } res(v); preload(adGroupId); };
+    const t = setTimeout(() => { if (!shown) end(false); }, WAIT);   // 광고가 뜨기 전 무응답이면 포기 (뜬 뒤에는 닫힐 때까지 기다림)
+    stop = showFullScreenAd({
       options: { adGroupId },
       onEvent: e => {
+        if (e.type === 'show' || e.type === 'impression') shown = true;
         if (e.type === 'userEarnedReward') earned = true;
         else if (e.type === 'dismissed') end(earned);
         else if (e.type === 'failedToShow') end(false);
@@ -47,14 +54,19 @@ async function products() {
 function buy(sku) {
   if (!supported(IAP.createOneTimePurchaseOrder)) return Promise.resolve(false);
   return new Promise(res => {
-    IAP.createOneTimePurchaseOrder({
+    let stop = null, done = false, granted = false;
+    // 결제 화면은 사용자가 오래 머물 수 있어 시간 제한은 넉넉히(3분). 그 사이 지급됐으면 성공으로 본다
+    const end = v => { if (done) return; done = true; clearTimeout(t); if (stop) try { stop(); } catch (e) { /* noop */ } res(v || granted); };
+    const t = setTimeout(() => end(false), 180000);
+    stop = IAP.createOneTimePurchaseOrder({
       options: {
         sku,
-        processProductGrant: () => { if (bridge.onGrant) bridge.onGrant(sku); return true; },
+        processProductGrant: () => { granted = true; if (bridge.onGrant) bridge.onGrant(sku); return true; },
       },
-      onEvent: e => { if (e.type === 'success') res(true); },
-      onError: () => res(false),
+      onEvent: e => { if (e.type === 'success') end(true); },
+      onError: () => end(false),
     });
+    if (done && stop) try { stop(); } catch (e) { /* noop */ }
   });
 }
 
@@ -77,10 +89,11 @@ async function owned() {
       let key = null, guard = 0;
       do {
         const r = await IAP.getCompletedOrRefundedOrders(key ? { key } : undefined);
-        (r.orders || []).forEach(o => { if (status[o.sku] !== 'REFUNDED') status[o.sku] = o.status; });
+        // 최근 주문 날짜 기준 상태 (환불 뒤 다시 산 경우도 맞게)
+        (r.orders || []).forEach(o => { const p = status[o.sku]; if (!p || String(o.date) > String(p.date)) status[o.sku] = o; });
         key = r.hasNext ? r.nextKey : null;
       } while (key && guard++ < 20);
-      Object.keys(status).forEach(s => { if (status[s] === 'COMPLETED') has.add(s); });
+      Object.keys(status).forEach(s => { if (status[s].status === 'COMPLETED') has.add(s); });
     } catch (e) { /* noop */ }
   }
   return [...has];
