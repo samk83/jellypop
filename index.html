@@ -4,6 +4,12 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no,viewport-fit=cover">
 <meta name="theme-color" content="#ffd1e8">
+<link rel="manifest" href="manifest.webmanifest">
+<link rel="icon" type="image/png" sizes="192x192" href="icons/icon-192.png">
+<link rel="apple-touch-icon" href="icons/apple-touch-icon.png">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-title" content="젤리팝">
 <title>젤리팝 젤리마을 대소동</title>
 <script src="i18n.js"></script>
 <script src="lang-en.js"></script>
@@ -295,6 +301,19 @@ img{-webkit-user-drag:none}
 @keyframes hintPulse{0%,100%{transform:scale(1)}50%{transform:scale(1.07)}}
 @media (prefers-reduced-motion:reduce){.sound-hint{animation:none}}
 .sound-hint.calm{animation:none;opacity:.85;font-size:14px;min-height:44px}
+/* 광고 보고 이어하기 · 후원 팩 (monetize.js) */
+.btn.ad{background:linear-gradient(180deg,#7be495,#2fbf71);box-shadow:0 5px 0 #1d8a50,0 8px 16px rgba(42,11,78,.2)}
+.btn.ad:active{box-shadow:0 2px 0 #1d8a50}
+.btn.ad small{display:block;font-size:12px;line-height:1;opacity:.9}
+.title-actions .shop-btn{min-height:44px;font-size:16px;padding:0 18px}
+.shop{position:fixed;inset:0;z-index:60;display:grid;place-items:center;background:rgba(42,11,78,.55);padding:16px}
+.shop[hidden]{display:none}
+.shop-card{width:min(100%,340px);background:linear-gradient(180deg,#fff,#ffe6f1);border:3px solid #ffb3d1;border-radius:24px;padding:18px;text-align:center;color:var(--ink);display:grid;gap:10px}
+.shop-card h3{margin:0;font-family:var(--font-display);font-weight:900;font-size:24px;color:#ff4f8b}
+.shop-item{background:#fff;border-radius:16px;padding:12px;display:grid;gap:6px;box-shadow:0 4px 0 #ffd1e6}
+.shop-item b{font-size:18px}.shop-item small{color:var(--ink-soft);font-weight:700}
+.shop-card .btn{min-height:46px;font-size:17px}
+.shop-note{font-size:12px;color:var(--ink-soft);font-weight:700;margin:0}
 </style>
 </head>
 <body>
@@ -312,6 +331,7 @@ img{-webkit-user-drag:none}
         <button class="btn light" id="bookBtn1">스티커 북</button>
         <button class="btn light" id="storyBtn">이야기 다시 보기</button>
       </div>
+      <button class="btn light shop-btn" id="shopBtn" hidden>🎁 후원 팩</button>
     </div>
     <div class="title-note" id="titleNote"></div>
   </section>
@@ -377,6 +397,15 @@ img{-webkit-user-drag:none}
   <button class="btn" id="hzOk">알겠어요!</button>
 </div>
 <!-- 결과 -->
+<div class="shop" id="shop" hidden role="dialog" aria-modal="true" aria-labelledby="shopTitle">
+  <div class="shop-card">
+    <h3 id="shopTitle">후원 팩</h3>
+    <div id="shopList"></div>
+    <button class="btn light" id="shopRestore">구매 복원</button>
+    <button class="btn" id="shopClose">닫기</button>
+    <p class="shop-note">구매는 스토어 계정으로 결제돼요. 한 번 사면 다시 설치해도 '구매 복원'으로 돌아와요.</p>
+  </div>
+</div>
 <div id="result" hidden>
   <div class="confetti" id="resultConfetti" aria-hidden="true"></div>
   <div class="result-hero" aria-hidden="true">
@@ -389,6 +418,7 @@ img{-webkit-user-drag:none}
     <div id="resultSticker"></div>
     <p class="result-msg" id="resultMsg"></p>
     <div class="result-actions">
+      <button class="btn ad" id="resultAd" hidden>▶ 광고 보고 이어하기<small>천장이 3칸 올라가요</small></button>
       <button class="btn" id="resultMain">지도로</button>
       <button class="btn light" id="resultSub">다시 하기</button>
     </div>
@@ -402,6 +432,8 @@ img{-webkit-user-drag:none}
 <script src="banner.js"></script>
 <script src="story-data.js"></script>
 <script src="story.js"></script>
+<script src="monetize-config.js"></script>
+<script src="monetize.js"></script>
 <script>
 (() => {
 'use strict';
@@ -705,7 +737,7 @@ function newGame(stageNo) {
     st, b, fired: 0, queue: [], angle: -Math.PI / 2, crank: 0, aiming: false,
     state: 'aim', moving: null, fx: [], falls: [], pops: [], texts: [], rescues: [], wobbles: [],
     saved: 0, need: st.boss ? 1 : b.friendCount, bossHp: st.boss ? st.boss.hp : 0, bossHit: 0,
-    shotCount: 0, score: 0, settleT: 0, queueShift: 0, y0Target: b.y0, swapT: 0, outcome: null, time: 0,
+    shotCount: 0, score: 0, settleT: 0, queueShift: 0, y0Target: b.y0, y0Start: b.y0, continues: 0, swapT: 0, outcome: null, time: 0,
     paused: false, hz: makeHz(st),
   };
   fillQueue();
@@ -1964,7 +1996,11 @@ function updateSoundHint() {
   triedSound = true; unlockAudio();
   setTimeout(updateSoundHint, 600);
 }, true));
-document.addEventListener('visibilitychange', () => { if (!document.hidden) setTimeout(updateSoundHint, 300); });
+// 앱이 뒤로 가면 소리를 완전히 멈추고, 돌아오면 다시 켠다 (스토어·토스 심사 기준)
+document.addEventListener('visibilitychange', () => {
+  if (audio) { try { if (document.hidden) audio.suspend(); else if (soundOn) audio.resume(); } catch (e) {} }
+  if (!document.hidden) setTimeout(updateSoundHint, 300);
+});
 function tone(f, to, dur, type, vol, delay = 0, bus = sfxBus) {
   const t0 = audio.currentTime + delay, o = audio.createOscillator(), g = audio.createGain();
   o.type = type; o.frequency.setValueAtTime(f, t0); o.frequency.exponentialRampToValueAtTime(to, t0 + dur);
@@ -2210,6 +2246,7 @@ function go(name) {
   Music.setTrack(name === 'play' ? 'play' : 'title');
   if (name === 'title') renderTitle();
   if (name === 'map') renderMap();
+  if (window.JellyMonetize) { if (name === 'map') JellyMonetize.showBanner(); else JellyMonetize.hideBanner(); }
   if (name === 'book') renderBook();
   if (name === 'play') { if (!$('bannerTitle').textContent) showBanner(0); resize(); setTimeout(() => canvas.focus({ preventScroll: true }), 50); }
 }
@@ -2648,8 +2685,84 @@ function showResult() {
     $('resultSub').textContent = T('지도로');
     $('resultSub').onclick = () => { $('result').hidden = true; go('map'); };
   }
+  $('resultAd').hidden = !canRevive();
+  if (!$('resultAd').hidden) {
+    const free = JellyMonetize.has('freecontinue');
+    $('resultAd').innerHTML = (free ? tx('▶ 이어하기') : tx('▶ 광고 보고 이어하기')) + `<small>${o.reason === 'time' ? tx('시간 +20초') : tx('천장이 3칸 올라가요')}</small>`;
+  }
   setTimeout(() => $('resultMain').focus({ preventScroll: true }), 50);
 }
+// ---------- 이어하기 (보상형 광고 · 후원 팩, monetize.js) ----------
+const tx = s => (typeof window.T === 'function' ? window.T(s) : s);
+if (window.JellyI18n && JellyI18n.add) JellyI18n.add({ '▶ 이어하기': '▶ Continue', '▶ 광고 보고 이어하기': '▶ Watch an ad to continue', '천장이 3칸 올라가요': 'Ceiling goes up 3 rows', '시간 +20초': '+20 seconds', '이어서 해 봐요!': 'Keep going!', '후원 팩': 'Supporter Pack', '🎁 후원 팩': '🎁 Supporter Pack', '구매 복원': 'Restore purchases', '닫기': 'Close', '구매했어요': 'Purchased', '구매하기': 'Buy', "구매는 스토어 계정으로 결제돼요. 한 번 사면 다시 설치해도 '구매 복원'으로 돌아와요.": 'Purchases are billed to your store account. Use “Restore purchases” after reinstalling.' });
+function canRevive() {
+  if (!G || !G.outcome || G.outcome.win || !window.JellyMonetize) return false;
+  if ((G.continues || 0) >= JellyMonetize.continuePerStage) return false;
+  return JellyMonetize.canContinue();
+}
+// 같은 판 이어하기: 천장 3칸 올리기(바닥 선과 3칸 여유가 생길 때까지 더, 단 시작 높이까지만)
+// → 그래도 바닥 선 근처면 아래쪽 거품만 걷어 낸다(갇힌 친구는 구출). 시간 끝이면 +20초
+function revive() {
+  const b = G.b, h = G.hz, o = G.outcome;
+  G.continues = (G.continues || 0) + 1;
+  const safe = DEADLINE - 3 * ROW_H;
+  G.y0Target = Math.max(G.y0Start, G.y0Target - 3 * ROW_H); b.y0 = G.y0Target;
+  while (Board.lowestY(b) + R > safe && G.y0Target > G.y0Start) { G.y0Target = Math.max(G.y0Start, G.y0Target - ROW_H); b.y0 = G.y0Target; }
+  b.rows.forEach((row, r) => row.forEach((cell, c) => {
+    if (!cell) return;
+    const q = Board.pos(b, r, c);
+    if (q.y + R <= safe) return;
+    row[c] = null; G.falls.push({ x: q.x, y: q.y, vy: -40, vx: 0, c: cell.c, friend: cell.friend });
+    if (cell.friend !== undefined) rescue(cell.friend, q);
+  }));
+  Board.floating(b).forEach(([y, x]) => { const cell = b.rows[y][x], q = Board.pos(b, y, x); b.rows[y][x] = null; G.falls.push({ x: q.x, y: q.y, vy: -40, vx: 0, c: cell.c, friend: cell.friend }); if (cell.friend !== undefined) rescue(cell.friend, q); });
+  if (o && o.reason === 'time' && h.clock !== null) h.clock += 20;
+  h.timeUp = false;
+  if (h.cfg.dropSec) h.dropT = h.cfg.dropSec;
+  G.outcome = null; G.state = 'aim';
+  $('result').hidden = true; $('app').inert = false;
+  if (G.st.boss && Board.count(b) === 0) { Board.pushTop(b, [...G.st.colors]); Board.pushTop(b, [...G.st.colors]); }
+  if (!G.st.boss && G.saved >= G.need) return finish(true);
+  refreshQueueColors();
+  showToast(tx('이어서 해 봐요!'));
+  updateHud();
+  setTimeout(() => canvas.focus({ preventScroll: true }), 50);
+}
+// 광고 보는 동안은 게임 소리를 멈춘다 (스토어·토스 심사 기준)
+async function withAdPause(fn) {
+  const wasRunning = audio && audio.state === 'running';
+  if (wasRunning) { try { await audio.suspend(); } catch (e) {} }
+  try { return await fn(); } finally { if (wasRunning) { try { await audio.resume(); } catch (e) {} } }
+}
+$('resultAd').onclick = async () => {
+  const btn = $('resultAd'); if (btn.disabled || !G) return;
+  btn.disabled = true;
+  const ok = await withAdPause(() => JellyMonetize.rewarded('continue'));
+  btn.disabled = false;
+  if (ok && G && G.outcome && !G.outcome.win) revive();
+  else if (!ok) { btn.hidden = true; showToast(JellyMonetize.t('adFail')); }
+};
+// ---------- 후원 팩 (인앱 구매) ----------
+let shopBusy = false;
+async function renderShop() {
+  const list = await JellyMonetize.products();
+  $('shopList').innerHTML = list.map(p => `<div class="shop-item"><b>${p.title}</b><small>${p.desc}</small>` +
+    (p.owned ? `<button class="btn light" disabled>${tx('구매했어요')} ✓</button>` : `<button class="btn" data-buy="${p.id}">${tx('구매하기')} · ${p.price}</button>`) + '</div>').join('');
+  $('shopList').querySelectorAll('[data-buy]').forEach(b => b.onclick = async () => {
+    if (shopBusy) return; shopBusy = true; b.disabled = true;
+    const ok = await withAdPause(() => JellyMonetize.buy(b.dataset.buy));
+    shopBusy = false;
+    alertNote(ok ? JellyMonetize.t('bought') : JellyMonetize.t('buyFail'));
+    renderShop();
+  });
+}
+function alertNote(text) { const n = $('shop').querySelector('.shop-note'); n.textContent = text; }
+function updateShopBtn() { $('shopBtn').hidden = !(window.JellyMonetize && JellyMonetize.canShop()); }
+$('shopBtn').onclick = () => { $('shop').hidden = false; $('app').inert = true; renderShop(); setTimeout(() => $('shopClose').focus({ preventScroll: true }), 50); };
+$('shopClose').onclick = () => { $('shop').hidden = true; $('app').inert = false; $('shopBtn').focus({ preventScroll: true }); };
+$('shop').addEventListener('keydown', e => { if (e.key === 'Escape') $('shopClose').click(); });
+$('shopRestore').onclick = async () => { const n = await JellyMonetize.restore(); alertNote(n ? JellyMonetize.t('restored') : JellyMonetize.t('nothing')); renderShop(); };
+if (window.JellyMonetize) { JellyMonetize.init().then(updateShopBtn); JellyMonetize.onChange(updateShopBtn); }
 // 스테이지를 처음 깨면 그 스테이지 이야기 컷신 (story.js). 본 컷신은 다시 안 나온다
 function playStory(id, then) {
   if (!window.JellyStory || !JellyStory.has(id) || P.seenStory[id]) return then();
@@ -2660,7 +2773,7 @@ function playStory(id, then) {
 $('playMap').onclick = () => { G = null; $('result').hidden = true; go('map'); };
 // 결과 창: 포커스를 창 안에 가두고, Esc는 지도로
 $('result').addEventListener('keydown', e => {
-  const btns = [$('resultMain'), $('resultSub')];
+  const btns = [$('resultAd'), $('resultMain'), $('resultSub')].filter(b => !b.hidden);
   if (e.key === 'Tab') {
     const i = btns.indexOf(document.activeElement);
     btns[(i + (e.shiftKey ? btns.length - 1 : 1)) % btns.length].focus(); e.preventDefault();
@@ -2695,12 +2808,16 @@ $('bookBack').onclick = () => go(bookReturn);
 // ============================================================
 updateSoundBtn();
 go('title');
+// 설치형 웹앱(PWA): 오프라인에서도 열리게 서비스 워커 등록 (앱·토스 안, 파일로 열 때, ?sw=0 이면 안 함)
+if ('serviceWorker' in navigator && /^https?:$/.test(location.protocol) && !(window.Capacitor && Capacitor.isNativePlatform && Capacitor.isNativePlatform()) && !window.JellyTossBridge && !/[?&]sw=0/.test(location.search)) {
+  window.addEventListener('load', () => navigator.serviceWorker.register('sw.js').catch(() => {}));
+}
 requestAnimationFrame(frame);
 
 // 테스트용 손잡이 (화면에는 영향 없음)
 window.__jp = {
   get G() { return G; }, lowerCeiling, showBanner, P, STAGES, Board, R, ROW_H, W, H, PIVOT, DEADLINE,
-  startStage, rescue, showResult, land, hazardsAfterShot, unlockAudio, boom, audioReady: () => !!audio, audioState: () => audio && audio.state, soundHint: () => !$('soundHint').hidden, LUCKY, pickLucky, applyLucky, seenHz: () => P.seenHz, aimLimit, music: () => Music.info(), voices: () => voiceCount, soundMode: () => soundMode, sfx, CS, shoot, swapQueue, setAngle, go, seedRandom,
+  startStage, rescue, showResult, revive, canRevive, finish, land, hazardsAfterShot, unlockAudio, boom, audioReady: () => !!audio, audioState: () => audio && audio.state, soundHint: () => !$('soundHint').hidden, LUCKY, pickLucky, applyLucky, seenHz: () => P.seenHz, aimLimit, music: () => Music.info(), voices: () => voiceCount, soundMode: () => soundMode, sfx, CS, shoot, swapQueue, setAngle, go, seedRandom,
   reset() { Object.assign(P, { stars: new Array(NST).fill(0), stickers: {}, seenIntro: false, at: 0, seenHz: {}, seenStory: {} }); saveP(); },
   story: () => window.JellyStory,
   mapScene: wi => Jelly3D.scene().then(() => mapArtWorld(wi, true)),   // 지도 그림 굽기 도구용 (design/forest/bake-map.mjs)

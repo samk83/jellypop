@@ -1,0 +1,23 @@
+{
+  "name": "jellypop-app",
+  "version": "0.11.0",
+  "private": true,
+  "description": "젤리팝 안드로이드·아이폰 앱 (Capacitor). 게임 파일은 저장소 루트에서 복사해 온다.",
+  "type": "module",
+  "scripts": {
+    "copy-web": "node scripts/copy-web.mjs",
+    "sync": "node scripts/copy-web.mjs && npx cap sync",
+    "android": "node scripts/copy-web.mjs && npx cap sync android && npx cap open android",
+    "ios": "node scripts/copy-web.mjs && npx cap sync ios && npx cap open ios"
+  },
+  "dependencies": {
+    "@capacitor-community/admob": "8.2.1",
+    "@capacitor/android": "8.5.3",
+    "@capacitor/core": "8.5.3",
+    "@capacitor/ios": "8.5.3",
+    "cordova-plugin-purchase": "13.20.0"
+  },
+  "devDependencies": {
+    "@capacitor/cli": "8.5.3"
+  }
+}

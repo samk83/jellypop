@@ -5,7 +5,10 @@
   "description": "젤리팝 — 휴대폰에서도 되는 웹 젤리 퍼즐 게임",
   "type": "module",
   "scripts": {
-    "test": "node tests/bubble.test.mjs && node tests/stages30.test.mjs && node tests/game.test.mjs && node tests/jelly3d.test.mjs && node tests/story.test.mjs && node tests/i18n.test.mjs"
+    "test": "node tests/bubble.test.mjs && node tests/stages30.test.mjs && node tests/game.test.mjs && node tests/jelly3d.test.mjs && node tests/story.test.mjs && node tests/i18n.test.mjs && node tests/monetize.test.mjs",
+    "test:app": "node tests/app.test.mjs",
+    "icons": "node design/store/make-icons.mjs",
+    "shots": "node design/store/shots.mjs"
   },
   "devDependencies": {
     "playwright": "1.56.1"

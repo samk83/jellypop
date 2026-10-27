@@ -1,0 +1,8 @@
+{
+  "appId": "com.jellydock.jellypop",
+  "appName": "젤리팝",
+  "webDir": "www",
+  "backgroundColor": "#ffd1e8",
+  "android": { "backgroundColor": "#ffd1e8" },
+  "ios": { "backgroundColor": "#ffd1e8", "contentInset": "never" }
+}
