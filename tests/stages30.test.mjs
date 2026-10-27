@@ -511,6 +511,15 @@ for (const [label, dev] of [['iPhone SE (320x568)', devices['iPhone SE']], ['Gal
   const modes = [];
   for (let i = 0; i < 3; i++) { await page.tap('#soundBtn'); await page.waitForTimeout(300); modes.push(await page.evaluate(() => [window.__jp.soundMode(), window.__jp.music().running])); }
   check('소리 버튼: 음악+효과음 → 효과음만(음악 멈춤) → 끔 → 다시 모두', JSON.stringify(modes) === JSON.stringify([['sfx', false], ['off', false], ['all', true]]), JSON.stringify(modes));
+  // 소리가 멈춘 상태(아이폰에서 흔함)여도 화면을 한 번 누르면 다시 깨어남
+  const sus = await page.evaluate(() => window.__jp.audioState());
+  check('소리: 첫 터치 뒤 소리 장치가 켜져 있음(running)', sus === 'running', String(sus));
+  await page.tap('#hudName'); await page.waitForTimeout(300);
+  check('소리: 켜져 있으면 "소리 켜기" 안내가 안 보임', !(await page.evaluate(() => window.__jp.soundHint())));
+  await page.tap('#soundBtn'); await page.tap('#soundBtn'); await page.waitForTimeout(200);   // all → sfx → off
+  check('소리: 꺼 두면 "🔇 소리 켜기" 안내가 보임', await page.evaluate(() => window.__jp.soundMode() === 'off' && window.__jp.soundHint()));
+  await page.tap('#soundHint'); await page.waitForTimeout(700);
+  check('소리: 안내 버튼을 누르면 음악+효과음으로 켜지고 안내가 사라짐', await page.evaluate(() => window.__jp.soundMode() === 'all' && !window.__jp.soundHint() && window.__jp.music().running));
   check('대포가 커짐 (그림 배율 1.05, 전 0.8)', await page.evaluate(() => window.__jp.CS) >= 1);
   await page.screenshot({ path: path.join(shots, 'v4-cannon-390.png') });
   await page.close();

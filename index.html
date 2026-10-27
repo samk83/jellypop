@@ -286,6 +286,11 @@ img{-webkit-user-drag:none}
 
 @media (max-height:700px){.node{width:50px;height:46px;margin:-23px 0 0 -25px;font-size:22px}.node.boss{width:52px;height:48px;margin:-24px 0 0 -26px}.node.boss img.bj{width:40px;margin-left:-20px;top:-26px}.node .nm{top:44px;font-size:10px}.walker{width:54px}.title-cast{height:min(30vh,200px)}}
 @media (prefers-reduced-motion:reduce){.title-cast img,.walker img,.follower img,.sticker,.node.next::after{animation:none!important}}
+.sound-hint{position:fixed;right:12px;bottom:calc(env(safe-area-inset-bottom) + 84px);z-index:40;min-height:48px;padding:0 16px;border-radius:99px;
+  font:900 16px var(--font-body);color:#fff;background:linear-gradient(#ff8fbd,#f24d8c);box-shadow:0 5px 0 var(--pink-dark),0 8px 16px rgba(42,11,78,.3);animation:hintPulse 1.2s ease-in-out infinite}
+@keyframes hintPulse{0%,100%{transform:scale(1)}50%{transform:scale(1.07)}}
+@media (prefers-reduced-motion:reduce){.sound-hint{animation:none}}
+.sound-hint.calm{animation:none;opacity:.85;font-size:14px;min-height:44px}
 </style>
 </head>
 <body>
@@ -359,6 +364,7 @@ img{-webkit-user-drag:none}
   </section>
 </div>
 
+<button class="sound-hint" id="soundHint" type="button" hidden aria-label="소리 켜기">🔇 소리 켜기</button>
 <div class="world-banner" id="worldBanner" hidden></div>
 <div class="hzcard" id="hzCard" hidden role="dialog" aria-labelledby="hzTitle">
   <h3 id="hzTitle">새로운 방해가 나타났어요!</h3>
@@ -1895,16 +1901,50 @@ let audio = null, master = null, musicBus = null, sfxBus = null;
 // 소리 설정: 'all' 모두 켬 / 'sfx' 효과음만(음악 끔) / 'off' 모두 끔. 옛 저장값(true/false)도 읽는다
 let soundMode = soundOn === false ? 'off' : soundOn === true ? 'all' : soundOn;
 soundOn = soundMode !== 'off';
+// 휴대폰(특히 아이폰)은 손가락을 뗄 때(touchend·click) 소리를 켜야 하고, 만든 뒤에도 '멈춤' 상태로 시작할 때가 있다.
+// 그래서 소리가 실제로 나기 전까지는 화면 어디를 누르든 매번 다시 깨운다.
+const SILENT_WAV = 'data:audio/wav;base64,UklGRiQAAABXQVZFZm10IBAAAAABAAEAQB8AAEAfAAABAAgAZGF0YQAAAAA=';
+let silentEl = null;
 function unlockAudio() {
-  if (audio || !soundOn) return;
+  if (!soundOn) { updateSoundHint(); return; }
   try {
-    audio = new (window.AudioContext || window.webkitAudioContext)();
-    master = audio.createGain(); master.gain.value = .9; master.connect(audio.destination);
-    sfxBus = audio.createGain(); sfxBus.connect(master);
-    musicBus = audio.createGain(); musicBus.gain.value = .32; musicBus.connect(master);
-    Music.start();
+    // 아이폰 무음 스위치를 켜 둬도 게임 소리가 나게 (iOS 17+ Safari)
+    if (navigator.audioSession && navigator.audioSession.type !== 'playback') navigator.audioSession.type = 'playback';
+  } catch (e) {}
+  try {
+    if (!audio) {
+      audio = new (window.AudioContext || window.webkitAudioContext)();
+      master = audio.createGain(); master.gain.value = .9; master.connect(audio.destination);
+      sfxBus = audio.createGain(); sfxBus.connect(master);
+      musicBus = audio.createGain(); musicBus.gain.value = .32; musicBus.connect(master);
+      audio.onstatechange = updateSoundHint;
+      Music.start();
+    }
+    if (audio.state !== 'running') {
+      const r = audio.resume(); if (r && r.then) r.then(updateSoundHint, () => {});
+      // 아주 짧은 무음을 한 번 틀어 소리 장치를 깨운다 (옛 아이폰 방식)
+      const b = audio.createBufferSource(); b.buffer = audio.createBuffer(1, 1, 22050); b.connect(audio.destination); b.start(0);
+      // 옛 아이폰: <audio> 무음을 한 번 틀면 무음 스위치와 상관없이 '재생' 모드가 된다
+      if (!silentEl && !navigator.audioSession) { silentEl = new Audio(SILENT_WAV); silentEl.setAttribute('playsinline', ''); const pp = silentEl.play(); if (pp && pp.catch) pp.catch(() => {}); }
+    }
   } catch (e) { audio = null; }
+  updateSoundHint();
 }
+// 소리가 꺼져 있거나 아직 안 깨어났으면 화면 오른쪽 아래에 '🔇 소리 켜기' 버튼을 보여 준다
+let triedSound = false;
+function updateSoundHint() {
+  const el = $('soundHint'); if (!el) return;
+  const asleep = soundOn && triedSound && (!audio || audio.state !== 'running');
+  el.hidden = !(soundMode === 'off' || asleep);
+  el.classList.toggle('calm', !asleep);   // 일부러 끈 경우는 깜빡이지 않게
+}
+['touchend', 'click', 'keydown'].forEach(ev => document.addEventListener(ev, e => {
+  if (e.target && e.target.closest && e.target.closest('#soundHint, #soundBtn')) return;
+  if (audio && audio.state === 'running') return;
+  triedSound = true; unlockAudio();
+  setTimeout(updateSoundHint, 600);
+}, true));
+document.addEventListener('visibilitychange', () => { if (!document.hidden) setTimeout(updateSoundHint, 300); });
 function tone(f, to, dur, type, vol, delay = 0, bus = sfxBus) {
   const t0 = audio.currentTime + delay, o = audio.createOscillator(), g = audio.createGain();
   o.type = type; o.frequency.setValueAtTime(f, t0); o.frequency.exponentialRampToValueAtTime(to, t0 + dur);
@@ -2129,7 +2169,12 @@ $('soundBtn').onclick = () => {
   soundOn = soundMode !== 'off'; store.set('sound', soundMode);
   if (soundOn) unlockAudio();
   if (master) master.gain.value = soundOn ? .9 : 0;
-  updateSoundBtn(); showToast({ all: '음악 켜짐', sfx: '효과음만', off: '소리 끔' }[soundMode]);
+  updateSoundBtn(); updateSoundHint(); showToast({ all: '음악 켜짐', sfx: '효과음만', off: '소리 끔' }[soundMode]);
+};
+$('soundHint').onclick = () => {
+  if (soundMode === 'off') { soundMode = 'all'; soundOn = true; store.set('sound', soundMode); if (master) master.gain.value = .9; updateSoundBtn(); }
+  triedSound = true; unlockAudio(); sfx('swap');
+  setTimeout(() => { updateSoundHint(); showToast(audio && audio.state === 'running' ? '소리 켜짐' : '소리가 안 나면 휴대폰 음량을 올려 주세요'); }, 400);
 };
 
 // ============================================================
@@ -2635,7 +2680,7 @@ requestAnimationFrame(frame);
 // 테스트용 손잡이 (화면에는 영향 없음)
 window.__jp = {
   get G() { return G; }, lowerCeiling, showBanner, P, STAGES, Board, R, ROW_H, W, H, PIVOT, DEADLINE,
-  startStage, rescue, showResult, land, hazardsAfterShot, unlockAudio, boom, audioReady: () => !!audio, LUCKY, pickLucky, applyLucky, seenHz: () => P.seenHz, aimLimit, music: () => Music.info(), voices: () => voiceCount, soundMode: () => soundMode, sfx, CS, shoot, swapQueue, setAngle, go, seedRandom,
+  startStage, rescue, showResult, land, hazardsAfterShot, unlockAudio, boom, audioReady: () => !!audio, audioState: () => audio && audio.state, soundHint: () => !$('soundHint').hidden, LUCKY, pickLucky, applyLucky, seenHz: () => P.seenHz, aimLimit, music: () => Music.info(), voices: () => voiceCount, soundMode: () => soundMode, sfx, CS, shoot, swapQueue, setAngle, go, seedRandom,
   reset() { Object.assign(P, { stars: new Array(NST).fill(0), stickers: {}, seenIntro: false, at: 0, seenHz: {}, seenStory: {} }); saveP(); },
   story: () => window.JellyStory,
   mapScene: wi => Jelly3D.scene().then(() => mapArtWorld(wi, true)),   // 지도 그림 굽기 도구용 (design/forest/bake-map.mjs)
