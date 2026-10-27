@@ -1,0 +1,9 @@
+<?xml version='1.0' encoding='utf-8'?>
+<resources>
+    <string name="app_name">젤리팝</string>
+    <string name="title_activity_main">젤리팝</string>
+    <string name="package_name">com.jellydock.jellypop</string>
+    <string name="custom_url_scheme">com.jellydock.jellypop</string>
+    <!-- AdMob 앱 ID: Owner가 AdMob 에서 안드로이드 앱을 만든 뒤 "ca-app-pub-...~..." 값으로 바꾸기. 지금 값은 Google 공식 테스트 앱 ID -->
+    <string name="admob_app_id">ca-app-pub-3940256099942544~3347511713</string>
+</resources>

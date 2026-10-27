@@ -1,0 +1,20 @@
+{
+  "name": "젤리팝 — 젤리마을 대소동",
+  "short_name": "젤리팝",
+  "description": "말랑이와 함께 거품을 쏘아 갇힌 젤리 친구들을 구하는 버블 슈터 퍼즐",
+  "id": "./",
+  "start_url": "./?source=pwa",
+  "scope": "./",
+  "display": "fullscreen",
+  "display_override": ["fullscreen", "standalone"],
+  "orientation": "portrait",
+  "background_color": "#ffd1e8",
+  "theme_color": "#ffd1e8",
+  "lang": "ko",
+  "categories": ["games", "entertainment"],
+  "icons": [
+    { "src": "icons/icon-192.png", "sizes": "192x192", "type": "image/png", "purpose": "any" },
+    { "src": "icons/icon-512.png", "sizes": "512x512", "type": "image/png", "purpose": "any" },
+    { "src": "icons/maskable-512.png", "sizes": "512x512", "type": "image/png", "purpose": "maskable" }
+  ]
+}

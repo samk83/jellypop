@@ -1,0 +1,18 @@
+{
+  "name": "jellypop-toss",
+  "version": "0.12.0",
+  "private": true,
+  "description": "젤리팝 토스 앱인토스 미니앱. 게임 파일은 저장소 루트에서 복사하고, 토스 SDK 연결(bridge.js)만 번들한다.",
+  "type": "module",
+  "scripts": {
+    "web": "node scripts/build.mjs",
+    "build": "node scripts/build.mjs && ait build",
+    "deploy": "ait deploy"
+  },
+  "dependencies": {
+    "@apps-in-toss/web-framework": "3.9.0"
+  },
+  "devDependencies": {
+    "esbuild": "0.25.10"
+  }
+}
