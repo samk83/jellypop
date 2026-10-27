@@ -1,0 +1,13 @@
+{
+  "name": "jellypop",
+  "version": "0.1.0",
+  "private": true,
+  "description": "젤리팝 — 휴대폰에서도 되는 웹 젤리 퍼즐 게임",
+  "type": "module",
+  "scripts": {
+    "test": "node tests/bubble.test.mjs && node tests/stages30.test.mjs && node tests/game.test.mjs && node tests/jelly3d.test.mjs && node tests/story.test.mjs"
+  },
+  "devDependencies": {
+    "playwright": "1.56.1"
+  }
+}
