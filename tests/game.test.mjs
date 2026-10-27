@@ -1,6 +1,7 @@
 // 젤리팝 자동 테스트: node tests/game.test.mjs
 // 휴대폰 화면(터치)과 PC 화면에서 실제 브라우저로 열어 확인한다.
 import { chromium, devices } from 'playwright';
+import { koreanByDefault } from './locale.mjs';
 import { fileURLToPath, pathToFileURL } from 'node:url';
 import path from 'node:path';
 import fs from 'node:fs';
@@ -17,6 +18,7 @@ function check(name, ok, info = '') {
 const settle = page => page.waitForFunction(() => !window.__jelly.state.busy, null, { timeout: 5000 });
 
 const browser = await chromium.launch(process.env.CHROMIUM ? { executablePath: process.env.CHROMIUM } : {});
+koreanByDefault(browser);
 
 // 1) 규칙(로직) 테스트
 {

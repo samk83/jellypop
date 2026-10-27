@@ -19,6 +19,7 @@
 | 스티커 북(30칸·스탬프) | `renderBook()` |
 | 저장(별·스티커·프롤로그 본 적) | `P`, `saveP()` (localStorage `jellypop2.progress`) |
 | 테스트용 손잡이 | `window.__jp` (`evalShot`, `advance`, `?seed=`) |
+| 언어 전환(한국어/영어)·타이틀 언어 버튼 | `i18n.js` (`T()`, `JellyI18n.apply/set/add`), 영어 사전 `lang-en.js`, `#langBtn` |
 
 ## v0.1 톡 터뜨리기 (`classic.html`, 보관)
 | 기능 | 위치 |
@@ -32,4 +33,6 @@
 | `tests/bubble.test.mjs` | v0.2: 규칙, 휴대폰 3기종, PC 자동 플레이 1~6, 난이도(시드 10개) |
 | `tests/stages30.test.mjs` | v0.4: 특수 거품·방해 요소·놈놈·시계·보스 단계·휴대폰 3기종·월드 전환·완주·난이도(10시드×30) |
 | `tests/game.test.mjs` | v0.1 (`classic.html`) |
+| `tests/i18n.test.mjs` | 0.11: 영어 사전 빠짐, 언어 고르기·저장, 영어 화면(320/390/PC)·영어 컷신 30개. 다른 테스트는 `tests/locale.mjs`로 한국어 브라우저에서 실행 |
+| `design/screens/en-*.png` | 영어 화면 캡처 |
 | `design/screens/v2-*.png` | 테스트가 자동으로 찍는 v0.2 화면 캡처 |

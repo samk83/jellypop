@@ -4,8 +4,8 @@
 //   url: 버튼을 누르면 열 주소(없으면 '곧 열려요!' 안내) · art: 'cotton' | 'gift' | 'star' (왼쪽 그림)
 window.JellyBanner = {
   items: [
-    { tag: '이벤트', title: '솜사탕 축제 오픈!', sub: '3판 깨면 무지개 거품 선물', button: '보기', art: 'cotton' },
-    { tag: '알림', title: '천장이 내려와요!', sub: '위쪽 시간 게이지를 잘 보세요', art: 'star' },
+    { tag: T('이벤트'), title: T('솜사탕 축제 오픈!'), sub: T('3판 깨면 무지개 거품 선물'), button: T('보기'), art: 'cotton' },
+    { tag: T('알림'), title: T('천장이 내려와요!'), sub: T('위쪽 시간 게이지를 잘 보세요'), art: 'star' },
   ],
   every: 5,   // 초
 };

@@ -1,6 +1,7 @@
 // 젤리팝 v0.2 버블 슈터 자동 테스트: node tests/bubble.test.mjs
 // 휴대폰 3기종 + PC 화면에서 실제 브라우저로 열어 docs/SPEC.md 수락기준을 확인한다.
 import { chromium, devices } from 'playwright';
+import { koreanByDefault } from './locale.mjs';
 import { fileURLToPath, pathToFileURL } from 'node:url';
 import path from 'node:path';
 import fs from 'node:fs';
@@ -15,6 +16,7 @@ function check(name, ok, info = '') {
   if (ok) { pass++; console.log('  ✅ ' + name); } else { fail++; console.log('  ❌ ' + name + ' ' + info); }
 }
 const browser = await chromium.launch(process.env.CHROMIUM ? { executablePath: process.env.CHROMIUM } : {});
+koreanByDefault(browser);
 
 // 자동 플레이: 각도를 촘촘히 바꿔 가며 가장 좋은 한 발을 고른다 (대포 속 친구와 맨 앞 친구 둘 다 따져 봄)
 function botPlay(stageNo) {

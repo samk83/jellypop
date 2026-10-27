@@ -5,6 +5,8 @@
 <meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no,viewport-fit=cover">
 <meta name="theme-color" content="#ffd1e8">
 <title>젤리팝 젤리마을 대소동</title>
+<script src="i18n.js"></script>
+<script src="lang-en.js"></script>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Baloo+2:wght@800&family=Noto+Sans+KR:wght@700;900&display=swap">
 <style>
@@ -93,6 +95,8 @@ img{-webkit-user-drag:none}
 .title-actions .row{display:grid;grid-template-columns:1fr 1fr;gap:10px}
 .title-actions .row .btn{padding:0 10px;font-size:16px;min-height:48px}
 .title-actions .btn.big{min-height:60px;font-size:24px}
+.lang-btn{position:absolute;z-index:3;top:calc(env(safe-area-inset-top) + 10px);right:12px;min-height:44px;padding:0 14px;border:0;border-radius:22px;
+  font:900 14px var(--font-body);color:var(--pink-dark,#c2245a);background:rgba(255,255,255,.88);box-shadow:0 3px 0 rgba(90,45,145,.25);cursor:pointer}
 .title-note{position:relative;font-size:13px;color:var(--ink-soft);margin-top:4px;font-weight:700}
 #title.f3d .title-note{color:#fff;text-shadow:0 1px 3px rgba(0,0,0,.6)}
 
@@ -299,6 +303,7 @@ img{-webkit-user-drag:none}
   <section class="screen" id="title">
     <div class="art" id="titleArt" aria-hidden="true"></div>
     <h1 class="title-logo"><span class="l1">JELLY</span><span class="l2">POP!</span></h1>
+    <button class="lang-btn" id="langBtn" type="button"></button>
     <div class="ribbon">젤리마을 대소동</div>
     <div class="title-cast" id="titleCast" aria-hidden="true"></div>
     <div class="title-actions">
@@ -401,6 +406,17 @@ img{-webkit-user-drag:none}
 (() => {
 'use strict';
 const Art = window.Gummy, AC = Art.C;
+// 언어: 정적 HTML 글자를 사전으로 바꾸고, 타이틀의 언어 버튼은 다른 언어로 바꾼다 (i18n.js)
+JellyI18n.apply(document.body);
+document.title = T('젤리팝 젤리마을 대소동');
+{
+  const other = JellyI18n.lang === 'ko' ? 'en' : 'ko';
+  const lb = document.getElementById('langBtn');
+  lb.textContent = other === 'en' ? 'English' : '한국어';
+  lb.lang = other;
+  lb.setAttribute('aria-label', other === 'en' ? 'Play in English' : '한국어로 하기');
+  lb.onclick = () => JellyI18n.set(other);
+}
 // ============================================================
 // 기본 값
 // ============================================================
@@ -731,8 +747,8 @@ function shoot() {
     // 놈놈이 대포 앞을 막고 있으면 거품이 막힌다
     const n = G.hz.nom; n.state = 'leave'; n.t = 0;
     burst(PIVOT.x, PIVOT.y - 60, color, 8);
-    G.texts.push({ x: 180, y: 470, text: '막혔어요!', life: 1.1, color: '#d9c8ff' });
-    showToast('놈놈이 막았어요!'); sfx('boss');
+    G.texts.push({ x: 180, y: 470, text: T('막혔어요!'), life: 1.1, color: '#d9c8ff' });
+    showToast(T('놈놈이 막았어요!')); sfx('boss');
     G.state = 'settle'; G.settleT = .35;
     return true;
   }
@@ -747,7 +763,7 @@ function swapQueue() {
     // 간지럼 공격: 대포를 막은 놈놈을 쫓아낸다
     const n = G.hz.nom; n.state = 'leave'; n.t = 0; n.hit = true;
     G.score += 30; G.texts.push({ x: PIVOT.x, y: PIVOT.y - 70, text: '+30', life: 1 });
-    showToast('간지럼 공격! 놈놈이 도망갔어요'); sfx('rescue');
+    showToast(T('간지럼 공격! 놈놈이 도망갔어요')); sfx('rescue');
     return true;
   }
   if (G.queue.length < 2) return false;
@@ -792,7 +808,7 @@ function land(m) {
     G.score += n * 10 + d * 20 + u * 10;
     res.popped.forEach((p, i) => { const q = Board.pos(b, p.r, p.c); G.pops.push({ x: q.x, y: q.y, c: p.cell.c, t: -i * .03 }); burst(q.x, q.y, p.cell.c, 6); punchCloud(q.x, q.y); });
     res.dropped.forEach(p => { const q = Board.pos(b, p.r, p.c); G.falls.push({ x: q.x, y: q.y, vy: -60 - rand() * 80, vx: (rand() - .5) * 60, c: p.cell.c, friend: p.cell.friend }); punchCloud(q.x, q.y); });
-    res.unstuck.forEach((p, i) => { const q = Board.pos(b, p.r, p.c); burst(q.x, q.y, '#ffb347', 8); if (i < 2) G.texts.push({ x: q.x, y: q.y - 6, text: '시럽 벗김!', life: 1, color: '#ffc24a' }); });
+    res.unstuck.forEach((p, i) => { const q = Board.pos(b, p.r, p.c); burst(q.x, q.y, '#ffb347', 8); if (i < 2) G.texts.push({ x: q.x, y: q.y - 6, text: T('시럽 벗김!'), life: 1, color: '#ffc24a' }); });
     res.thawed.forEach(p => { const q = Board.pos(b, p.r, p.c); burst(q.x, q.y, '#dff4ff', 6); });
     res.recolored.forEach(p => { const q = Board.pos(b, p.r, p.c); burst(q.x, q.y, '#fff', 3); });
     [...res.popped, ...res.dropped].forEach(p => { if (p.cell.friend !== undefined) rescue(p.cell.friend, Board.pos(b, p.r, p.c)); });
@@ -802,14 +818,14 @@ function land(m) {
     }
     const p0 = Board.pos(b, r, c);
     G.texts.push({ x: p0.x, y: p0.y, text: '+' + (n * 10 + d * 20 + u * 10), life: 1 });
-    if (u && !n) showToast('시럽이 벗겨졌어요!');
-    else if (d >= 4) showToast('우르르 쿵!'); else if (n >= 6) showToast('굉장해요!');
+    if (u && !n) showToast(T('시럽이 벗겨졌어요!'));
+    else if (d >= 4) showToast(T('우르르 쿵!')); else if (n >= 6) showToast(T('굉장해요!'));
     // 선물 상자: 다음 거품이 무지개(60%) 또는 폭탄(40%)
-    if (res.gifts && G.queue.length) { const bomb = rand() < .4; G.queue[0] = bomb ? 'z' : 'w'; showToast(bomb ? '선물 상자! 폭탄 거품' : '선물 상자! 무지개 거품'); }
-    if (res.fireflies) { G.hz.aimBoost = 3; showToast('반딧불! 3발 동안 조준선이 길어요'); }
+    if (res.gifts && G.queue.length) { const bomb = rand() < .4; G.queue[0] = bomb ? 'z' : 'w'; showToast(bomb ? T('선물 상자! 폭탄 거품') : T('선물 상자! 무지개 거품')); }
+    if (res.fireflies) { G.hz.aimBoost = 3; showToast(T('반딧불! 3발 동안 조준선이 길어요')); }
     if (res.bombs) {
       res.popped.filter(p => p.cell.k === 'z').forEach(p => { const q = Board.pos(b, p.r, p.c); burst(q.x, q.y, '#ffb347', 18); burst(q.x, q.y, '#ff5f3a', 10); });
-      G.impact = Math.max(G.impact || 0, .4); showToast(res.bombs > 1 ? '연쇄 폭발! 펑펑!' : '폭탄 펑!'); sfx('boom', res.bombs);
+      G.impact = Math.max(G.impact || 0, .4); showToast(res.bombs > 1 ? T('연쇄 폭발! 펑펑!') : T('폭탄 펑!')); sfx('boom', res.bombs);
     }
     res.randoms.forEach(p => applyLucky(pickLucky(), Board.pos(b, p.r, p.c)));
     sfx('pop', n); if (d) setTimeout(() => sfx('drop', d), 120);
@@ -817,7 +833,7 @@ function land(m) {
   } else {
     G.hz.misses++;
     res.wobbled.forEach(p => G.wobbles.push({ r: p.r, c: p.c, t: 0 }));
-    if (res.wobbled.length) showToast('푸딩이 출렁! 색이 바뀌었어요');
+    if (res.wobbled.length) showToast(T('푸딩이 출렁! 색이 바뀌었어요'));
     sfx('stick');
   }
   G.state = 'settle'; G.settleT = n ? .45 : .12;
@@ -826,13 +842,13 @@ function land(m) {
 
 // 랜덤 거품: 좋은 효과 4가지(60%) · 나쁜 효과 3가지(40%) 중 하나가 나온다
 const LUCKY = [
-  { id: 'bomb', good: true, text: '랜덤알: 다음 거품이 폭탄!' },
-  { id: 'rainbow', good: true, text: '랜덤알: 다음 거품이 무지개!' },
-  { id: 'firefly', good: true, text: '랜덤알: 반딧불! 3발 동안 조준선이 길어요' },
-  { id: 'time', good: true, text: '랜덤알: 시간 충전!' },
-  { id: 'fog', good: false, text: '랜덤알: 앗, 안개가 꼈어요!' },
-  { id: 'ceil', good: false, text: '랜덤알: 앗, 천장이 한 칸!' },
-  { id: 'mix', good: false, text: '랜덤알: 앗, 주변 색이 뒤섞였어요!' },
+  { id: 'bomb', good: true, text: T('랜덤알: 다음 거품이 폭탄!') },
+  { id: 'rainbow', good: true, text: T('랜덤알: 다음 거품이 무지개!') },
+  { id: 'firefly', good: true, text: T('랜덤알: 반딧불! 3발 동안 조준선이 길어요') },
+  { id: 'time', good: true, text: T('랜덤알: 시간 충전!') },
+  { id: 'fog', good: false, text: T('랜덤알: 앗, 안개가 꼈어요!') },
+  { id: 'ceil', good: false, text: T('랜덤알: 앗, 천장이 한 칸!') },
+  { id: 'mix', good: false, text: T('랜덤알: 앗, 주변 색이 뒤섞였어요!') },
 ];
 function pickLucky() { const good = rand() < .6, list = LUCKY.filter(e => e.good === good); return list[Math.floor(rand() * list.length)]; }
 function applyLucky(e, at) {
@@ -855,7 +871,7 @@ function applyLucky(e, at) {
     refreshQueueColors();
   }
   burst(at.x, at.y, e.good ? '#ffe27a' : '#a99bd0', 14);
-  G.texts.push({ x: at.x, y: at.y - 14, text: e.good ? '행운!' : '꽝!', life: 1.2, color: e.good ? '#ffe27a' : '#d9c8ff' });
+  G.texts.push({ x: at.x, y: at.y - 14, text: e.good ? T('행운!') : T('꽝!'), life: 1.2, color: e.good ? '#ffe27a' : '#d9c8ff' });
   if (e.id !== 'ceil') showToast(e.text);
   sfx(e.good ? 'rescue' : 'boss');
   G.lucky = (G.lucky || []).concat(e.id);   // 테스트용 기록
@@ -867,14 +883,14 @@ function rescue(idx, at) {
   // 거품에서 풀려나 위로 톡 튀어 오른 뒤 떨어진다 → 땅에서 통통 → 데굴데굴 → 말랑이 옆 자리로 폴짝 (stepRescue)
   const slot = RESCUE_SLOTS[G.rescues.length % RESCUE_SLOTS.length];
   G.rescues.push({ x: at.x, y: at.y, vx: (at.x < W / 2 ? 1 : -1) * (40 + Math.random() * 50), vy: -260, rot: 0, sq: 0, t: 0, phase: 'fall', bounces: 0, slot, color: f.color, name: f.name });
-  showToast(f.name + ' 구출!');
+  showToast(f.name + T(' 구출!'));
   sfx('rescue');
 }
 
 // 천장 내리기 (조준 중이면 바로, 아니면 정리할 때)
 function lowerCeiling(rows, text) {
   G.y0Target += rows * ROW_H;
-  showToast(text || '천장이 내려와요!');
+  showToast(text || T('천장이 내려와요!'));
   sfx('boss');
   if (G.state === 'aim') {
     G.b.y0 = G.y0Target;
@@ -895,7 +911,7 @@ function bossPhases() {
     if (ph.red) h.red = true;
     // 마지막 단계는 방해를 바꿔 끼운다 (동시에 3개까지)
     (ph.off || []).forEach(k => { h.cfg[k] = null; if (k === 'nom' && h.nom && h.nom.state !== 'gone') { h.nom.state = 'leave'; h.nom.t = 0; } if (k === 'cloud' && h.cloud) h.cloud.leaving = true; });
-    G.texts.push({ x: 180, y: 150, text: ph.say || (bs.name + '이(가) 화났어요!'), life: 1.6, color: '#ffb3d4' });
+    G.texts.push({ x: 180, y: 150, text: ph.say || (bs.name + T('이(가) 화났어요!')), life: 1.6, color: '#ffb3d4' });
     sfx('boss');
   });
 }
@@ -905,12 +921,12 @@ function hazardsAfterShot() {
   const h = G.hz, cfg = h.cfg, b = G.b, n = G.shotCount, st = G.st;
   h.ceilWarn = 0;
   if (cfg.drop) { if (n % cfg.drop === 0) lowerCeiling(1); else if ((n + 1) % cfg.drop === 0) h.ceilWarn = 1; }
-  if (cfg.miss) { if (h.misses >= cfg.miss) { h.misses = 0; lowerCeiling(1, '헛방 3번! 천장이 내려와요'); } else if (h.misses === cfg.miss - 1) h.ceilWarn = 1; }
+  if (cfg.miss) { if (h.misses >= cfg.miss) { h.misses = 0; lowerCeiling(1, T('헛방 3번! 천장이 내려와요')); } else if (h.misses === cfg.miss - 1) h.ceilWarn = 1; }
   // 구름: 오는 중이면 하나 줄이고, 때가 되면 새로 덮는다
   if (h.cloud && !h.cloud.leaving && --h.cloud.left <= 0) h.cloud.leaving = true;
   if (cfg.cloud) {
     if (n === h.cloudNext) { spawnCloud(cfg.cloud); h.cloudNext = n + cfg.cloud.every; }
-    else if (n + 1 === h.cloudNext) warn(cfg.cloud.look === 'frost' ? '서리가 끼려 해요!' : '구름이 몰려와요!');
+    else if (n + 1 === h.cloudNext) warn(cfg.cloud.look === 'frost' ? T('서리가 끼려 해요!') : T('구름이 몰려와요!'));
   }
   // 꼬마 놈놈: 한 발 전에 빼꼼 → 행동
   if (h.nom && h.nom.shots !== undefined && (h.nom.state === 'hover' || h.nom.state === 'fly') && --h.nom.shots <= 0) { h.nom.state = 'leave'; h.nom.t = 0; }
@@ -923,9 +939,9 @@ function hazardsAfterShot() {
     if (n % cfg.caramel === 0 && h.caramelX !== null) {
       const at = Board.stickFrom(b, h.caramelX, Board.cell(randomColor(), '.'));
       h.caramelLast = at;
-      if (at) { const q = Board.pos(b, at[0], at[1]); burst(q.x, q.y, '#e8912f', 6); showToast('캐러멜 방울이 떨어졌어요!'); }
+      if (at) { const q = Board.pos(b, at[0], at[1]); burst(q.x, q.y, '#e8912f', 6); showToast(T('캐러멜 방울이 떨어졌어요!')); }
       h.caramelX = null;
-    } else if ((n + 1) % cfg.caramel === 0) { h.caramelX = 40 + rand() * 280; warn('캐러멜 방울이 떨어지려 해요!'); }
+    } else if ((n + 1) % cfg.caramel === 0) { h.caramelX = 40 + rand() * 280; warn(T('캐러멜 방울이 떨어지려 해요!')); }
   }
   // 컨베이어: 정해진 줄이 한 칸씩 (줄마다 방향 반대)
   if (cfg.conveyor) {
@@ -934,7 +950,7 @@ function hazardsAfterShot() {
       cv.rows.forEach((r, i) => Board.shiftRow(b, r, i % 2 ? -1 : 1));
       const fl = Board.floating(b);
       fl.forEach(([y, x]) => { const cell = b.rows[y][x], q = Board.pos(b, y, x); b.rows[y][x] = null; G.falls.push({ x: q.x, y: q.y, vy: -40, vx: 0, c: cell.c, friend: cell.friend }); if (cell.friend !== undefined) rescue(cell.friend, q); });
-      showToast('컨베이어가 움직여요!'); sfx('swap');
+      showToast(T('컨베이어가 움직여요!')); sfx('swap');
     } else if ((n + 1) % cv.every === 0) { h.convWarn = true; }
   }
   // 보스의 거품 공격
@@ -942,8 +958,8 @@ function hazardsAfterShot() {
     // lucky: 던지는 줄에 랜덤 거품 1개가 섞일 확률 (18·24·30 보스)
     const qi = st.boss.lucky && rand() < st.boss.lucky ? Math.floor(rand() * 9) : -1;   // 9칸 줄이어도 들어가게
     Board.pushTop(b, [...st.colors], i => (i === qi ? 'q' : st.boss.sticky && rand() < st.boss.sticky ? 's' : null));
-    if (qi >= 0) G.texts.push({ x: 180, y: 172, text: '랜덤알도 섞였어요!', life: 1.2, color: '#ffe27a' });
-    G.texts.push({ x: 180, y: 150, text: st.boss.name + '의 거품 공격!', life: 1.2, color: '#ffb3d4' }); sfx('boss');
+    if (qi >= 0) G.texts.push({ x: 180, y: 172, text: T('랜덤알도 섞였어요!'), life: 1.2, color: '#ffe27a' });
+    G.texts.push({ x: 180, y: 150, text: st.boss.name + T('의 거품 공격!'), life: 1.2, color: '#ffb3d4' }); sfx('boss');
   } else if (st.boss && (n + 1) % st.boss.every === 0) h.ceilWarn = 1;
   if (st.boss && Board.count(b) === 0) { Board.pushTop(b, [...st.colors]); Board.pushTop(b, [...st.colors]); }
 }
@@ -979,9 +995,9 @@ function tickHazards(dt) {
     h.clock = Math.max(0, h.clock - dt);
     if (before > 0 && h.clock === 0) {
       if (cfg.clock.hard) { if (G.state === 'aim') return finish(false, 'time'); h.timeUp = true; }
-      else { cfg.dropSec = Math.max(4, Math.round(cfg.dropSec / 2)); h.dropT = cfg.dropSec; lowerCeiling(2, '시간 끝! 천장이 쿵!'); }
+      else { cfg.dropSec = Math.max(4, Math.round(cfg.dropSec / 2)); h.dropT = cfg.dropSec; lowerCeiling(2, T('시간 끝! 천장이 쿵!')); }
     }
-    if (before > 10 && h.clock <= 10) warn('10초 남았어요!');
+    if (before > 10 && h.clock <= 10) warn(T('10초 남았어요!'));
   }
   if (cfg.dropSec && h.started) {
     h.dropT -= dt;
@@ -990,7 +1006,7 @@ function tickHazards(dt) {
   }
   if (cfg.shotTimer && G.state === 'aim') {
     h.shotT -= dt;
-    if (h.shotT <= 0) { h.shotT = cfg.shotTimer; G.aiming = false; showToast('시간 초과! 자동 발사'); shoot(); }
+    if (h.shotT <= 0) { h.shotT = cfg.shotTimer; G.aiming = false; showToast(T('시간 초과! 자동 발사')); shoot(); }
   }
 }
 
@@ -1000,7 +1016,7 @@ function spawnCloud(cfg) {
   for (let i = 0; i < 9; i++) wisps.push({ x: rand() * W, w: 70 + rand() * 60, ph: rand() * 6, sp: (rand() < .5 ? -1 : 1) * (6 + rand() * 8) });
   // a: 짙기(0→1로 스며들고, 떠날 때 1→0으로 걷힘). depth: 거품 몇 줄 아래까지 덮는지
   G.hz.cloud = { holes: [], wisps, left: cfg.last, leaving: false, a: 0, look: cfg.look || 'cotton', rows, depth: R * 2 + rows * ROW_H + 40 };
-  showToast(cfg.look === 'frost' ? '서리가 꼈어요!' : '구름이 덮였어요!');
+  showToast(cfg.look === 'frost' ? T('서리가 꼈어요!') : T('구름이 덮였어요!'));
 }
 function punchCloud(x, y) {
   const cl = G.hz.cloud; if (!cl || cl.leaving) return;
@@ -1008,7 +1024,7 @@ function punchCloud(x, y) {
 }
 
 // ---------- 꼬마 놈놈 ----------
-const NOM_SAY = { steal: '놈놈이 거품을 노려요!', take: '놈놈이 친구를 노려요!', block: '놈놈이 대포로 와요!', junk: '놈놈이 거품을 던지려 해요!' };
+const NOM_SAY = { steal: T('놈놈이 거품을 노려요!'), take: T('놈놈이 친구를 노려요!'), block: T('놈놈이 대포로 와요!'), junk: T('놈놈이 거품을 던지려 해요!') };
 function nomPeek(act) {
   const side = rand() < .5 ? -1 : 1;
   G.hz.nom = { act, state: 'peek', side, x: side < 0 ? -6 : W + 6, y: 330, tx: side < 0 ? 16 : W - 16, ty: 330, t: 0 };
@@ -1027,21 +1043,21 @@ function nomAct(act) {
     b.rows[r][c] = null;
     while (b.rows.length && b.rows[b.rows.length - 1].every(x => !x)) b.rows.pop();
     Object.assign(n, { state: 'fly', carry: cell.c, shots: 2, x: q.x, y: q.y }, hoverAt());
-    showToast('놈놈이 거품을 훔쳤어요!');
+    showToast(T('놈놈이 거품을 훔쳤어요!'));
   } else if (act === 'take') {
     const taken = G.queue.pop(); fillQueue();
     h.dropT = Math.max(1, h.dropT - 4);
     Object.assign(n, { state: 'fly', carryFriend: COLORS[taken] ? COLORS[taken].base : AC.pink, shots: 3, x: queuePos(2).x, y: queuePos(2).y }, hoverAt());
-    showToast('놈놈이 친구를 데려갔어요! 천장 -4초'); updateHud();
+    showToast(T('놈놈이 친구를 데려갔어요! 천장 -4초')); updateHud();
   } else if (act === 'block') {
     Object.assign(n, { state: 'block', tx: PIVOT.x, ty: PIVOT.y - 74 });
-    showToast('놈놈이 대포를 막았어요! 맨 앞 친구를 눌러요');
+    showToast(T('놈놈이 대포를 막았어요! 맨 앞 친구를 눌러요'));
   } else if (act === 'junk') {
     const x = 40 + rand() * 280;
     const at = Board.stickFrom(b, x, Board.cell(null, 'n'));
     if (at) { const q = Board.pos(b, at[0], at[1]); burst(q.x, q.y, '#8e84a8', 6); }
     Object.assign(n, { state: 'leave', t: 0 });
-    showToast('놈놈이 회색 거품을 던졌어요!');
+    showToast(T('놈놈이 회색 거품을 던졌어요!'));
   }
   sfx('boss');
   h.nom = n;
@@ -1050,9 +1066,9 @@ function nomHit() {
   const n = G.hz.nom; n.hit = true; n.state = 'leave'; n.t = 0;
   G.score += 50; G.texts.push({ x: n.x, y: n.y - 10, text: '+50', life: 1 });
   burst(n.x, n.y, '#b8a6ff', 10);
-  if (n.act === 'take') { G.hz.dropT = Math.min(G.hz.cfg.dropSec, G.hz.dropT + 4); showToast('친구를 되찾았어요! +4초'); }
-  else if (n.carry) { G.falls.push({ x: n.x, y: n.y, vy: -80, vx: 0, c: n.carry }); showToast('놈놈을 쫓아냈어요!'); }
-  else showToast('놈놈을 쫓아냈어요!');
+  if (n.act === 'take') { G.hz.dropT = Math.min(G.hz.cfg.dropSec, G.hz.dropT + 4); showToast(T('친구를 되찾았어요! +4초')); }
+  else if (n.carry) { G.falls.push({ x: n.x, y: n.y, vy: -80, vx: 0, c: n.carry }); showToast(T('놈놈을 쫓아냈어요!')); }
+  else showToast(T('놈놈을 쫓아냈어요!'));
   sfx('rescue'); updateHud();
 }
 function stepNom(dt) {
@@ -1447,7 +1463,7 @@ function fallShake(dt) {
 let gaugeLast = '';
 function updateGauge() {
   const h = G.hz, sec = h.cfg.dropSec || 0, k = sec ? Math.max(0, h.dropT / sec) : 0, hot = h.dropT < 3;
-  const label = !h.started ? '첫 발부터 ' + Math.ceil(h.dropT) + '초' : h.dropT < .6 ? '⚠ 한 칸 내려와요!' : '하강까지 ' + Math.ceil(h.dropT) + '초';
+  const label = !h.started ? T('첫 발부터 {n}초', { n: Math.ceil(h.dropT) }) : h.dropT < .6 ? T('⚠ 한 칸 내려와요!') : T('하강까지 {n}초', { n: Math.ceil(h.dropT) });
   const key = Math.round(k * 200) + label + hot;
   if (key === gaugeLast) return; gaugeLast = key;
   $('tfill').style.width = (k * 100).toFixed(1) + '%';
@@ -1506,7 +1522,7 @@ function render(dt) {
   // 조준선
   if (G.state === 'aim' && G.queue.length && G.cancelAim) {
     ctx.fillStyle = 'rgba(255,255,255,.95)'; roundRect(W / 2 - 86, 350, 172, 28, 14); ctx.fill();
-    ctx.fillStyle = '#5a2d91'; ctx.font = '700 14px "Noto Sans KR", sans-serif'; ctx.textAlign = 'center'; ctx.fillText('여기서 떼면 발사 취소', W / 2, 369);
+    ctx.fillStyle = '#5a2d91'; ctx.font = '700 14px "Noto Sans KR", sans-serif'; ctx.textAlign = 'center'; ctx.fillText(T('여기서 떼면 발사 취소'), W / 2, 369);
   } else if (G.state === 'aim' && G.queue.length) {
     const tr = Board.trace(b, G.angle, G.aiming ? 2400 : 260);
     G.aimEnd = { x: tr.x, y: tr.y };
@@ -1644,7 +1660,7 @@ function drawNom(t, dt) {
   if (!spr('nom-' + mood, () => SPR.nom(mood), x, y, 1, 1, n.state === 'leave' && n.hit ? n.t * 8 : 0)) { ctx.fillStyle = '#3b2a7a'; ctx.beginPath(); ctx.arc(x, y, 15, 0, 7); ctx.fill(); }
   if (n.state === 'block') {
     ctx.fillStyle = 'rgba(255,255,255,.95)'; roundRect(x - 54, y - 46, 108, 20, 10); ctx.fill();
-    ctx.fillStyle = '#5a2d91'; ctx.font = '900 11px "Noto Sans KR", sans-serif'; ctx.textAlign = 'center'; ctx.fillText('맨 앞 친구를 눌러요!', x, y - 32);
+    ctx.fillStyle = '#5a2d91'; ctx.font = '900 11px "Noto Sans KR", sans-serif'; ctx.textAlign = 'center'; ctx.fillText(T('맨 앞 친구를 눌러요!'), x, y - 32);
   }
 }
 // 방해 요소 표시: 시계 · 헛방 · 한 발 초침 · 예고 글
@@ -1654,15 +1670,15 @@ function drawHazardHud(t) {
     ctx.fillStyle = hot ? 'rgba(255,79,139,.95)' : 'rgba(90,45,145,.85)'; roundRect(x, DEADLINE + 8, w, 22, 11); ctx.fill();
     ctx.fillStyle = '#fff'; ctx.font = '800 13px "Baloo 2", "Noto Sans KR", sans-serif'; ctx.textAlign = 'center'; ctx.fillText(text, x + w / 2, DEADLINE + 24);
   };
-  if (h.clock === 0 && !cfg.clock.hard) pill(W - 76, 70, '서둘러!', true);
+  if (h.clock === 0 && !cfg.clock.hard) pill(W - 76, 70, T('서둘러!'), true);
   else if (h.clock !== null) { const sec = Math.ceil(h.clock); pill(W - 76, 70, '⏱ ' + Math.floor(sec / 60) + ':' + String(sec % 60).padStart(2, '0'), h.clock <= 10 && Math.sin(t * 10) > 0); }
-  if (cfg.miss) pill(6, 86, '헛방 ' + '●'.repeat(h.misses) + '○'.repeat(Math.max(0, cfg.miss - h.misses)), h.misses === cfg.miss - 1);
+  if (cfg.miss) pill(6, 86, T('헛방 ') + '●'.repeat(h.misses) + '○'.repeat(Math.max(0, cfg.miss - h.misses)), h.misses === cfg.miss - 1);
   if (cfg.shotTimer && G.state === 'aim') {
     const k = Math.max(0, h.shotT / cfg.shotTimer);
     ctx.strokeStyle = 'rgba(255,255,255,.7)'; ctx.lineWidth = 5; ctx.beginPath(); ctx.arc(PIVOT.x, PIVOT.y, 22, 0, 7); ctx.stroke();
     ctx.strokeStyle = k < .35 ? '#ff4f8b' : '#ffd23f'; ctx.beginPath(); ctx.arc(PIVOT.x, PIVOT.y, 22, -Math.PI / 2, -Math.PI / 2 + k * Math.PI * 2); ctx.stroke();
   }
-  if (h.aimBoost > 0) pill(W / 2 - 50, 100, '반딧불 ' + h.aimBoost + '발', false);
+  if (h.aimBoost > 0) pill(W / 2 - 50, 100, T('반딧불 {n}발', { n: h.aimBoost }), false);
   if (h.warn) {
     const a = Math.min(1, (1.8 - h.warn.t) * 3), y = 300;
     ctx.globalAlpha = a; ctx.fillStyle = 'rgba(255,255,255,.95)'; roundRect(W / 2 - 120, y - 18, 240, 34, 17); ctx.fill();
@@ -1702,7 +1718,11 @@ function drawBoss(t) {
   // 체력 막대 (분홍 유리 패널)
   ctx.fillStyle = 'rgba(217,84,138,.9)'; roundRect(30, 4, 300, 16, 8); ctx.fill();
   ctx.strokeStyle = 'rgba(255,255,255,.35)'; ctx.lineWidth = 1.5; roundRect(30, 4, 300, 16, 8); ctx.stroke();
-  ctx.font = '900 10px "Noto Sans KR", sans-serif'; ctx.textAlign = 'left'; ctx.fillStyle = '#fff'; ctx.fillText((G.st.id === NST ? '최종 ' : '보스 ') + G.st.boss.name, 40, 15.5);
+  // 이름표 칸은 48px: 영어 등 다른 언어에서 긴 이름은 글자를 줄여 맞춘다 (한국어는 예전 그대로)
+  const bossLabel = (G.st.id === NST ? T('최종 ') : T('보스 ')) + G.st.boss.name;
+  let bossFs = 10; ctx.font = '900 10px "Noto Sans KR", sans-serif';
+  while (JellyI18n.lang !== 'ko' && ctx.measureText(bossLabel).width > 46 && bossFs > 6) { bossFs -= .5; ctx.font = '900 ' + bossFs + 'px "Noto Sans KR", sans-serif'; }
+  ctx.textAlign = 'left'; ctx.fillStyle = '#fff'; ctx.fillText(bossLabel, 40, 15.5);
   ctx.fillStyle = '#4a1d3a'; roundRect(88, 7, 190, 10, 5); ctx.fill();
   if (hpRatio > 0) { const hg = ctx.createLinearGradient(0, 7, 0, 17); hg.addColorStop(0, '#ffd1e8'); hg.addColorStop(1, '#ff4f8b'); ctx.fillStyle = hg; roundRect(88, 7, Math.max(10, 190 * hpRatio), 10, 5); ctx.fill();
     ctx.fillStyle = 'rgba(255,255,255,.6)'; roundRect(90, 8, Math.max(6, 190 * hpRatio - 4), 3, 1.5); ctx.fill(); }
@@ -1780,14 +1800,14 @@ function drawCannonArea(t, dt) {
     const p = queuePos(1);
     ctx.fillStyle = '#fff'; roundRect(p.x - 22, p.y - 40, 44, 18, 9); ctx.fill();
     ctx.beginPath(); ctx.moveTo(p.x - 4, p.y - 22); ctx.lineTo(p.x + 4, p.y - 22); ctx.lineTo(p.x, p.y - 17); ctx.fill();
-    ctx.fillStyle = '#5a2d91'; ctx.font = '900 12px "Noto Sans KR", sans-serif'; ctx.textAlign = 'center'; ctx.fillText('다음!', p.x, p.y - 27);
+    ctx.fillStyle = '#5a2d91'; ctx.font = '900 12px "Noto Sans KR", sans-serif'; ctx.textAlign = 'center'; ctx.fillText(T('다음!'), p.x, p.y - 27);
   }
   G.lineShown = { cannon: G.queue.length ? 1 : 0, line: Math.max(0, show) };   // 화면에 그린 것 (테스트 확인용)
   // 점수 · 쏜 거품 수 (적게 쏠수록 별이 많다)
   ctx.fillStyle = 'rgba(217,84,138,.9)'; roundRect(W / 2 - 92, H - 28, 184, 24, 12); ctx.fill();
   ctx.strokeStyle = 'rgba(255,255,255,.35)'; ctx.lineWidth = 1.5; roundRect(W / 2 - 92, H - 28, 184, 24, 12); ctx.stroke();
   ctx.font = '800 13px "Noto Sans KR", sans-serif'; ctx.textAlign = 'center';
-  const label = '점수 ' + G.score.toLocaleString() + '  ·  쏜 거품 ' + G.fired;
+  const label = T('점수 ') + G.score.toLocaleString() + T('  ·  쏜 거품 ') + G.fired;
   ctx.fillStyle = '#fff'; ctx.fillText(label, W / 2, H - 11);
 }
 // 말랑이의 짧고 통통한 젤리 팔: 몸 옆에서 나와 살짝 굽어 동그란 손으로 손잡이를 꼭 잡는다
@@ -1824,7 +1844,7 @@ function drawTurnHint(t, dt) {
     G.zoneHint -= dt; const k = Math.min(1, G.zoneHint * 2);
     ctx.globalAlpha = k * .35; ctx.fillStyle = '#fff'; roundRect(6, DEADLINE - 4, W - 12, H - DEADLINE - 32, 16); ctx.fill();
     ctx.globalAlpha = k; ctx.fillStyle = 'rgba(255,255,255,.96)'; roundRect(W / 2 - 112, DEADLINE - 44, 224, 30, 15); ctx.fill();
-    ctx.fillStyle = '#5a2d91'; ctx.font = '800 14px "Noto Sans KR", sans-serif'; ctx.textAlign = 'center'; ctx.fillText('대포 근처를 좌우로 끌어 돌려요', W / 2, DEADLINE - 24); ctx.globalAlpha = 1;
+    ctx.fillStyle = '#5a2d91'; ctx.font = '800 14px "Noto Sans KR", sans-serif'; ctx.textAlign = 'center'; ctx.fillText(T('대포 근처를 좌우로 끌어 돌려요'), W / 2, DEADLINE - 24); ctx.globalAlpha = 1;
   }
 }
 function queuePos(i) { return { x: i <= 1 ? 234 + i * 22 : 256 + (i - 1) * 16, y: 584 + (i > 1 ? 4 : 0) }; }
@@ -2064,7 +2084,7 @@ const Music = (() => {
     const steps = [];
     song.bars.forEach(([ch, mel]) => {
       const [c1, c2 = c1] = ch.split('/'), toks = mel.trim().split(/\s+/);
-      if (toks.length !== 8 || !CHORD[c1] || !CHORD[c2]) throw new Error('악보 오류: ' + ch + ' ' + mel);
+      if (toks.length !== 8 || !CHORD[c1] || !CHORD[c2]) throw new Error(T('악보 오류: ') + ch + ' ' + mel);
       for (let i = 0; i < 16; i++) steps.push({ m: null, len: 0, ch: i < 8 ? c1 : c2 });
       const base = steps.length - 16;
       let last = null;
@@ -2160,7 +2180,7 @@ function updateSoundBtn() {
     (soundMode === 'all' ? '<path d="M17 4v9.5a2.5 2.5 0 1 1-2-2.45V4l6-1.5v8a2.5 2.5 0 1 1-2-2.45" fill="#fff" stroke="none" transform="translate(-5 4) scale(.75)"/>' + spk + '<path d="M15.5 8.5a5 5 0 0 1 0 7"/>'
       : soundMode === 'sfx' ? spk + '<path d="M15.5 8.5a5 5 0 0 1 0 7"/><path d="M19 5a10 10 0 0 1 0 14"/>'
       : spk + '<path d="M22 9l-6 6M16 9l6 6"/>') + '</svg>';
-  const label = { all: '소리: 음악+효과음 (누르면 효과음만)', sfx: '소리: 효과음만 (누르면 끄기)', off: '소리 꺼짐 (누르면 켜기)' }[soundMode];
+  const label = { all: T('소리: 음악+효과음 (누르면 효과음만)'), sfx: T('소리: 효과음만 (누르면 끄기)'), off: T('소리 꺼짐 (누르면 켜기)') }[soundMode];
   $('soundBtn').setAttribute('aria-label', label); $('soundBtn').title = label;
   $('soundBtn').setAttribute('aria-pressed', String(soundOn));
 }
@@ -2169,12 +2189,12 @@ $('soundBtn').onclick = () => {
   soundOn = soundMode !== 'off'; store.set('sound', soundMode);
   if (soundOn) unlockAudio();
   if (master) master.gain.value = soundOn ? .9 : 0;
-  updateSoundBtn(); updateSoundHint(); showToast({ all: '음악 켜짐', sfx: '효과음만', off: '소리 끔' }[soundMode]);
+  updateSoundBtn(); updateSoundHint(); showToast({ all: T('음악 켜짐'), sfx: T('효과음만'), off: T('소리 끔') }[soundMode]);
 };
 $('soundHint').onclick = () => {
   if (soundMode === 'off') { soundMode = 'all'; soundOn = true; store.set('sound', soundMode); if (master) master.gain.value = .9; updateSoundBtn(); }
   triedSound = true; unlockAudio(); sfx('swap');
-  setTimeout(() => { updateSoundHint(); showToast(audio && audio.state === 'running' ? '소리 켜짐' : '소리가 안 나면 휴대폰 음량을 올려 주세요'); }, 400);
+  setTimeout(() => { updateSoundHint(); showToast(audio && audio.state === 'running' ? T('소리 켜짐') : T('소리가 안 나면 휴대폰 음량을 올려 주세요')); }, 400);
 };
 
 // ============================================================
@@ -2214,7 +2234,7 @@ function showBanner(i) {
 }
 $('bannerBtn').addEventListener('click', () => {
   const it = (BANNER.items || [])[bannerIdx]; if (!it) return;
-  if (it.url) window.open(it.url, '_blank', 'noopener'); else showToast('곧 열려요!');
+  if (it.url) window.open(it.url, '_blank', 'noopener'); else showToast(T('곧 열려요!'));
 });
 let bannerHold = false;
 ['pointerenter', 'focusin'].forEach(e => $('banner').addEventListener(e, () => { bannerHold = true; }));
@@ -2226,10 +2246,10 @@ function showToast(text) { const el = $('toast'); el.textContent = text; el.clas
 function hideTip() { $('tip').classList.add('hide'); }
 function updateHud() {
   if (!G) return;
-  $('hudStage').textContent = '스테이지 ' + G.st.id + (G.st.boss ? ' · 보스' : '');
+  $('hudStage').textContent = T('스테이지 ') + G.st.id + (G.st.boss ? T(' · 보스') : '');
   $('hudName').textContent = G.st.name;
-  if (G.st.boss) { $('hudGoalLabel').textContent = '보스 체력'; $('hudGoal').textContent = G.bossHp; }
-  else { $('hudGoalLabel').textContent = '구할 친구'; $('hudGoal').textContent = G.saved + ' / ' + G.need; }
+  if (G.st.boss) { $('hudGoalLabel').textContent = T('보스 체력'); $('hudGoal').textContent = G.bossHp; }
+  else { $('hudGoalLabel').textContent = T('구할 친구'); $('hudGoal').textContent = G.saved + ' / ' + G.need; }
 }
 
 function startStage(n) {
@@ -2248,7 +2268,7 @@ function startStage(n) {
   const fresh = keysOf(G.st).filter(k => !P.seenHz[k] && (G.st.world > 1 || 'zq'.includes(k)));
   if (fresh.length) showHzCard(fresh);
   else { $('hzCard').hidden = true; $('tip').innerHTML = G.st.tip; $('tip').classList.remove('hide'); }
-  showToast('스테이지 ' + n);
+  showToast(T('스테이지 ') + n);
 }
 function hzIcon(art) {
   const bx = { x: -R * 1.4, y: -R * 1.6, w: R * 2.8, h: R * 3 };
@@ -2266,7 +2286,7 @@ function showHzCard(keys) {
   G.paused = true;
   $('tip').classList.add('hide');
   // 도움 거품(수정·선물·반딧불·폭탄·랜덤)만 새로 나오면 "새 거품" 제목
-  $('hzTitle').textContent = keys.every(k => 'cgfzq'.includes(k) && k.length === 1) ? '새로운 거품이 나타났어요!' : '새로운 방해가 나타났어요!';
+  $('hzTitle').textContent = keys.every(k => 'cgfzq'.includes(k) && k.length === 1) ? T('새로운 거품이 나타났어요!') : T('새로운 방해가 나타났어요!');
   $('hzList').innerHTML = keys.map(k => { const f = HZ_INFO[k]; return `<div class="hzitem"><div class="ic">${hzIcon(f.art)}</div><div><b>${f.title}</b><p>${f.text}</p><p class="how">${f.how}</p></div></div>`; }).join('');
   $('hzCard').hidden = false;
   $('hzOk').onclick = () => {
@@ -2306,7 +2326,7 @@ window.titleBgFailed = function () { $('title').classList.remove('f3d'); sceneRe
 function totalStickers() { return Object.keys(P.stickers).length; }
 function renderTitle() {
   const n = totalStickers();
-  $('titleNote').textContent = n ? '모은 스티커 ' + n + ' / 30 · 별 ' + P.stars.reduce((a, b) => a + b, 0) : '사라진 젤리 친구들을 구하러 가요!';
+  $('titleNote').textContent = n ? T('모은 스티커 {n} / 30 · 별 {s}', { n, s: P.stars.reduce((a, b) => a + b, 0) }) : T('사라진 젤리 친구들을 구하러 가요!');
   if (!$('titleArt').firstChild) {
     $('title').classList.toggle('f3d', !!(window.Jelly3D && Jelly3D.ok()));
     $('titleArt').innerHTML = cachedArt('title', titleArt);
@@ -2322,13 +2342,13 @@ $('bookBtn1').onclick = () => { bookReturn = 'title'; go('book'); };
 // 프롤로그 4컷
 // ============================================================
 const SLIDES = [
-  { bg: 'linear-gradient(#ffd1e8,#fff6e8 60%,#7fdc9a)', title: '평화로운 젤리마을', text: '말랑말랑한 젤리들이 사는 행복한 젤리마을. 오늘도 모두 신나게 놀아요.', art: 'village' },
-  { bg: 'linear-gradient(#2a1660,#5a3aa6 60%,#1d0f3a)', title: '노놈의 습격', text: '하늘이 보랏빛으로 어두워지고, 마법 거품이 친구들을 하나씩 감싸 데려가요.',
-    say: ['노놈', '냠냠! 말랑한 젤리는 전부 내 디저트야!', true], art: 'attack' },
-  { bg: 'linear-gradient(#d9c8ff,#f3eaff 60%,#c9f3d6)', title: '혼자 남은 말랑이', text: '텅 빈 마을에 남겨진 건 말랑이 하나뿐이었어요.',
-    say: ['말랑이', '다들 어디 간 거야…? 아니, 내가 구할 거야!'], art: 'alone' },
-  { bg: 'linear-gradient(#ffd1e8,#fff6e8 60%,#7fdc9a)', title: '신비한 거품 대포', text: '창고에서 핸들이 달린 거품 대포를 찾았어요. 친구들이 줄을 서서 도와주면 거품을 쏠 수 있어요!',
-    say: ['말랑이', '이걸로 거품을 맞히면 친구들이 풀려날 거야!'], art: 'cannon' },
+  { bg: 'linear-gradient(#ffd1e8,#fff6e8 60%,#7fdc9a)', title: T('평화로운 젤리마을'), text: T('말랑말랑한 젤리들이 사는 행복한 젤리마을. 오늘도 모두 신나게 놀아요.'), art: 'village' },
+  { bg: 'linear-gradient(#2a1660,#5a3aa6 60%,#1d0f3a)', title: T('노놈의 습격'), text: T('하늘이 보랏빛으로 어두워지고, 마법 거품이 친구들을 하나씩 감싸 데려가요.'),
+    say: [T('노놈'), T('냠냠! 말랑한 젤리는 전부 내 디저트야!'), true], art: 'attack' },
+  { bg: 'linear-gradient(#d9c8ff,#f3eaff 60%,#c9f3d6)', title: T('혼자 남은 말랑이'), text: T('텅 빈 마을에 남겨진 건 말랑이 하나뿐이었어요.'),
+    say: [T('말랑이'), T('다들 어디 간 거야…? 아니, 내가 구할 거야!')], art: 'alone' },
+  { bg: 'linear-gradient(#ffd1e8,#fff6e8 60%,#7fdc9a)', title: T('신비한 거품 대포'), text: T('창고에서 핸들이 달린 거품 대포를 찾았어요. 친구들이 줄을 서서 도와주면 거품을 쏠 수 있어요!'),
+    say: [T('말랑이'), T('이걸로 거품을 맞히면 친구들이 풀려날 거야!')], art: 'cannon' },
 ];
 // 프롤로그 장면마다 깔 3D 숲 그림 (낮 마을 → 밤 습격 → 안개 낀 빈 마을 → 다시 낮)
 const SLIDE_BG3D = { village: 'title', attack: 'w3', alone: 'w4', cannon: 'w1' };
@@ -2388,7 +2408,7 @@ function renderSlide() {
   const say = s.say ? `<div class="say ${s.say[2] ? 'dark' : ''}"><i>${s.say[0]}</i>${s.say[1]}</div>` : '';
   $('slides').innerHTML = `<div class="slide" style="background:${s.bg}"><div class="scene">${slideArt(s.art)}</div>
     ${say}<div class="caption"><b>${s.title}</b>${s.text}</div>
-    <button class="btn intro-next" id="nextSlide">${slideIdx < SLIDES.length - 1 ? '다음' : '모험 시작!'}</button></div>`;
+    <button class="btn intro-next" id="nextSlide">${slideIdx < SLIDES.length - 1 ? T('다음') : T('모험 시작!')}</button></div>`;
   $('nextSlide').onclick = () => { if (slideIdx < SLIDES.length - 1) { slideIdx++; renderSlide(); } else endIntro(); };
   $('nextSlide').focus({ preventScroll: true });
 }
@@ -2507,7 +2527,7 @@ function renderMap() {
   // 월드를 넘어가면 지도가 새 월드로 바뀌고 이름이 크게 나온다
   if (walkFrom !== null && Math.floor(walkFrom / 6) < atWorld) { showWorldBanner(atWorld); walkFrom = null; mapView = null; }
   const wi = mapView === null ? atWorld : Math.min(mapView, atWorld), base = wi * 6;
-  $('mapWorldNo').textContent = '월드 ' + (wi + 1); $('mapWorldName').textContent = WORLDS[wi];
+  $('mapWorldNo').textContent = T('월드 ') + (wi + 1); $('mapWorldName').textContent = WORLDS[wi];
   $('mapPrev').hidden = wi === 0; $('mapNext').hidden = wi >= atWorld;
   // 그림을 화면에 덮되(cover) 칸 6개가 상단 바와 하단 버튼 사이에 들어오게 비율·위치를 고른다
   const fw = field.clientWidth, fh = field.clientHeight, headH = $('mapHead').offsetHeight, footH = $('mapFoot').offsetHeight;
@@ -2530,19 +2550,19 @@ function renderMap() {
     btn.className = 'node' + (done ? ' done' : '') + (st.boss ? ' boss' : '') + (next ? ' next' : '');
     pct(MAP_NODES[i][0], MAP_NODES[i][1], btn);
     btn.disabled = locked;
-    btn.setAttribute('aria-label', `스테이지 ${gi + 1} ${st.name}` + (done ? ` 별 ${P.stars[gi]}개` : locked ? ' 잠김' : ''));
+    btn.setAttribute('aria-label', T('스테이지 {n}', { n: gi + 1 }) + ' ' + st.name + (done ? T(' 별 {n}개', { n: P.stars[gi] }) : locked ? T(' 잠김') : ''));
     const state = locked ? 'locked' : next ? 'current' : 'done';
     const bossArt = st.boss && (st.boss.kind === 'nomnom' ? Art.nomnom(0, 0, 17, {}) : Art.boss(0, 0, 17, { mood: 'angry', kind: st.boss.kind }));
     btn.innerHTML = cachedArt('coin-' + sizes[i] + '-' + state + (st.boss ? '-b' : ''), () => coinImg(sizes[i], state, st.boss ? '#b47cff' : '#ffd04a')) +
       (st.boss ? cachedArt('bossNode-' + st.boss.kind, () => Art.img(bossArt, { x: -34, y: -31, w: 68, h: 56 }, 'class="bj"')) : '') +
       `<span class="n">${st.boss || locked ? '' : (gi + 1)}</span>` +
-      (done ? `<span class="st">${'★'.repeat(P.stars[gi])}${'☆'.repeat(3 - P.stars[gi])}</span>` : '') + `<span class="nm">${st.boss ? '보스 · ' : ''}${st.name}</span>`;
+      (done ? `<span class="st">${'★'.repeat(P.stars[gi])}${'☆'.repeat(3 - P.stars[gi])}</span>` : '') + `<span class="nm">${st.boss ? T('보스 · ') : ''}${st.name}</span>`;
     btn.onclick = () => startStage(gi + 1);
     btn.dataset.stage = gi + 1;
     world.appendChild(btn);
   });
   const li = wi === atWorld ? at - base : 5;   // 이 월드에서 말랑이가 서 있는 칸
-  if (wi === atWorld && !P.stars[at]) { const h = document.createElement('div'); h.className = 'hint'; h.textContent = '다음은 여기!'; h.style.left = (MAP_NODES[li][0] + 26) / MAP_W * 100 + '%'; h.style.top = (MAP_NODES[li][1] - 30) / MAP_H * 100 + '%'; world.appendChild(h); }
+  if (wi === atWorld && !P.stars[at]) { const h = document.createElement('div'); h.className = 'hint'; h.textContent = T('다음은 여기!'); h.style.left = (MAP_NODES[li][0] + 26) / MAP_W * 100 + '%'; h.style.top = (MAP_NODES[li][1] - 30) / MAP_H * 100 + '%'; world.appendChild(h); }
   // 각 칸이 길 위 어디쯤인지 (길 길이 기준)
   const road = world.querySelector('#roadLine'), total = road.getTotalLength();
   const nodeLen = MAP_NODES.map(([x, y]) => {
@@ -2575,7 +2595,7 @@ function renderMap() {
   }
   walkFrom = null;
   P.at = at; saveP();
-  $('mapPlay').textContent = P.stars[at] && at === NST - 1 ? '최종 보스 다시 하기' : `스테이지 ${at + 1} 시작`;
+  $('mapPlay').textContent = P.stars[at] && at === NST - 1 ? T('최종 보스 다시 하기') : T('스테이지 {n} 시작', { n: at + 1 });
   $('mapPlay').onclick = () => startStage(at + 1);
 }
 function showWorldBanner(wi) {
@@ -2603,29 +2623,29 @@ function showResult() {
   if (!$('resultConfetti').firstChild) $('resultConfetti').innerHTML = cachedArt('confetti', () => Art.img(Art.confetti(5, 70, [0, 40, 390, 500]), { x: 0, y: 0, w: 390, h: 844 }));
   $('resultConfetti').hidden = !o.win;
   [...$('resultStars').children].forEach((s, i) => { if (!s.firstChild) s.innerHTML = cachedArt('bigstar' + i, () => Art.img(Art.bigStar(0, 0, 50, [-15, 0, 15][i]), { x: -62, y: -62, w: 124, h: 124 })); });
-  $('resultScore').innerHTML = `점수 <b>${G.score.toLocaleString()}</b>` + (o.win ? ` · 쏜 거품 <b>${G.fired}</b>발` : '');
+  $('resultScore').innerHTML = T('점수 <b>{n}</b>', { n: G.score.toLocaleString() }) + (o.win ? T(' · 쏜 거품 <b>{n}</b>발', { n: G.fired }) : '');
   if (o.win) {
-    $('resultTitle').textContent = '스테이지 클리어!';
+    $('resultTitle').textContent = T('스테이지 클리어!');
     $('resultStars').hidden = false;
     [...$('resultStars').children].forEach((s, i) => s.className = i < o.stars ? 'on' : '');
     $('resultMascot').innerHTML = cachedArt('mascotWin-' + f.color, () => Art.img(Art.jelly(240, 100, 36, f.color, { mood: 'joy' }) + Art.jelly(160, 90, 58, MAL, { ears: true, mood: 'joy', faceScale: 1.05 }) + Art.sparkle(90, 30, 9, '#ffe27a') + Art.sparkle(300, 40, 8), { x: 40, y: 10, w: 320, h: 150 }));
     $('resultSticker').innerHTML = `<div class="sticker"><div class="in">${jellyImg(f.color, 24, { mood: 'joy' })}</div></div>`;
-    $('resultMsg').innerHTML = st.id === NST && totalStickers() === NST ? `<b>모험 완주!</b> 친구 30명을 모두 구했어요!<br><small>노놈도 머쓱하게 함께 놀고 싶대요</small>`
-      : o.newSticker ? `<b>${f.name}</b> 스티커를 받았어요!<br><small>스티커 북 ${totalStickers()} / 30</small>` : `<b>${f.name}</b> 스티커는 이미 받았어요.<br><small>별을 더 모아 봐요!</small>`;
-    if (st.id === NST) $('resultTitle').textContent = '최종 보스 클리어!';
-    $('resultMain').textContent = st.id < NST ? '다음 스테이지로' : '지도로';
+    $('resultMsg').innerHTML = st.id === NST && totalStickers() === NST ? T('<b>모험 완주!</b> 친구 30명을 모두 구했어요!<br><small>노놈도 머쓱하게 함께 놀고 싶대요</small>')
+      : o.newSticker ? T('<b>{name}</b> 스티커를 받았어요!<br><small>스티커 북 {n} / 30</small>', { name: f.name, n: totalStickers() }) : T('<b>{name}</b> 스티커는 이미 받았어요.<br><small>별을 더 모아 봐요!</small>', { name: f.name });
+    if (st.id === NST) $('resultTitle').textContent = T('최종 보스 클리어!');
+    $('resultMain').textContent = st.id < NST ? T('다음 스테이지로') : T('지도로');
     $('resultMain').onclick = () => { $('result').hidden = true; walkFrom = st.id - 1; playStory(st.id, () => go('map')); };
-    $('resultSub').textContent = '다시 하기';
+    $('resultSub').textContent = T('다시 하기');
     $('resultSub').onclick = () => startStage(st.id);
   } else {
-    $('resultTitle').textContent = '아쉬워요!';
+    $('resultTitle').textContent = T('아쉬워요!');
     $('resultStars').hidden = true;
     $('resultMascot').innerHTML = cachedArt('mascotLose', () => Art.img(Art.jelly(195, 95, 58, MAL, { ears: true, mood: 'worried', faceScale: 1.05 }) + `<ellipse cx="172" cy="104" rx="4" ry="7" fill="#8fd3ff" opacity="0.9"/>`, { x: 40, y: 10, w: 320, h: 150 }));
     $('resultSticker').innerHTML = '';
-    $('resultMsg').textContent = o.reason === 'line' ? '거품이 바닥 선을 넘었어요. 위쪽 줄기를 끊어 한꺼번에 떨어뜨려 봐요.' : o.reason === 'time' ? '시간이 다 됐어요! 망설이지 말고 빨리 쏴 봐요.' : '거품이 바닥 선을 넘었어요. 다시 해 볼까요?';
-    $('resultMain').textContent = '다시 하기';
+    $('resultMsg').textContent = o.reason === 'line' ? T('거품이 바닥 선을 넘었어요. 위쪽 줄기를 끊어 한꺼번에 떨어뜨려 봐요.') : o.reason === 'time' ? T('시간이 다 됐어요! 망설이지 말고 빨리 쏴 봐요.') : T('거품이 바닥 선을 넘었어요. 다시 해 볼까요?');
+    $('resultMain').textContent = T('다시 하기');
     $('resultMain').onclick = () => startStage(st.id);
-    $('resultSub').textContent = '지도로';
+    $('resultSub').textContent = T('지도로');
     $('resultSub').onclick = () => { $('result').hidden = true; go('map'); };
   }
   setTimeout(() => $('resultMain').focus({ preventScroll: true }), 50);
@@ -2667,7 +2687,7 @@ function renderBook() {
       } else cells += `<div class="cell">?</div>`;
     }
     const complete = STAGES.slice(wi * 6, wi * 6 + 6).every(s => P.stickers[s.id]);
-    return `<div class="book-row"><h3>월드 ${wi + 1} · ${w}</h3><div class="cells">${cells}</div>${complete ? `<span class="stamp">${w} 완주!</span>` : ''}</div>`;
+    return `<div class="book-row"><h3>${T('월드 {n}', { n: wi + 1 })} · ${w}</h3><div class="cells">${cells}</div>${complete ? `<span class="stamp">${T('{name} 완주!', { name: w })}</span>` : ''}</div>`;
   }).join('');
 }
 $('bookBack').onclick = () => go(bookReturn);
