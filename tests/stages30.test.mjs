@@ -186,8 +186,22 @@ function botPlay(stageNo) {
     out.card4 = !document.getElementById('hzCard').hidden && document.getElementById('hzList').textContent.includes('폭탄 거품');
     j.closeCard(); j.startStage(4); out.card4again = document.getElementById('hzCard').hidden;
     j.startStage(14); out.card14 = document.getElementById('hzList').textContent.includes('랜덤 거품');
+    // 보스 18·24·30은 거품 줄에 랜덤 거품을 섞어 던짐 (lucky 확률)
+    out.luckyBoss = j.STAGES.filter(s => s.boss && s.boss.lucky).map(s => s.id).join(',');
+    out.keys18 = j.keysOf(j.STAGES[17]).includes('q');
+    j.startStage(18); j.closeCard(); G().st.boss.lucky = 1;
+    let thrown = 0;
+    for (let k = 0; k < 4; k++) { G().shotCount = 5 * (k + 1); j.hazardsAfterShot(); thrown += G().b.rows[0].filter(c => c && c.k === 'q').length; }
+    j.STAGES[17].boss.lucky = .5;
+    out.thrown = thrown;
+    // 폭발 소리: 소리를 켠 상태에서 연쇄 3까지 에러 없이 남
+    let boomOk = false; try { j.unlockAudio(); if (j.audioReady()) { j.boom(1); j.boom(3); boomOk = true; } } catch (e) { boomOk = String(e); }   // sfx 의 try 를 거치지 않고 직접
+    out.boomOk = boomOk;
     return out;
   });
+  check('보스 18·24·30만 랜덤 거품을 섞어 던지고, 18에서 설명 카드 대상', r.luckyBoss === '18,24,30' && r.keys18, r.luckyBoss);
+  check('보스가 던지는 줄마다 랜덤 거품 1개 (확률 100%로 4번 → 4개)', r.thrown === 4, r.thrown);
+  check('폭발 전용 효과음이 에러 없이 남 (연쇄면 여러 번)', r.boomOk === true, r.boomOk);
   check('폭탄·랜덤 거품은 쏠 색에 들어가지 않고 짝도 안 됨', !r.bombColors.includes('z') && !r.bombNoMatch && !r.qColors, r.bombColors);
   check('폭탄: 닿으면 둘레 거품이 색 상관없이 터짐(1.8칸 안, 맨 아래 줄 폭탄이면 9개)', r.bombs === 1 && r.bombPop >= 9 && r.bombMixed >= 4, r.bombPop + '/' + r.bombMixed);
   check('폭탄: 범위 안 갇힌 친구는 풀려남', r.bombFriend);

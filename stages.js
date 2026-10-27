@@ -98,7 +98,7 @@ window.JellyStages = (() => {
       rows: ['ppbbggrrgp', 'byprrpygb', 'bpbbggYpyy', 'rrprrbbgg', 'ypypggrrpr', 'yrrbbpyyg', 'bggyypgbgp', 'byrrgbybp'],
       kinds: ['..........', '.........', '..........', '.........', '...f......', '...f.....', '.f...q....', '..q......'] },
     { id: 18, name: '동굴 깊은 곳', theme: 'w3-heart', shots: 34, colors: 'rybgp', hz: { cloud: { first: 4, every: 8, last: 3 } },
-      boss: { name: '푸딩 골렘', kind: 'pudding', hp: 85, every: 5 },
+      boss: { name: '푸딩 골렘', kind: 'pudding', hp: 85, every: 5, lucky: .5 },
       friends: [{ name: '푸디', color: '#ffaa85' }],
       tip: '<b>보스 푸딩 골렘!</b> 거품 줄과 구름을 함께 조심해요',
       rows: ['yyggyypggy', 'gpbppgpyp', 'pgpbrgrgyg', 'rbyppygrg', 'rgbrbybbpp', 'yyrbppyyg'],
@@ -130,7 +130,7 @@ window.JellyStages = (() => {
       rows: ['brroobbggy', 'boyrppooy', 'orgbRgyypb', 'ogoyoropb', 'rrbyggoggp', 'ybgppbbpy', 'rrgrroyybb', 'pybygpoor'],
       kinds: ['..........', '.........', '..........', '...g.....', '......g...', '.........', '.........g', '.........'] },
     { id: 24, name: '공장장실', theme: 'w4-boss', shots: 36, colors: 'rybgpo', hz: { conveyor: { every: 4, rows: [2] }, aim: 'blink' },
-      boss: { name: '철컹이', kind: 'robot', hp: 64, every: 5 },
+      boss: { name: '철컹이', kind: 'robot', hp: 64, every: 5, lucky: .6 },
       friends: [{ name: '무지', color: '#5b6dff' }],
       tip: '<b>보스 철컹이!</b> 고장 난 조준기가 깜빡여요',
       rows: ['ooybrrooby', 'bbybgbbry', 'yygrgpgrpr', 'pprbbpgpr', 'obbpggoyyo'] },
@@ -162,7 +162,7 @@ window.JellyStages = (() => {
       rows: ['pprooyyoyg', 'gbpggrbbg', 'pbgbOoryro', 'prrbyypro', 'bggppbggyr', 'bryyboory'],
       kinds: ['..........', '.........', '..........', '.........', '..q.......', '......q..'] },
     { id: 30, name: '왕좌의 방', theme: 'w5-throne', shots: 40, colors: 'rybgpo',
-      boss: { name: '노놈', kind: 'nomnom', hp: 95, every: 5, phases: [
+      boss: { name: '노놈', kind: 'nomnom', hp: 95, every: 5, lucky: .7, phases: [
         { at: .67, nom: { first: 1, every: 4, acts: ['steal', 'block'] }, cloud: { every: 7, last: 3 }, say: '부하들아, 나와라!' },
         { at: .34, dropSec: 18, aim: 'short', red: true, off: ['nom', 'cloud'], say: '이제 진짜 화났다!' }] },
       friends: [{ name: '촌장님', color: '#9ad85a' }],
@@ -219,6 +219,7 @@ window.JellyStages = (() => {
     };
     fromHz(hz);
     if (st.boss && st.boss.sticky) add('s');
+    if (st.boss && st.boss.lucky) add('q');
     if (st.boss && st.boss.phases) st.boss.phases.forEach(fromHz);
     return out;
   }

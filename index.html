@@ -802,7 +802,7 @@ function land(m) {
     if (res.fireflies) { G.hz.aimBoost = 3; showToast('반딧불! 3발 동안 조준선이 길어요'); }
     if (res.bombs) {
       res.popped.filter(p => p.cell.k === 'z').forEach(p => { const q = Board.pos(b, p.r, p.c); burst(q.x, q.y, '#ffb347', 18); burst(q.x, q.y, '#ff5f3a', 10); });
-      G.impact = Math.max(G.impact || 0, .4); showToast(res.bombs > 1 ? '연쇄 폭발! 펑펑!' : '폭탄 펑!');
+      G.impact = Math.max(G.impact || 0, .4); showToast(res.bombs > 1 ? '연쇄 폭발! 펑펑!' : '폭탄 펑!'); sfx('boom', res.bombs);
     }
     res.randoms.forEach(p => applyLucky(pickLucky(), Board.pos(b, p.r, p.c)));
     sfx('pop', n); if (d) setTimeout(() => sfx('drop', d), 120);
@@ -932,7 +932,10 @@ function hazardsAfterShot() {
   }
   // 보스의 거품 공격
   if (st.boss && n % st.boss.every === 0) {
-    Board.pushTop(b, [...st.colors], st.boss.sticky ? () => (rand() < st.boss.sticky ? 's' : null) : null);
+    // lucky: 던지는 줄에 랜덤 거품 1개가 섞일 확률 (18·24·30 보스)
+    const qi = st.boss.lucky && rand() < st.boss.lucky ? Math.floor(rand() * 9) : -1;   // 9칸 줄이어도 들어가게
+    Board.pushTop(b, [...st.colors], i => (i === qi ? 'q' : st.boss.sticky && rand() < st.boss.sticky ? 's' : null));
+    if (qi >= 0) G.texts.push({ x: 180, y: 172, text: '랜덤알도 섞였어요!', life: 1.2, color: '#ffe27a' });
     G.texts.push({ x: 180, y: 150, text: st.boss.name + '의 거품 공격!', life: 1.2, color: '#ffb3d4' }); sfx('boss');
   } else if (st.boss && (n + 1) % st.boss.every === 0) h.ceilWarn = 1;
   if (st.boss && Board.count(b) === 0) { Board.pushTop(b, [...st.colors]); Board.pushTop(b, [...st.colors]); }
@@ -1386,7 +1389,7 @@ function warmSprites(st) {
   else Art.sprite('bg-' + st.theme, () => SPR.bg(st.theme), dpr, spriteReady);
   for (const c of st.colors) { Art.sprite('bub-' + c, () => SPR.bubble(c), dpr, spriteReady); Art.sprite('jel-' + COLORS[c].base + '-10-happy', () => SPR.jelly(COLORS[c].base, 10, {}), dpr, spriteReady); }
   for (const c of 'wknz') Art.sprite('bub-' + c, () => SPR.bubble(c), dpr, spriteReady);
-  if ((st.kinds || []).join('').includes('q')) Art.sprite('bub-q', () => SPR.bubble('q'), dpr, spriteReady);
+  if ((st.kinds || []).join('').includes('q') || (st.boss && st.boss.lucky)) Art.sprite('bub-q', () => SPR.bubble('q'), dpr, spriteReady);
   const kinds = new Set((st.kinds || []).join('').replace(/[.ckzq]/g, ''));
   if (st.boss && st.boss.sticky) kinds.add('s');
   kinds.forEach(k => { for (const c of st.colors) Art.sprite('bx-' + c + k, () => SPR.bubx(c, k), dpr, spriteReady); });
@@ -1895,6 +1898,7 @@ function sfx(k, n = 0) {
     else if (k === 'tick') [0, .18, .36].forEach(d => tone(1250, 1150, .05, 'square', .05, d));
     else if (k === 'rescue') [660, 880, 1100].forEach((f, i) => tone(f, f * 1.02, .14, 'triangle', .18, i * .08));
     else if (k === 'boss') tone(160, 80, .3, 'sawtooth', .15);
+    else if (k === 'boom') boom(n);
     else if (k === 'win') [523, 659, 784, 1047].forEach((f, i) => tone(f, f * 1.01, .22, 'triangle', .2, i * .11));
     else if (k === 'lose') [392, 330, 262].forEach((f, i) => tone(f, f * .98, .3, 'triangle', .18, i * .16));
   } catch (e) {}
@@ -1905,6 +1909,26 @@ function sfx(k, n = 0) {
   else if (k === 'win') jellyVoice('cheer', .5);
   else if (k === 'lose') jellyVoice('aww', .3);
   else if (k === 'boss') jellyVoice('hmph', .1);
+  else if (k === 'boom') jellyVoice('wow', .35);
+}
+// 폭발 소리: 잡음이 "콰-" 하고 낮아지며 사라짐 + 낮은 쿵 + 짧은 딱 소리. n = 연쇄로 터진 폭탄 수(많을수록 길고 크게)
+let boomNoise = null;
+function boom(n = 1) {
+  const chain = Math.min(3, Math.max(1, n));
+  if (!boomNoise) {
+    const len = audio.sampleRate; boomNoise = audio.createBuffer(1, len, audio.sampleRate);
+    const d = boomNoise.getChannelData(0); for (let i = 0; i < len; i++) d[i] = Math.random() * 2 - 1;
+  }
+  for (let i = 0; i < chain; i++) {
+    const t0 = audio.currentTime + i * .13, dur = .55 + i * .1;
+    const src = audio.createBufferSource(), f = audio.createBiquadFilter(), g = audio.createGain();
+    src.buffer = boomNoise; f.type = 'lowpass';
+    f.frequency.setValueAtTime(2400, t0); f.frequency.exponentialRampToValueAtTime(90, t0 + dur);
+    g.gain.setValueAtTime(.0001, t0); g.gain.exponentialRampToValueAtTime(.5, t0 + .015); g.gain.exponentialRampToValueAtTime(.001, t0 + dur);
+    src.connect(f).connect(g).connect(sfxBus); src.start(t0); src.stop(t0 + dur);
+    tone(120, 38, .45, 'sine', .45, i * .13);
+    tone(900, 300, .05, 'square', .06, i * .13);
+  }
 }
 
 // ---------- 젤리 목소리: 모음 소리(포먼트)를 흉내 낸 짧은 "뿌요! 야호!" ----------
@@ -2579,7 +2603,7 @@ requestAnimationFrame(frame);
 // 테스트용 손잡이 (화면에는 영향 없음)
 window.__jp = {
   get G() { return G; }, lowerCeiling, showBanner, P, STAGES, Board, R, ROW_H, W, H, PIVOT, DEADLINE,
-  startStage, rescue, showResult, land, LUCKY, pickLucky, applyLucky, seenHz: () => P.seenHz, aimLimit, music: () => Music.info(), voices: () => voiceCount, soundMode: () => soundMode, sfx, CS, shoot, swapQueue, setAngle, go, seedRandom,
+  startStage, rescue, showResult, land, hazardsAfterShot, unlockAudio, boom, audioReady: () => !!audio, LUCKY, pickLucky, applyLucky, seenHz: () => P.seenHz, aimLimit, music: () => Music.info(), voices: () => voiceCount, soundMode: () => soundMode, sfx, CS, shoot, swapQueue, setAngle, go, seedRandom,
   reset() { Object.assign(P, { stars: new Array(NST).fill(0), stickers: {}, seenIntro: false, at: 0, seenHz: {}, seenStory: {} }); saveP(); },
   story: () => window.JellyStory,
   // 설명 카드 닫기 · 생각하는 시간 흘려보내기(조준 중 시계가 흐름) · 놈놈이 대포를 막았는지
