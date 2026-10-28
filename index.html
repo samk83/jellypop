@@ -640,7 +640,8 @@ const Board = {
     }
     return best;
   },
-  // 발사 길 따라가기: 벽에 튕기고, 천장이나 거품에 닿으면 멈춤 → 멈춘 자리, 지나간 점들, 처음 튕긴 점 번호
+  // 발사 길 따라가기: 벽·장애물에 튕기고, 천장이나 거품에 닿으면 멈춤 → 멈춘 자리, 지나간 점들, 처음 튕긴 점 번호
+  // 거미줄에 걸리면 web, 장애물에 튕겨 바닥 선 아래로 돌아오면 lost (둘 다 판에 안 붙음)
   trace(b, angle, maxLen = 2400, from) {
     let x = from ? from.x : PIVOT.x + Math.cos(angle) * 34, y = from ? from.y : PIVOT.y + Math.sin(angle) * 34;
     let vx = Math.cos(angle), vy = Math.sin(angle), len = 0, bounceAt = -1;
@@ -651,13 +652,17 @@ const Board = {
       x += vx * 3; y += vy * 3; len += 3;
       if (x < R) { x = 2 * R - x; vx = -vx; if (bounceAt < 0) bounceAt = pts.length; }
       if (x > W - R) { x = 2 * (W - R) - x; vx = -vx; if (bounceAt < 0) bounceAt = pts.length; }
+      const oh = Obs.hit(b.obs, x, y);
+      if (oh && oh.o.t === 'web') { pts.push({ x, y }); return { x, y, pts, bounceAt, web: oh.o }; }
+      if (oh) { const p = { x, y }, v = { x: vx, y: vy }; Obs.bounce(p, v, oh); x = p.x; y = p.y; vx = v.x; vy = v.y; if (bounceAt < 0) bounceAt = pts.length; }
+      if (vy > 0 && y > DEADLINE) { pts.push({ x, y }); return { x, y, pts, bounceAt, lost: true }; }
       if (len % 15 < 3) pts.push({ x, y });
       if (y - R <= b.y0) return { x, y, pts, bounceAt };
       for (const p of bubbles) if ((p.x - x) ** 2 + (p.y - y) ** 2 < hitR2) return { x, y, pts, bounceAt };
     }
     return { x, y, pts, bounceAt };
   },
-  clone(b) { return { rows: b.rows.map(row => row.map(c => c && { ...c })), parity: b.parity, y0: b.y0, friendCount: b.friendCount, palette: b.palette }; },
+  clone(b) { return { rows: b.rows.map(row => row.map(c => c && { ...c })), parity: b.parity, y0: b.y0, friendCount: b.friendCount, palette: b.palette, obs: b.obs }; },
   // 무지개 거품: 붙은 자리에서 가장 크게 이어지는 이웃 색으로 바뀐다 (이웃에 색이 없으면 수정으로 남음)
   bestColor(b, r, c) {
     let best = 'w', size = 0;
@@ -749,7 +754,7 @@ const Board = {
   },
   // 아래에서 곧장 위로 올라가 붙기 (캐러멜 방울·방해 거품). 터뜨리지 않고 붙기만 한다
   stickFrom(b, x, cell) {
-    const tr = Board.trace(b, -Math.PI / 2, 2400, { x, y: DEADLINE - R });
+    const tr = Board.trace({ ...b, obs: null }, -Math.PI / 2, 2400, { x, y: DEADLINE - R });   // 장애물은 무시하고 곧장 위로
     const at = Board.snap(b, tr.x, tr.y);
     if (!at) return null;
     Board.ensureRow(b, at[0]);
@@ -775,6 +780,39 @@ const Board = {
   },
 };
 
+// 지형 장애물 (0.14.0): 판 아래 빈 곳에 놓여 날아가는 거품을 방해한다. 친구·판 칸은 건드리지 않는다
+//   branch 나뭇가지(닿으면 튕김) · web 솜사탕 거미줄(한 발을 붙잡고 찢어짐) · fan 풍차 날개(빙글빙글 돌며 튕김)
+// 판이 내려와 닿으면 부서져 없어진다 (Obs.crush)
+const OBS_T = { branch: 7, web: 5, fan: 6 };   // 굵기(반지름 px)
+const Obs = {
+  // stages.js 의 obs 칸 → 판 위 장애물 (a: 기울기°, spin: 초당 도는 각도°)
+  make(list) { return (list || []).map(o => ({ t: o.t, x: o.x, y: o.y, len: o.len, a: (o.a || 0) * Math.PI / 180, spin: (o.spin || 0) * Math.PI / 180, hitT: 9, gone: false })); },
+  ends(o) { const h = o.len / 2, cx = Math.cos(o.a) * h, cy = Math.sin(o.a) * h; return [o.x - cx, o.y - cy, o.x + cx, o.y + cy]; },
+  // 거품 중심 (x, y)가 장애물에 닿았나 → 닿은 장애물과 바깥쪽 방향(nx, ny), 파고든 깊이
+  hit(obs, x, y) {
+    if (!obs) return null;
+    for (const o of obs) {
+      if (o.gone) continue;
+      const [x1, y1, x2, y2] = Obs.ends(o), dx = x2 - x1, dy = y2 - y1;
+      const k = Math.max(0, Math.min(1, ((x - x1) * dx + (y - y1) * dy) / (dx * dx + dy * dy)));
+      const px = x1 + dx * k, py = y1 + dy * k, d = Math.hypot(x - px, y - py), lim = R * .8 + OBS_T[o.t];
+      if (d < lim) return { o, nx: d ? (x - px) / d : 0, ny: d ? (y - py) / d : 1, push: lim - d };
+    }
+    return null;
+  },
+  // 튕기기: 들어오던 방향만 거울처럼 뒤집고, 파고든 만큼 밖으로 밀어낸다.
+  // 아래쪽으로 튕기게 되면 대신 가지 끝 쪽 위로 비스듬히 미끄러져 나간다 (아래에서 맞혀도 거품을 잃지 않음)
+  bounce(p, v, h) {
+    const dot = v.x * h.nx + v.y * h.ny;
+    if (dot < 0) { v.x -= 2 * dot * h.nx; v.y -= 2 * dot * h.ny; }
+    const sp = Math.hypot(v.x, v.y);
+    if (v.y > -.4 * sp) { const side = Math.sign(p.x - h.o.x) || Math.sign(v.x) || 1; v.x = side * .87 * sp; v.y = -.5 * sp; }
+    p.x += h.nx * (h.push + .5); p.y += h.ny * (h.push + .5);
+  },
+  // 판이 닿으면 부서지는 높이 (도는 풍차는 날개가 그리는 원 전체)
+  top(o) { if (o.spin) return o.y - o.len / 2 - OBS_T[o.t]; const [, y1, , y2] = Obs.ends(o); return Math.min(y1, y2) - OBS_T[o.t]; },
+};
+
 // ============================================================
 // 게임 상태
 // ============================================================
@@ -782,6 +820,7 @@ let G = null;
 function newGame(stageNo) {
   const st = STAGES[stageNo - 1];
   const b = Board.fromRows(st.rows, st.boss ? 84 : 10, st.kinds, st.colors);
+  b.obs = Obs.make(st.obs);
   G = {
     st, b, fired: 0, queue: [], angle: -Math.PI / 2, crank: 0, aiming: false,
     state: 'aim', moving: null, fx: [], falls: [], pops: [], texts: [], rescues: [], wobbles: [],
@@ -793,8 +832,9 @@ function newGame(stageNo) {
   fillQueue();
   gaugeLast = '';
 }
-// 조준선 길이(px): 1~6 끝까지 → 7번 700 → 30번 150
-function aimLimit(st) { return st.id <= 6 ? Infinity : Math.max(150, 700 - (st.id - 7) * 24); }
+// 조준선 길이(px): 월드(테마)마다 한 단계씩 뚜렷하게 짧아진다. 월드 1은 끝까지 (0.14.0 Owner: "다음 테마로 갈수록 짧게")
+const AIM_BY_WORLD = [Infinity, 400, 300, 210, 140];
+function aimLimit(st) { return AIM_BY_WORLD[st.world - 1]; }
 // 방해 요소 상태 (설정 cfg 는 보스 단계가 바뀌면 늘어난다)
 function makeHz(st) {
   const cfg = { ...st.hz };
@@ -866,6 +906,11 @@ function stepMoving(dt) {
     m.x += m.vx * dt / steps; m.y += m.vy * dt / steps;
     if (m.x < R) { m.x = 2 * R - m.x; m.vx = -m.vx; sfx('bounce'); }
     if (m.x > W - R) { m.x = 2 * (W - R) - m.x; m.vx = -m.vx; sfx('bounce'); }
+    const oh = Obs.hit(b.obs, m.x, m.y);
+    if (oh && oh.o.t === 'web') { catchWeb(m, oh.o); return; }
+    if (oh) { const v = { x: m.vx, y: m.vy }; Obs.bounce(m, v, oh); m.vx = v.x; m.vy = v.y; if (oh.o.hitT > .15) obsBump(oh.o, m); }
+    if (m.vy > 0 && m.y > DEADLINE) { lostShot(m); return; }
+    if ((m.life = (m.life || 0) + dt / steps) > 3) { lostShot(m); return; }   // 장애물·벽 사이를 오래 오가면 3초 뒤 사라짐
     const n = G.hz.nom;
     if (n && !n.hit && (n.state === 'hover' || n.state === 'fly') && (n.x - m.x) ** 2 + (n.y - m.y) ** 2 < 28 * 28) nomHit();
     let hit = m.y - R <= b.y0;
@@ -923,6 +968,48 @@ function land(m) {
   updateHud();
 }
 
+// ---------- 지형 장애물 ----------
+// 나뭇가지·풍차에 튕김: 흔들림 + 나뭇잎/사탕 가루 + 통 소리
+function obsBump(o, m) {
+  o.hitT = 0;
+  burst(m.x, m.y, o.t === 'branch' ? '#7bd36a' : '#ffd1e8', 5);
+  sfx(o.t === 'branch' ? 'branch' : 'fan');
+  if (o.t === 'branch' && !G.hz.seenBump) { G.hz.seenBump = true; G.texts.push({ x: m.x, y: m.y - 20, text: T('통!'), life: .8, color: '#c8f5b0' }); }
+}
+// 솜사탕 거미줄: 거품이 걸려 대롱대롱 흔들리다 거미줄과 함께 떨어진다 (헛방 1번)
+function catchWeb(m, o) {
+  G.moving = null;
+  o.gone = true;
+  G.webCatch = { x: m.x, y: m.y, c: m.c, o, t: 0 };
+  G.hz.misses++;
+  G.texts.push({ x: m.x, y: m.y - 24, text: T('거미줄에 걸렸어요!'), life: 1.1, color: '#ffe0f0' });
+  sfx('web');
+  G.state = 'settle'; G.settleT = .7;
+  updateHud();
+}
+// 장애물에 튕겨 바닥 쪽으로 돌아온 거품: 판에 못 붙고 사라진다 (헛방 1번)
+function lostShot(m) {
+  G.moving = null;
+  G.falls.push({ x: m.x, y: m.y, vy: 120, vx: m.vx * .2, c: m.c });
+  G.hz.misses++;
+  showToast(T('튕겨 나갔어요!'));
+  sfx('stick');
+  G.state = 'settle'; G.settleT = .3;
+  updateHud();
+}
+// 판이 내려와 장애물에 닿으면 부서져 없어진다
+function obsCrush() {
+  const b = G.b, low = Board.lowestY(b) + R;
+  (b.obs || []).forEach(o => {
+    if (o.gone || low < Obs.top(o)) return;
+    o.gone = true;
+    const [x1, y1, x2, y2] = Obs.ends(o);
+    for (let i = 0; i <= 4; i++) burst(x1 + (x2 - x1) * i / 4, y1 + (y2 - y1) * i / 4, o.t === 'branch' ? '#9a6232' : o.t === 'web' ? '#fff' : '#ff8fb1', 4);
+    G.texts.push({ x: o.x, y: o.y - 16, text: T('와작!'), life: .9, color: '#fff' });
+    sfx('stick');
+  });
+}
+
 // 랜덤 거품: 좋은 효과 4가지(60%) · 나쁜 효과 3가지(40%) 중 하나가 나온다
 const LUCKY = [
   { id: 'bomb', good: true, text: T('랜덤알: 다음 거품이 폭탄!') },
@@ -978,6 +1065,7 @@ function lowerCeiling(rows, text, kind = 'ceil') {
   if (G.state === 'aim') {
     G.b.y0 = G.y0Target;
     if (Board.lowestY(G.b) + R > DEADLINE) finish(false, 'line');
+    else obsCrush();
   }
   nomCameo(kind);
 }
@@ -1063,6 +1151,7 @@ function afterSettle() {
   if (!st.boss && G.saved >= G.need) return finish(true);   // 컨베이어로 떨어진 친구
   b.y0 = G.y0Target;
   if (Board.lowestY(b) + R > DEADLINE) return finish(false, 'line');
+  obsCrush();
   refreshQueueColors();
   G.hz.shotT = G.hz.cfg.shotTimer || 0;
   G.state = 'aim';
@@ -1690,6 +1779,7 @@ function render(dt) {
   }
   if (fs.slide) ctx.restore();
   G.wobbles = G.wobbles.filter(w => (w.t += dt) < .6);
+  drawObstacles(t, dt);
   // 캐러멜 방울 예고: 천장에 맺힌 방울
   if (h.caramelX !== null) { const yy = b.y0 + 4 + Math.abs(Math.sin(t * 4)) * 4; ctx.fillStyle = '#e8912f'; ctx.beginPath(); ctx.ellipse(h.caramelX, yy, 7, 10, 0, 0, 7); ctx.fill(); ctx.fillStyle = 'rgba(255,255,255,.8)'; ctx.beginPath(); ctx.arc(h.caramelX - 2, yy - 3, 2.2, 0, 7); ctx.fill(); }
   drawClouds(t, dt);
@@ -1702,7 +1792,7 @@ function render(dt) {
     G.aimEnd = { x: tr.x, y: tr.y };
     // 조준선 모드: 짧게(첫 벽까지) / 깜빡 / 없음(화살표만). 반딧불이 켜지면 끝까지
     const mode = h.aimBoost > 0 ? 'full' : (h.cfg.aim || 'full');
-    let pts = tr.pts, ring = G.aiming;
+    let pts = tr.pts, ring = G.aiming && !tr.web && !tr.lost;
     if (mode === 'short' && tr.bounceAt >= 0) { pts = pts.slice(0, tr.bounceAt); ring = false; }
     if (mode === 'blink' && t % 2.4 > 1.5) { pts = []; ring = false; }
     // 스테이지가 올라갈수록 조준선이 짧아진다 (월드 1은 끝까지)
@@ -1777,6 +1867,73 @@ function friendSparkles(t) {
 // 안개 색 [짙은 곳, 옅은 끝]
 const CLOUD_LOOK = { cotton: ['255,240,247', '255,214,232'], frost: ['240,250,255', '200,232,250'], night: ['226,218,250', '170,155,225'] };
 let mistCv = null;
+// ---------- 지형 장애물 그림 ----------
+function drawObstacles(t, dt) {
+  for (const o of G.b.obs || []) {
+    if (o.gone) continue;
+    const wig = o.hitT < .4 ? Math.sin(o.hitT * 40) * 3 * (1 - o.hitT / .4) : 0;
+    ctx.save(); ctx.translate(o.x, o.y); ctx.rotate(o.a); ctx.translate(0, wig);
+    const h = o.len / 2;
+    if (o.t === 'branch') {
+      // 나뭇가지: 진한 테두리 + 나무 몸통 + 윗면 빛 + 흔들리는 잎 3장
+      ctx.lineCap = 'round';
+      ctx.strokeStyle = '#5b3418'; ctx.lineWidth = 16; ctx.beginPath(); ctx.moveTo(-h, 0); ctx.quadraticCurveTo(0, 4, h, 0); ctx.stroke();
+      ctx.strokeStyle = '#9a6232'; ctx.lineWidth = 12; ctx.stroke();
+      ctx.strokeStyle = 'rgba(232,180,120,.9)'; ctx.lineWidth = 3; ctx.beginPath(); ctx.moveTo(-h + 6, -3); ctx.quadraticCurveTo(0, 0, h - 6, -3); ctx.stroke();
+      ctx.strokeStyle = '#6e4220'; ctx.lineWidth = 5; ctx.beginPath(); ctx.moveTo(h * .35, 1); ctx.lineTo(h * .6, -14); ctx.stroke();
+      [[-h * .55, -7, -.6], [h * .6, -16, .5], [h * .05, 8, 2.6]].forEach(([lx, ly, la], i) => {
+        const sw = Math.sin(t * 2.2 + i * 1.7) * .25 + wig * .08;
+        ctx.save(); ctx.translate(lx, ly); ctx.rotate(la + sw);
+        const lg = ctx.createLinearGradient(0, -6, 0, 6); lg.addColorStop(0, '#9ef07e'); lg.addColorStop(1, '#3fae4a');
+        ctx.fillStyle = lg; ctx.beginPath(); ctx.ellipse(0, -8, 6, 10, 0, 0, 7); ctx.fill();
+        ctx.strokeStyle = 'rgba(255,255,255,.6)'; ctx.lineWidth = 1.2; ctx.beginPath(); ctx.moveTo(0, -1); ctx.lineTo(0, -15); ctx.stroke();
+        ctx.restore();
+      });
+    } else if (o.t === 'web') {
+      // 솜사탕 거미줄: 양쪽 사탕 못 + 처진 실 3가닥 + 가로 실
+      const sag = 12 + Math.sin(t * 2) * 1.5;
+      ctx.fillStyle = 'rgba(255,214,236,.3)'; ctx.beginPath(); ctx.moveTo(-h, -2); ctx.quadraticCurveTo(0, sag * 2 + 4, h, -2); ctx.quadraticCurveTo(0, -8, -h, -2); ctx.fill();
+      // 대롱대롱 꼬마 사탕 거미 (가운데 실에 매달려 통통)
+      const sy = sag + 14 + Math.sin(t * 3) * 3;
+      ctx.strokeStyle = 'rgba(255,240,250,.9)'; ctx.lineWidth = 1; ctx.beginPath(); ctx.moveTo(0, sag); ctx.lineTo(0, sy - 5); ctx.stroke();
+      const sg = ctx.createRadialGradient(-2, sy - 2, 1, 0, sy, 7); sg.addColorStop(0, '#ffe3f0'); sg.addColorStop(1, '#e05a9a');
+      ctx.fillStyle = sg; ctx.beginPath(); ctx.arc(0, sy, 6, 0, 7); ctx.fill();
+      ctx.fillStyle = '#3a2350'; ctx.beginPath(); ctx.arc(-2, sy, 1.1, 0, 7); ctx.arc(2, sy, 1.1, 0, 7); ctx.fill();
+      ctx.strokeStyle = 'rgba(255,240,250,.92)'; ctx.shadowColor = '#ff8fb1'; ctx.shadowBlur = 4; ctx.lineWidth = 2;
+      [-5, 0, 5].forEach(dy => { ctx.beginPath(); ctx.moveTo(-h, dy * .4); ctx.quadraticCurveTo(0, dy + sag * (dy === 0 ? 1 : .6), h, dy * .4); ctx.stroke(); });
+      for (let i = 1; i < 6; i++) { const x = -h + i * o.len / 6, y = sag * (1 - (x / h) ** 2); ctx.beginPath(); ctx.moveTo(x, y - 7); ctx.lineTo(x + 2, y + 6); ctx.stroke(); }
+      ctx.shadowBlur = 0;
+      [-h, h].forEach(x => { const pg = ctx.createRadialGradient(x - 2, -2, 1, x, 0, 6); pg.addColorStop(0, '#fff'); pg.addColorStop(1, '#ff8fb1'); ctx.fillStyle = pg; ctx.beginPath(); ctx.arc(x, 0, 5.5, 0, 7); ctx.fill(); });
+    } else if (o.t === 'fan') {
+      // 풍차 날개: 분홍·하양 줄무늬 막대 + 금색 가운데 못
+      const fg = ctx.createLinearGradient(0, -6, 0, 6); fg.addColorStop(0, '#ffd6e6'); fg.addColorStop(.5, '#ff7fae'); fg.addColorStop(1, '#d4417a');
+      ctx.fillStyle = fg; roundRect(-h, -6, o.len, 12, 6); ctx.fill();
+      ctx.save(); roundRect(-h, -6, o.len, 12, 6); ctx.clip();
+      ctx.fillStyle = 'rgba(255,255,255,.75)'; for (let x = -h - 8; x < h; x += 16) { ctx.beginPath(); ctx.moveTo(x, 6); ctx.lineTo(x + 6, 6); ctx.lineTo(x + 14, -6); ctx.lineTo(x + 8, -6); ctx.fill(); }
+      ctx.restore();
+      ctx.fillStyle = 'rgba(255,255,255,.7)'; roundRect(-h + 5, -4.5, o.len - 10, 2.5, 1.2); ctx.fill();
+      const hg = ctx.createRadialGradient(-2, -2, 1, 0, 0, 8); hg.addColorStop(0, '#fff6c8'); hg.addColorStop(1, '#e0a020');
+      ctx.fillStyle = hg; ctx.beginPath(); ctx.arc(0, 0, 8, 0, 7); ctx.fill();
+    }
+    ctx.restore();
+  }
+  // 거미줄에 걸린 거품: 대롱대롱 흔들리다 찢어진 실과 함께 떨어진다
+  const wc = G.webCatch;
+  if (wc) {
+    if (!G.paused) wc.t += dt;
+    if (wc.t < .6) {
+      const sx = Math.sin(wc.t * 26) * 4 * (1 - wc.t / .6), k = 1 - wc.t / .6;
+      ctx.strokeStyle = `rgba(255,240,250,${.9 * k})`; ctx.lineWidth = 1.4;
+      const [x1, y1, x2, y2] = Obs.ends(wc.o);
+      ctx.beginPath(); ctx.moveTo(x1, y1); ctx.lineTo(wc.x + sx, wc.y); ctx.lineTo(x2, y2); ctx.stroke();
+      drawBubble(wc.x + sx, wc.y + wc.t * 6, wc.c, 1 + Math.sin(wc.t * 30) * .05);
+    } else {
+      G.falls.push({ x: wc.x, y: wc.y + 4, vy: 40, vx: 0, c: wc.c });
+      G.webCatch = null;
+    }
+  }
+}
+
 function drawClouds(t, dt) {
   const cl = G.hz.cloud; if (!cl) return;
   cl.a += ((cl.leaving ? 0 : 1) - cl.a) * Math.min(1, dt * (cl.leaving ? 1.8 : 3));
@@ -2032,6 +2189,7 @@ function roundRect(x, y, w, h, r) { ctx.beginPath(); ctx.moveTo(x + r, y); ctx.a
 let last = performance.now(), lastAngle = 0;
 function update(dt) {
   tickHazards(dt);
+  if (!G.paused && G.state !== 'done') (G.b.obs || []).forEach(o => { o.a += o.spin * dt; o.hitT += dt; });
   if (G.state === 'flying' && G.moving) stepMoving(dt);
   if (G.state === 'settle') { G.settleT -= dt; if (G.settleT <= 0) afterSettle(); }
 }
@@ -2159,6 +2317,9 @@ function sfx(k, n = 0) {
     else if (k === 'bounce') tone(500, 420, .05, 'square', .04);
     else if (k === 'boing') { const f = 340 + n * 90; tone(f, f * 1.7, .1, 'sine', .14 - n * .02); }
     else if (k === 'stick') tone(220, 180, .06, 'sine', .15);
+    else if (k === 'branch') { tone(260, 190, .07, 'triangle', .16); tone(520, 300, .05, 'square', .04, .02); }
+    else if (k === 'fan') tone(700, 1100, .06, 'triangle', .1);
+    else if (k === 'web') { tone(420, 260, .22, 'sine', .14); tone(300, 360, .16, 'triangle', .08, .12); }
     else if (k === 'pop') { const f = 480 + Math.min(n, 12) * 40; tone(f, f * 2, .12, 'sine', .25); tone(f * 1.5, f * .8, .08, 'triangle', .1, .04); }
     else if (k === 'drop') [700, 560, 440].forEach((f, i) => tone(f, f * .7, .1, 'sine', .12, i * .05));
     else if (k === 'swap') tone(600, 900, .08, 'sine', .12);
@@ -2475,7 +2636,7 @@ function hzIcon(art) {
     if (art === 'k') return Art.img(Art.cookie(0, 0, R), bx);
     if (art === 'nom') return Art.img(Art.nomnom(0, 0, 18, { mini: true }), { x: -28, y: -32, w: 56, h: 56 });
     if (art === 'cloud') return Art.img(Art.cloud(0, 0, .6), { x: -36, y: -26, w: 72, h: 50 });
-    return { miss: '●●○', clock: '⏱', aim: '⋯', caramel: '💧', dark: '🔦', conveyor: '⇄' }[art] || '!';
+    return { miss: '●●○', clock: '⏱', aim: '⋯', caramel: '💧', dark: '🔦', conveyor: '⇄', branch: '🌿', web: '🕸️', fan: '🎡' }[art] || '!';
   });
 }
 function showHzCard(keys) {
@@ -3063,7 +3224,9 @@ window.__jp = {
   advance() { let n = 0; while (G && (G.state === 'flying' || G.state === 'settle') && n++ < 2000) update(1 / 60); return G && G.state; },
   // 이 각도로 쏘면 어디에 붙고 몇 개가 터지는지 (판은 바꾸지 않음)
   evalShot(angle, color) {
-    const b = Board.clone(G.b), tr = Board.trace(b, angle), cell = Board.snap(b, tr.x, tr.y);
+    const b = Board.clone(G.b), tr = Board.trace(b, angle);
+    if (tr.web || tr.lost) return { cell: null, popped: 0, dropped: 0, friends: 0, lowest: Board.lowestY(b), web: !!tr.web, lost: !!tr.lost };
+    const cell = Board.snap(b, tr.x, tr.y);
     if (!cell) return null;
     const res = Board.place(b, cell[0], cell[1], color || G.queue[0]);
     const friends = [...res.popped, ...res.dropped].filter(p => p.cell.friend !== undefined).length;
