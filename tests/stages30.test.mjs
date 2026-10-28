@@ -620,6 +620,10 @@ for (const [label, dev] of [['iPhone SE (320x568)', devices['iPhone SE']], ['Gal
     j.closeCard(); j.think(1); out.spun = Math.abs(f.a - fa0) > .5;
     // 도는 풍차는 날개가 어느 방향이든 판이 날개 원에 닿으면 부서짐 (판 속으로 돌아 들어가지 않음)
     f.a = 0; j.lowerCeiling(2); out.fanCrushed = f.gone;
+    // 장애물 없는 판의 긴 발사(얕은 각도로 벽을 여러 번)는 3초가 넘어도 사라지지 않음
+    j.startStage(1); j.closeCard(); j.G.b.rows = j.G.b.rows.slice(0, 3);
+    const c1 = j.Board.count(j.G.b), s1 = j.G.score; j.setAngle(-0.16); j.shoot(); j.advance();
+    out.longShot = (j.Board.count(j.G.b) !== c1 || j.G.score > s1) && !j.G.falls.some(f => f.vy === 120);
     // 보스 판에는 장애물 없음
     out.bossFree = j.STAGES.filter(s => s.boss).every(s => !s.obs);
     out.nomFree = j.STAGES.filter(s => s.hz.nom).every(s => !s.obs);
@@ -633,6 +637,7 @@ for (const [label, dev] of [['iPhone SE (320x568)', devices['iPhone SE']], ['Gal
   check('판이 내려와 닿으면 장애물이 부러져 없어짐', r.beforeCrush && r.crushed, JSON.stringify(r));
   check('거미줄: 한 발을 붙잡고(판 그대로·헛방 1번) 찢어짐 → 다음 발은 지나감', r.webEval && r.webCaught && r.webPass, JSON.stringify(r));
   check('풍차 날개: 시간이 흐르면 돌고, 멈춤 중엔 안 돎', r.spun && r.pausedStill, JSON.stringify(r));
+  check('장애물 없는 판의 긴 발사는 3초가 넘어도 판에 붙음', r.longShot, JSON.stringify(r));
   check('보스 판·꼬마 놈놈 판에는 장애물 없음 (놈놈을 맞혀야 하므로)', r.bossFree && r.nomFree);
   // 그림: 장애물이 실제로 그려짐 (나뭇가지 자리 픽셀이 갈색 계열)
   await page.goto(url + '?seed=3');

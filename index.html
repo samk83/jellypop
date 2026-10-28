@@ -908,9 +908,9 @@ function stepMoving(dt) {
     if (m.x > W - R) { m.x = 2 * (W - R) - m.x; m.vx = -m.vx; sfx('bounce'); }
     const oh = Obs.hit(b.obs, m.x, m.y);
     if (oh && oh.o.t === 'web') { catchWeb(m, oh.o); return; }
-    if (oh) { const v = { x: m.vx, y: m.vy }; Obs.bounce(m, v, oh); m.vx = v.x; m.vy = v.y; if (oh.o.hitT > .15) obsBump(oh.o, m); }
+    if (oh) { const v = { x: m.vx, y: m.vy }; Obs.bounce(m, v, oh); m.vx = v.x; m.vy = v.y; if (m.obsT === undefined) m.obsT = 0; if (oh.o.hitT > .15) obsBump(oh.o, m); }
     if (m.vy > 0 && m.y > DEADLINE) { lostShot(m); return; }
-    if ((m.life = (m.life || 0) + dt / steps) > 3) { lostShot(m); return; }   // 장애물·벽 사이를 오래 오가면 3초 뒤 사라짐
+    if (m.obsT !== undefined && (m.obsT += dt / steps) > 3) { lostShot(m); return; }   // 장애물에 튕긴 뒤 3초 넘게 오가면 사라짐 (장애물 없는 긴 발사는 그대로)
     const n = G.hz.nom;
     if (n && !n.hit && (n.state === 'hover' || n.state === 'fly') && (n.x - m.x) ** 2 + (n.y - m.y) ** 2 < 28 * 28) nomHit();
     let hit = m.y - R <= b.y0;
