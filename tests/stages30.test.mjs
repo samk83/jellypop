@@ -504,10 +504,21 @@ for (const [label, dev] of [['iPhone SE (320x568)', devices['iPhone SE']], ['Gal
   const m1 = await page.evaluate(() => window.__jp.music());
   // 새 레트로 곡은 한 칸에 예약하는 음이 예전보다 적어 조금 더 기다림 (0.9초 → 1.6초)
   check('배경 음악: 화면을 누르면 시작되고 음표가 계속 예약됨', m1.running && m1.scheduled > 20, JSON.stringify(m1));
-  check('레트로 기본 음악: 플레이 화면은 16마디 플레이 테마', m1.track === 'play' && m1.bars === 16 && !m1.boss, JSON.stringify(m1));
-  const tr = await page.evaluate(async () => { const j = window.__jp; j.go('map'); await new Promise(r => setTimeout(r, 400)); const a = j.music(); j.startStage(12); await new Promise(r => setTimeout(r, 400)); const b = j.music(); j.go('map'); j.startStage(1); return { a, b }; });
-  check('레트로 기본 음악: 지도 화면은 타이틀 테마(8마디)로 바뀌고 계속 연주', tr.a.track === 'title' && tr.a.bars === 8 && tr.a.scheduled > m1.scheduled, JSON.stringify(tr.a));
-  check('레트로 기본 음악: 보스 판은 빠른 보스 변주', tr.b.track === 'play' && tr.b.boss === true, JSON.stringify(tr.b));
+  check('월드 음악: 1스테이지는 월드 1 곡(16마디)', m1.track === 'w1' && m1.bars === 16 && !m1.boss, JSON.stringify(m1));
+  // 0.13.0 Owner: 스테이지가 끝나고 지도·다음 판으로 가도 음악이 처음부터 다시 시작하지 않게
+  const tr = await page.evaluate(async () => {
+    const j = window.__jp, wait = ms => new Promise(r => setTimeout(r, ms));
+    await wait(1200); const a = j.music(); j.go('map'); await wait(400); const b = j.music(); j.startStage(2); await wait(300); const c = j.music(); j.startStage(2); await wait(300); const c2 = j.music();
+    j.P.stars[6] = 1; j.startStage(10); await wait(400); const d = j.music(); j.startStage(6); await wait(300); const e = j.music();
+    j.startStage(1); await wait(300); const f = j.music(); j.go('title'); await wait(200); const g = j.music(); j.startStage(1);
+    return { a, b, c, c2, d, e, f, g };
+  });
+  check('월드 음악: 플레이→지도→다음 판→다시 하기에도 같은 곡이 끊기지 않고 이어짐', tr.b.track === 'w1' && tr.c.track === 'w1' && tr.c2.track === 'w1' && tr.c2.switches === tr.a.switches && tr.c2.step > tr.a.step, JSON.stringify([tr.a, tr.c2]));
+  check('월드 음악: 월드 2 판은 다른 곡(w2), 보스 판은 보스 곡', tr.d.track === 'w2' && tr.d.bpm !== tr.a.bpm && tr.e.track === 'boss' && tr.e.boss, JSON.stringify([tr.d, tr.e]));
+  check('월드 음악: 듣던 곡으로 돌아오면 처음이 아니라 듣던 마디부터', tr.f.track === 'w1' && tr.f.step >= 16 && tr.f.step % 16 < 8, JSON.stringify(tr.f));
+  check('월드 음악: 타이틀 화면은 타이틀 곡(8마디)', tr.g.track === 'title' && tr.g.bars === 8, JSON.stringify(tr.g));
+  const songs = await page.evaluate(async () => { const j = window.__jp, out = []; for (const t of ['title', 'w1', 'w2', 'w3', 'w4', 'w5', 'boss']) { j.musicTrack(t); out.push(j.music()); } j.startStage(1); return out; });
+  check('월드 음악: 곡 7개(타이틀·월드 5·보스) 모두 빠르기와 반주 방식이 다름', new Set(songs.map(m => m.bpm)).size === 7 && new Set(songs.map(m => m.style)).size === 7, JSON.stringify(songs.map(m => [m.track, m.bpm, m.style])));
   const v = await page.evaluate(() => { const j = window.__jp, a = j.voices(); j.sfx('pop', 8); const b = j.voices(); return { a, b }; });
   check('크게 터지면 젤리 추임새 소리', v.b === v.a + 1, JSON.stringify(v));
   const modes = [];
@@ -522,6 +533,14 @@ for (const [label, dev] of [['iPhone SE (320x568)', devices['iPhone SE']], ['Gal
   check('소리: 꺼 두면 "🔇 소리 켜기" 안내가 보임', await page.evaluate(() => window.__jp.soundMode() === 'off' && window.__jp.soundHint()));
   await page.tap('#soundHint'); await page.waitForTimeout(700);
   check('소리: 안내 버튼을 누르면 음악+효과음으로 켜지고 안내가 사라짐', await page.evaluate(() => window.__jp.soundMode() === 'all' && !window.__jp.soundHint() && window.__jp.music().running));
+  // 0.13.0 Owner: "스테이지 9부터 소리가 안 남" — 휴대폰에서 소리 장치 시계가 멈추면 다음 터치에 새로 만들어 되살림
+  const st0 = await page.evaluate(() => { const j = window.__jp; j.fakeStall(); return { broken: j.audioBroken(), made: j.audioMade(), hint: j.soundHint() }; });
+  check('소리 복구: 소리 장치 시계가 멈추면 고장으로 알아채고 "소리 켜기" 안내를 보임', st0.broken && st0.hint, JSON.stringify(st0));
+  await page.tap('#hudName'); await page.waitForTimeout(900);
+  const st1 = await page.evaluate(() => { const j = window.__jp; return { broken: j.audioBroken(), made: j.audioMade(), st: j.audioState(), m: j.music(), hint: j.soundHint() }; });
+  check('소리 복구: 다음 터치 때 소리 장치를 새로 만들고 음악이 같은 곡으로 다시 흐름', !st1.broken && st1.made === st0.made + 1 && st1.st === 'running' && st1.m.track === 'w1' && !st1.hint, JSON.stringify(st1));
+  const st2 = await page.evaluate(async () => { const j = window.__jp, a = j.music().scheduled; await new Promise(r => setTimeout(r, 1500)); j.sfx('pop', 2); return { a, b: j.music().scheduled, st: j.audioState() }; });
+  check('소리 복구: 새 장치에서도 음표가 계속 예약됨', st2.b > st2.a + 15 && st2.st === 'running', JSON.stringify(st2));
   check('대포가 커짐 (그림 배율 1.05, 전 0.8)', await page.evaluate(() => window.__jp.CS) >= 1);
   await page.screenshot({ path: path.join(shots, 'v4-cannon-390.png') });
   await page.close();
