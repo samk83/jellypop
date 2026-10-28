@@ -22,3 +22,4 @@
 20. 0.10.7 GitHub 운영 정책 적용 완료(main이 기본 브랜치). 앞으로 모든 작업은 `main`에서 기능 브랜치 → `npm test` → PR → Merge. 남은 원격 브랜치 `claude/jellypop-game`(합쳐짐)·`claude/keen-cerf-wpf3qg`(하네스 초기 설치, 이미 포함됨) 정리는 브랜치 삭제라 Owner 결정
 21. 0.11.0 영어판·언어 전환 완료 → 다음: JellyDock(jellydock.com/jellypop/)에 올리기(젤리독 repo PR, 운영 배포는 Owner 승인 L3). Owner: 휴대폰에서 English 버튼 눌러 영어 문구 느낌 확인. 새 한국어 문구는 `T()`로 감싸고 `lang-en.js`에 영어 추가(빠지면 `tests/i18n.test.mjs`가 잡음)
 22. 0.12.0 수익화·PWA·앱 프로젝트 완료 → **Owner 계정 만들기**(순서·비용은 `docs/MONETIZATION.md` 5장): Google Play Console($25) → AdMob(무료) → 앱인토스 콘솔(무료, 결제는 사업자등록) → (선택) Apple Developer($99/년)+Mac. ID를 받으면 `monetize-config.js`·AdMob 앱 ID 교체 → `npm test` → PR. 개인정보처리방침 연락 이메일 입력. 다음 후보: 영수증 서버 검증(Cloudflare Workers), 스킨 팩 상품, 토스 리더보드(`Game.setLeaderboardScore`)
+23. 0.13.0 결과 점수표·패널티 놈놈·게임 오버 연출 완료 → Owner: 휴대폰에서 클리어 점수표 속도(너무 길면 줄임)·놈놈 등장 빈도(지금 4초에 한 번)·GAME OVER 느낌 확인. 다음 후보: 실패 때도 짧은 점수표, 월드별 최고 점수 지도 표시, 토스 리더보드에 최종 점수 올리기

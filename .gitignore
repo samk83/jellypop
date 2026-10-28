@@ -2,3 +2,6 @@ node_modules/
 design/forest/plates/w*
 design/forest/plates/title-bg*
 design/forest/png/game/
+design/screens/gameover-iphone13.png
+design/screens/nom-penalty-iphone13.png
+design/screens/result-score-iphone13.png
