@@ -1969,8 +1969,19 @@ soundOn = soundMode !== 'off';
 // 그래서 소리가 실제로 나기 전까지는 화면 어디를 누르든 매번 다시 깨운다.
 const SILENT_WAV = 'data:audio/wav;base64,UklGRiQAAABXQVZFZm10IBAAAAABAAEAQB8AAEAfAAABAAgAZGF0YQAAAAA=';
 let silentEl = null;
+// 0.13.0 (Owner: "스테이지 9부터 소리가 안 남"): 휴대폰에서 다른 앱·채팅에 다녀오거나 화면이 꺼졌다 켜지면
+// 소리 장치가 '켜짐(running)'이라고 하면서 시계가 멈추거나 소리가 안 나오는 일이 있다 (특히 아이폰).
+// → 시계가 멈춘 걸 알아채거나 앱에서 1.5초 넘게 나갔다 오면, 다음 터치 때 소리 장치를 새로 만든다 (곡·자리는 그대로)
+let audioBroken = false, refreshOnTouch = false, hiddenAt = 0, audioMade = 0, adPaused = false, clockSeen = { t: -1, n: 0 };
+const touchDevice = navigator.maxTouchPoints > 0 || 'ontouchstart' in window;
+function dropAudio() {
+  const old = audio; audio = null; master = musicBus = sfxBus = null; boomNoise = null; Music.reset();
+  try { old.onstatechange = null; old.close(); } catch (e) {}
+}
 function unlockAudio() {
   if (!soundOn) { updateSoundHint(); return; }
+  if (audio && (audioBroken || refreshOnTouch)) dropAudio();
+  audioBroken = refreshOnTouch = false;
   try {
     // 아이폰 무음 스위치를 켜 둬도 게임 소리가 나게 (iOS 17+ Safari)
     if (navigator.audioSession && navigator.audioSession.type !== 'playback') navigator.audioSession.type = 'playback';
@@ -1982,6 +1993,7 @@ function unlockAudio() {
       sfxBus = audio.createGain(); sfxBus.connect(master);
       musicBus = audio.createGain(); musicBus.gain.value = .32; musicBus.connect(master);
       audio.onstatechange = updateSoundHint;
+      audioMade++; clockSeen = { t: -1, n: 0 };
       Music.start();
     }
     if (audio.state !== 'running') {
@@ -1998,21 +2010,34 @@ function unlockAudio() {
 let triedSound = false;
 function updateSoundHint() {
   const el = $('soundHint'); if (!el) return;
-  const asleep = soundOn && triedSound && (!audio || audio.state !== 'running');
+  const asleep = soundOn && triedSound && (!audio || audio.state !== 'running' || audioBroken);
   el.hidden = !(soundMode === 'off' || asleep);
   el.classList.toggle('calm', !asleep);   // 일부러 끈 경우는 깜빡이지 않게
 }
 ['touchend', 'click', 'keydown'].forEach(ev => document.addEventListener(ev, e => {
   if (e.target && e.target.closest && e.target.closest('#soundHint, #soundBtn')) return;
-  if (audio && audio.state === 'running') return;
+  if (audio && audio.state === 'running' && !audioBroken && !refreshOnTouch) return;
   triedSound = true; unlockAudio();
   setTimeout(updateSoundHint, 600);
 }, true));
 // 앱이 뒤로 가면 소리를 완전히 멈추고, 돌아오면 다시 켠다 (스토어·토스 심사 기준)
 document.addEventListener('visibilitychange', () => {
   if (audio) { try { if (document.hidden) audio.suspend(); else if (soundOn) audio.resume(); } catch (e) {} }
-  if (!document.hidden) setTimeout(updateSoundHint, 300);
+  if (document.hidden) hiddenAt = performance.now();
+  else {
+    if (audio && touchDevice && hiddenAt && performance.now() - hiddenAt > 1500) refreshOnTouch = true;
+    setTimeout(updateSoundHint, 300);
+  }
 });
+// 1초마다 소리 장치 시계 확인: 화면이 보이고 소리가 켜져 있는데 2초 넘게 시계가 안 가거나 멈춤 상태면 '고장'
+function checkAudioClock(fake = false) {
+  if (!audio || !soundOn || document.hidden || adPaused) { clockSeen.n = 0; return; }
+  const t = audio.currentTime, stuck = fake || audio.state !== 'running' || t === clockSeen.t;
+  clockSeen = { t, n: stuck ? clockSeen.n + 1 : 0 };
+  if (clockSeen.n === 1 && audio.state !== 'running') { try { audio.resume(); } catch (e) {} }   // 터치 없이 깨워 보기
+  if (clockSeen.n >= 3 && !audioBroken) { audioBroken = true; triedSound = true; updateSoundHint(); }
+}
+setInterval(checkAudioClock, 1000);
 function tone(f, to, dur, type, vol, delay = 0, bus = sfxBus) {
   const t0 = audio.currentTime + delay, o = audio.createOscillator(), g = audio.createGain();
   o.type = type; o.frequency.setValueAtTime(f, t0); o.frequency.exponentialRampToValueAtTime(to, t0 + dur);
@@ -2103,17 +2128,22 @@ function jellyVoice(word, delay = 0) {
 
 // ---------- 배경 음악: 레트로 칩튠 (8비트 게임기 소리를 흉내 내 직접 만든 곡, 외부 파일 없음) ----------
 // 채널 4개 = 옛 게임기처럼: 사각파 멜로디 · 사각파 아르페지오(화음을 빠르게 쪼개 치기) · 삼각파 베이스 · 잡음 드럼
-// 곡 2개: 'title'(타이틀·지도·프롤로그, 느긋한 메아리 멜로디) / 'play'(플레이, 16마디 통통 테마)
+// 곡 7개 (0.13.0 Owner: 테마가 바뀌면 다른 곡): 타이틀 1 + 월드마다 1곡(멜로디·빠르기·리듬이 모두 다름) + 보스 1
+//   지도·플레이·스티커 북은 그 월드의 곡을 이어서 연주한다. 곡이 바뀔 때만 부드럽게 겹쳐 바뀌고(크로스페이드),
+//   예전에 듣던 곡으로 돌아가면 처음부터가 아니라 듣던 자리(마디 처음)부터 이어서 연주한다 → 첫 음이 되풀이되지 않음
 const Music = (() => {
   // 악보: 마디마다 화음 + 8분음표 8칸 멜로디 (. = 쉼, ~ = 앞 음 늘이기, 'Dm/G' = 마디 반씩 두 화음)
+  // style: 반주(베이스·드럼) 방식. 곡마다 다르게 해서 같은 곡처럼 들리지 않게 한다
   const SONGS = {
-    title: { bpm: 112, bars: [
+    // 타이틀·프롤로그: 느긋한 메아리 멜로디
+    title: { bpm: 112, style: 'title', bars: [
       ['C',  'E5 ~ ~ D5 C5 ~ G4 ~'], ['G',  'D5 ~ ~ E5 D5 ~ B4 ~'],
       ['Am', 'C5 ~ E5 ~ A5 ~ G5 ~'], ['Em', 'G5 ~ ~ ~ E5 ~ . .'],
       ['F',  'F5 ~ ~ E5 F5 ~ A5 ~'], ['C',  'G5 ~ ~ E5 C5 ~ E5 ~'],
       ['F',  'F5 ~ E5 ~ D5 ~ C5 ~'], ['G',  'D5 ~ ~ ~ G5 ~ ~ .'],
     ] },
-    play: { bpm: 140, bars: [
+    // 월드 1 젤리마을: 통통 튀는 16마디 테마 (예전 플레이 곡)
+    w1: { bpm: 140, style: 'bounce', duty: .25, bars: [
       ['C',  'C5 . E5 G5 C6 . G5 E5'], ['Am', 'A5 . G5 E5 C5 . E5 .'],
       ['F',  'F5 G5 A5 . C6 . A5 F5'], ['G',  'G5 ~ ~ . D5 E5 F5 G5'],
       ['C',  'C6 . B5 A5 G5 . E5 G5'], ['Am', 'A5 . C6 . E6 . D6 C6'],
@@ -2123,8 +2153,60 @@ const Music = (() => {
       ['F',  'F5 A5 C6 F6 E6 . C6 A5'], ['G',  'G5 B5 D6 G6 F6 . D6 B5'],
       ['E',  'G#5 . B5 . E6 . D6 B5'], ['G',  'G5 . A5 . B5 . D6 .'],
     ] },
+    // 월드 2 시럽 숲: 살랑이는 셔플(엇박 흔들림) 리듬, 단조, 피리 같은 멜로디
+    w2: { bpm: 116, style: 'swing', duty: .5, bars: [
+      ['Am', 'E5 ~ A5 ~ B5 C6 B5 A5'], ['F',  'C6 ~ ~ A5 F5 ~ A5 ~'],
+      ['C',  'G5 ~ E5 ~ G5 A5 G5 E5'], ['G',  'D5 ~ ~ ~ B4 ~ D5 ~'],
+      ['Am', 'E5 ~ A5 ~ B5 C6 D6 E6'], ['F',  'F6 ~ E6 ~ D6 ~ C6 ~'],
+      ['Dm/E', 'D6 ~ C6 B5 B5 ~ G#5 ~'], ['Am', 'A5 ~ ~ ~ ~ . E5 .'],
+      ['Dm', 'F5 ~ A5 ~ D6 ~ A5 ~'], ['Am', 'E5 ~ A5 ~ C6 ~ A5 ~'],
+      ['F',  'F5 G5 A5 C6 F6 ~ E6 D6'], ['C',  'E6 ~ ~ C6 G5 ~ E5 ~'],
+      ['Dm', 'D5 F5 A5 D6 C6 ~ A5 ~'], ['Am', 'C6 ~ B5 A5 E5 ~ C5 ~'],
+      ['E',  'B4 ~ E5 G#5 B5 ~ D6 ~'], ['E',  'E6 ~ ~ ~ D6 C6 B5 G#5'],
+    ] },
+    // 월드 3 푸딩 동굴: 느리고 신비로운 메아리, 물방울 소리, 낮은 걸음 베이스
+    w3: { bpm: 100, style: 'cave', duty: .125, bars: [
+      ['Dm', 'D5 ~ ~ F5 A5 ~ ~ .'], ['Dm', 'G5 ~ F5 ~ E5 ~ ~ .'],
+      ['Bb', 'D5 ~ ~ F5 Bb5 ~ A5 ~'], ['A',  'A5 ~ ~ ~ C#6 ~ ~ .'],
+      ['Dm', 'F5 ~ E5 F5 A5 ~ ~ .'], ['Gm', 'Bb5 ~ A5 G5 D5 ~ ~ .'],
+      ['Bb/A', 'F5 ~ G5 ~ E5 ~ C#5 ~'], ['Dm', 'D5 ~ ~ ~ ~ ~ . .'],
+      ['Gm', 'G5 ~ Bb5 ~ D6 ~ ~ .'], ['Dm', 'F6 ~ E6 ~ D6 ~ A5 ~'],
+      ['Bb', 'Bb5 ~ A5 ~ G5 ~ F5 ~'], ['C',  'E5 ~ G5 ~ C6 ~ ~ .'],
+      ['Dm', 'D6 ~ ~ C6 A5 ~ F5 ~'], ['Gm', 'G5 ~ Bb5 ~ A5 ~ G5 ~'],
+      ['A',  'E5 ~ A5 ~ C#6 ~ E6 ~'], ['A',  'A5 ~ ~ ~ ~ . . .'],
+    ] },
+    // 월드 4 디저트 공장: 빠르고 기계 같은 스타카토, 쉬지 않는 16분 아르페지오, 쿵쿵 네 박 드럼
+    w4: { bpm: 152, style: 'factory', duty: .25, bars: [
+      ['C',  'C5 C5 . G4 C5 . E5 G5'], ['Bb', 'Bb4 Bb4 . F4 Bb4 . D5 F5'],
+      ['F',  'A5 . G5 . F5 . C5 .'], ['G',  'D5 . G5 . B5 . D6 .'],
+      ['C',  'C6 . C6 B5 C6 . G5 .'], ['Bb', 'Bb5 . Bb5 A5 Bb5 . F5 .'],
+      ['F/G', 'A5 G5 F5 E5 D5 E5 F5 G5'], ['C', 'C6 . G5 . C5 . . .'],
+      ['Am', 'E5 E5 . A5 . E5 C5 .'], ['F',  'F5 F5 . A5 . C6 A5 .'],
+      ['Dm', 'D5 F5 A5 D6 . A5 F5 D5'], ['G',  'G5 B5 D6 G6 . D6 B5 G5'],
+      ['C',  'E6 . D6 . C6 . G5 .'], ['Bb', 'D6 . C6 . Bb5 . F5 .'],
+      ['F/G', 'C6 . A5 . B5 . D6 .'], ['C', 'C6 ~ ~ . C5 . . .'],
+    ] },
+    // 월드 5 노놈의 성: 단조 행진곡, 쿵-짝 베이스와 작은북
+    w5: { bpm: 128, style: 'march', duty: .5, bars: [
+      ['Am', 'A4 . A4 C5 E5 ~ A5 ~'], ['G',  'G5 . F5 E5 D5 ~ B4 ~'],
+      ['F',  'C5 . C5 F5 A5 ~ C6 ~'], ['E',  'B5 ~ G#5 ~ E5 ~ ~ .'],
+      ['Am', 'A5 . A5 B5 C6 ~ A5 ~'], ['Dm', 'D6 . C6 B5 A5 ~ F5 ~'],
+      ['E',  'E5 F5 G#5 A5 B5 ~ D6 ~'], ['Am', 'C6 ~ B5 ~ A5 ~ ~ .'],
+      ['F',  'F5 ~ A5 ~ C6 ~ F6 ~'], ['G',  'E6 ~ D6 ~ B5 ~ G5 ~'],
+      ['Em', 'E5 G5 B5 E6 D6 ~ B5 ~'], ['Am', 'C6 ~ A5 ~ E5 ~ ~ .'],
+      ['Dm', 'F5 . F5 A5 D6 ~ C6 ~'], ['Am', 'C6 . C6 B5 A5 ~ E5 ~'],
+      ['E',  'G#5 . A5 . B5 . C6 .'], ['E',  'B5 ~ ~ ~ E5 . . .'],
+    ] },
+    // 보스 판: 빠르고 긴장되는 단조 곡
+    boss: { bpm: 166, style: 'boss', duty: .25, bars: [
+      ['Em', 'E5 . E5 . G5 . E5 B5'], ['C',  'C6 . B5 . G5 . E5 .'],
+      ['D',  'F#5 . F#5 . A5 . F#5 D6'], ['B',  'D#6 . B5 . F#5 . D#5 .'],
+      ['Em', 'E6 . D6 . B5 . G5 .'], ['C',  'C6 . E6 . G6 . E6 .'],
+      ['Am/B', 'A5 B5 C6 A5 B5 . D#6 .'], ['Em', 'E6 ~ ~ . E5 . . .'],
+    ] },
   };
-  const CHORD = { C: [0, 4, 7], G: [7, 11, 14], Am: [9, 12, 16], Em: [4, 7, 11], F: [5, 9, 12], Dm: [2, 5, 9], E: [4, 8, 11] };
+  const CHORD = { C: [0, 4, 7], G: [7, 11, 14], Am: [9, 12, 16], Em: [4, 7, 11], F: [5, 9, 12], Dm: [2, 5, 9], E: [4, 8, 11],
+    Bb: [10, 14, 17], A: [9, 13, 16], Gm: [7, 10, 14], D: [2, 6, 9], B: [11, 15, 18] };
   const hz = n => 440 * Math.pow(2, (n - 69) / 12);
   const midi = s => { const m = /^([A-G])(#|b)?(\d)$/.exec(s); return 12 * (+m[3] + 1) + { C: 0, D: 2, E: 4, F: 5, G: 7, A: 9, B: 11 }[m[1]] + (m[2] === '#' ? 1 : m[2] ? -1 : 0); };
   // 악보 → 16분음표 칸마다 { 멜로디 음, 길이(칸), 화음 }
@@ -2145,10 +2227,9 @@ const Music = (() => {
     return steps;
   }
   const TRACK = {}; for (const k in SONGS) TRACK[k] = compile(SONGS[k]);
-  // 월드마다 조성·빠르기·멜로디 음색(사각파 폭)을 살짝 바꿈 (0~4)
-  const WORLD = [{ key: 0, bpm: 0, duty: .25 }, { key: 2, bpm: 4, duty: .5 }, { key: -3, bpm: -4, duty: .25 }, { key: 5, bpm: 8, duty: .125 }, { key: -1, bpm: 6, duty: .5 }];
-  let timer = null, step = 0, nextT = 0, scheduled = 0, track = 'title', world = WORLD[0], boss = false;
-  let waves = null, noiseBuf = null;
+  const pos = {};   // 곡마다 마지막으로 연주한 자리 (돌아오면 그 마디부터 이어서)
+  let timer = null, step = 0, nextT = 0, scheduled = 0, track = 'title', switches = 0;
+  let waves = null, noiseBuf = null, out = null;
   function prepare() {
     if (waves) return;
     // 옛 게임기 사각파(폭 12.5%/25%/50%)를 배음 합으로 만든다
@@ -2163,63 +2244,139 @@ const Music = (() => {
     const d = noiseBuf.getChannelData(0); let v = 0;
     for (let i = 0; i < len; i++) { if (i % 3 === 0) v = Math.random() * 2 - 1; d[i] = v; }
   }
+  // 곡마다 따로 쓰는 음량 손잡이: 곡을 바꿀 때 옛 곡은 줄이고 새 곡은 키워 겹쳐 바꾼다
+  function newOut(fadeIn) {
+    const g = audio.createGain(), now = audio.currentTime;
+    if (fadeIn) { g.gain.setValueAtTime(.0001, now); g.gain.linearRampToValueAtTime(1, now + fadeIn); }
+    g.connect(musicBus); return g;
+  }
   function pulse(f, t, dur, duty, vol) {
     const o = audio.createOscillator(), g = audio.createGain();
     o.setPeriodicWave(waves[duty]); o.frequency.setValueAtTime(f, t);
     g.gain.setValueAtTime(vol, t); g.gain.setTargetAtTime(vol * .55, t + .02, .08);
     g.gain.setValueAtTime(vol * .5, t + Math.max(.03, dur - .03)); g.gain.linearRampToValueAtTime(0, t + dur);
-    o.connect(g).connect(musicBus); o.start(t); o.stop(t + dur + .02); scheduled++;
+    o.connect(g).connect(out); o.start(t); o.stop(t + dur + .02); scheduled++;
   }
   function tri(f, t, dur, vol) {
     const o = audio.createOscillator(), g = audio.createGain();
     o.type = 'triangle'; o.frequency.setValueAtTime(f, t);
     g.gain.setValueAtTime(vol, t); g.gain.setValueAtTime(vol, t + dur * .8); g.gain.linearRampToValueAtTime(0, t + dur);
-    o.connect(g).connect(musicBus); o.start(t); o.stop(t + dur + .02); scheduled++;
+    o.connect(g).connect(out); o.start(t); o.stop(t + dur + .02); scheduled++;
+  }
+  // 높은 사인파 '똑' (동굴 물방울·공장 기계 소리)
+  function blip(f, t, vol) {
+    const o = audio.createOscillator(), g = audio.createGain();
+    o.type = 'sine'; o.frequency.setValueAtTime(f, t); o.frequency.exponentialRampToValueAtTime(f * .5, t + .09);
+    g.gain.setValueAtTime(vol, t); g.gain.exponentialRampToValueAtTime(.001, t + .1);
+    o.connect(g).connect(out); o.start(t); o.stop(t + .12); scheduled++;
   }
   function noise(t, dur, vol, type, freq) {
     const src = audio.createBufferSource(), f = audio.createBiquadFilter(), g = audio.createGain();
     src.buffer = noiseBuf; f.type = type; f.frequency.value = freq;
     g.gain.setValueAtTime(vol, t); g.gain.exponentialRampToValueAtTime(.001, t + dur);
-    src.connect(f).connect(g).connect(musicBus); src.start(t, Math.random() * .4); src.stop(t + dur + .01); scheduled++;
+    src.connect(f).connect(g).connect(out); src.start(t, Math.random() * .4); src.stop(t + dur + .01); scheduled++;
   }
-  function kick(t) {
+  function kick(t, vol = .8) {
     const o = audio.createOscillator(), g = audio.createGain();
     o.type = 'triangle'; o.frequency.setValueAtTime(160, t); o.frequency.exponentialRampToValueAtTime(40, t + .1);
-    g.gain.setValueAtTime(.8, t); g.gain.exponentialRampToValueAtTime(.001, t + .12);
-    o.connect(g).connect(musicBus); o.start(t); o.stop(t + .14); scheduled++;
+    g.gain.setValueAtTime(vol, t); g.gain.exponentialRampToValueAtTime(.001, t + .12);
+    o.connect(g).connect(out); o.start(t); o.stop(t + .14); scheduled++;
   }
+  const hat = (t, vol) => noise(t, .035, vol, 'highpass', 7000);
+  const snare = (t, vol = .3) => noise(t, .11, vol, 'bandpass', 2200);
   function play(s, t, STEP) {
-    const tr = TRACK[track], ev = tr[s % tr.length], i = s % 16, bar = Math.floor(s / 16) % (tr.length / 16), k = world.key;
-    const tones = CHORD[ev.ch], root = 45 + (tones[0] + 3) % 12;   // 베이스 근음: A2~G#3 사이
-    if (track === 'title') {
-      if (ev.m !== null) { pulse(hz(ev.m + k), t, STEP * ev.len, world.duty, .1); pulse(hz(ev.m + k), t + STEP * 3, STEP * ev.len, world.duty, .035); }
-      pulse(hz(72 + tones[i % 3] + k), t, STEP * .9, .125, .028);           // 반짝이는 아르페지오
-      if (i % 4 === 0) tri(hz(root + k), t, STEP * 3.6, .42);
-      if (i === 0) kick(t);
-      if (i === 4 || i === 12) noise(t, .04, .12, 'highpass', 7000);
-    } else {
-      const lastBar = bar === tr.length / 16 - 1;
-      if (ev.m !== null) pulse(hz(ev.m + k), t, STEP * ev.len, world.duty, .11);
-      if (bar >= 8 || boss) pulse(hz(72 + tones[i % 3] + k), t, STEP * .8, .125, .026);   // 후렴(9마디~)·보스 판은 아르페지오
-      if (i % 2 === 0) tri(hz(root + k + (i % 4 === 2 ? 12 : 0)), t, STEP * 1.7, .45);    // 통통 옥타브 베이스
-      if (i === 0 || i === 8 || (i === 10 && bar % 2)) kick(t);
-      if (i === 4 || i === 12 || (lastBar && i >= 13)) noise(t, .11, .3, 'bandpass', 2200);
-      else if (i % 2 === 0) noise(t, .035, i % 4 === 2 ? .14 : .08, 'highpass', 7000);
+    const song = SONGS[track], tr = TRACK[track], ev = tr[s % tr.length], i = s % 16, bars = tr.length / 16, bar = Math.floor(s / 16) % bars;
+    const tones = CHORD[ev.ch], root = 45 + (tones[0] + 3) % 12, duty = song.duty, m = ev.m, lastBar = bar === bars - 1;   // 베이스 근음: A2~G#3 사이
+    const arp = (vol, d = STEP * .8) => pulse(hz(72 + tones[i % 3]), t, d, .125, vol);
+    switch (song.style) {
+      case 'title':
+        if (m !== null) { pulse(hz(m), t, STEP * ev.len, .25, .1); pulse(hz(m), t + STEP * 3, STEP * ev.len, .25, .035); }
+        arp(.028, STEP * .9);                                   // 반짝이는 아르페지오
+        if (i % 4 === 0) tri(hz(root), t, STEP * 3.6, .42);
+        if (i === 0) kick(t);
+        if (i === 4 || i === 12) noise(t, .04, .12, 'highpass', 7000);
+        break;
+      case 'bounce':   // 월드 1: 통통 옥타브 베이스 + 후렴(9마디~) 아르페지오
+        if (m !== null) pulse(hz(m), t, STEP * ev.len, duty, .11);
+        if (bar >= 8) arp(.026);
+        if (i % 2 === 0) tri(hz(root + (i % 4 === 2 ? 12 : 0)), t, STEP * 1.7, .45);
+        if (i === 0 || i === 8 || (i === 10 && bar % 2)) kick(t);
+        if (i === 4 || i === 12 || (lastBar && i >= 13)) snare(t);
+        else if (i % 2 === 0) hat(t, i % 4 === 2 ? .14 : .08);
+        break;
+      case 'swing': {   // 월드 2: 엇박을 늦게 쳐서 살랑살랑 흔들리는 셔플
+        const sw = i % 4 === 2 ? STEP * .38 : 0;
+        if (m !== null) { pulse(hz(m), t + sw, STEP * ev.len, duty, .085); pulse(hz(m + 12), t + sw + STEP * 2, STEP * ev.len * .6, .125, .02); }
+        if (bar >= 8 && i % 4 === 0) pulse(hz(72 + tones[(i / 4) % 3]), t, STEP * 1.5, .125, .03);
+        if (i === 0 || i === 8) tri(hz(root), t, STEP * 2.6, .42);
+        if (i === 6 || i === 14) tri(hz(root + 7), t + STEP * .38, STEP * 1.8, .36);
+        if (i === 0) kick(t, .6);
+        if (i === 8) noise(t, .05, .2, 'bandpass', 3800);        // 딱 (림샷)
+        if (i % 2 === 0) noise(t + sw, .05, i % 4 === 2 ? .07 : .04, 'highpass', 9000);   // 찰찰 셰이커
+        break;
+      }
+      case 'cave':     // 월드 3: 메아리 두 번, 느린 걸음 베이스, 물방울
+        if (m !== null) { pulse(hz(m), t, STEP * ev.len, duty, .1); pulse(hz(m), t + STEP * 3, STEP * ev.len, duty, .04); pulse(hz(m), t + STEP * 6, STEP * ev.len, duty, .018); }
+        if (i % 4 === 0) tri(hz(root + [0, 7, 12, 7][i / 4]), t, STEP * 3.2, .44);
+        if (i === 0 || i === 10) kick(t, .7);
+        if (i === 8) noise(t, .16, .14, 'bandpass', 700);         // 둥 (낮은 북)
+        if ((i === 6 && bar % 2 === 0) || (i === 13 && bar % 4 === 3)) blip(1900 + (bar % 3) * 260, t, .07);   // 똑
+        break;
+      case 'factory':  // 월드 4: 짧게 끊는 멜로디, 16분 아르페지오, 네 박 쿵쿵 + 손뼉
+        if (m !== null) pulse(hz(m), t, STEP * Math.min(ev.len, 1.6) * .9, duty, .1);
+        arp(.03, STEP * .6);
+        tri(hz(root + (i % 4 === 3 ? 12 : 0)), t, STEP * .7, .36);
+        if (i % 4 === 0) kick(t);
+        if (i === 4 || i === 12) noise(t, .12, .28, 'bandpass', 1500);   // 짝 (손뼉)
+        hat(t, i % 4 === 2 ? .1 : .045);
+        if (i === 15 && bar % 4 === 3) blip(2600, t, .06);       // 철컥
+        break;
+      case 'march':    // 월드 5: 쿵-짝 베이스, 작은북 행진, 마지막 마디는 북 굴리기
+        if (m !== null) { pulse(hz(m), t, STEP * ev.len, duty, .1); pulse(hz(m - 12), t, STEP * ev.len, .25, .035); }
+        if (i % 2 === 0) tri(hz(root + (i % 4 === 2 ? 7 : 0)), t, STEP * 1.2, .44);
+        if (i === 0 || i === 8) kick(t);
+        if (i === 4 || i === 12) snare(t, .32);
+        else if (lastBar && i >= 8) snare(t, .16);
+        else if (i % 4 === 3) noise(t, .04, .08, 'bandpass', 2600);
+        break;
+      case 'boss':     // 보스: 쉬지 않는 아르페지오, 옥타브 베이스, 빠른 드럼
+        if (m !== null) pulse(hz(m), t, STEP * ev.len, duty, .1);
+        arp(.034);
+        tri(hz(root + (i % 2 ? 12 : 0)), t, STEP * .9, .4);
+        if (i === 0 || i === 3 || i === 8 || i === 11) kick(t);
+        if (i === 4 || i === 12 || (lastBar && i >= 14)) snare(t);
+        else if (i % 2 === 0) hat(t, .08);
+        break;
     }
   }
   function tick() {
     if (!audio || soundMode !== 'all' || document.hidden) { nextT = 0; return; }
     prepare();
-    const STEP = 60 / (SONGS[track].bpm + (track === 'play' ? world.bpm + (boss ? 12 : 0) : 0)) / 4;
+    if (!out) out = newOut(.4);
+    const STEP = 60 / SONGS[track].bpm / 4;
     if (!nextT || nextT < audio.currentTime) nextT = audio.currentTime + .05;
     while (nextT < audio.currentTime + .25) { play(step, nextT, STEP); step++; nextT += STEP; }
   }
   return {
+    TRACKS: Object.keys(SONGS),
     start() { if (!timer) timer = setInterval(tick, 60); tick(); },
-    // 곡 바꾸기: 'title' / 'play'. 같은 곡이면 이어서 연주
-    setTrack(name) { if (TRACK[name] && name !== track) { track = name; step = 0; } },
-    setWorld(w, isBoss = false) { world = WORLD[w] || WORLD[0]; boss = !!isBoss; },
-    info() { return { running: !!timer && soundMode === 'all', scheduled, step, track, bars: TRACK[track].length / 16, key: world.key, boss }; },
+    // 곡 바꾸기: 'title' / 'w1'~'w5' / 'boss'. 같은 곡이면 끊지 않고 이어서 연주
+    setTrack(name) {
+      if (!TRACK[name] || name === track) return;
+      pos[track] = step; track = name; switches++;
+      step = Math.floor((pos[name] || 0) / 16) * 16;   // 듣던 곡이면 그 마디 처음부터 (처음 듣는 곡은 0)
+      if (audio && out) {   // 옛 곡은 0.6초 동안 줄이고, 새 곡은 키우며 바로 이어서
+        const old = out, now = audio.currentTime;
+        old.gain.cancelScheduledValues(now); old.gain.setValueAtTime(old.gain.value, now); old.gain.linearRampToValueAtTime(.0001, now + .6);
+        setTimeout(() => { try { old.disconnect(); } catch (e) {} }, 1500);
+        out = newOut(.7); nextT = 0;
+      }
+    },
+    // 월드 번호(0~4) → 그 월드의 곡 이름
+    worldTrack(w, isBoss = false) { return isBoss ? 'boss' : 'w' + (Math.max(0, Math.min(4, w)) + 1); },
+    // 소리 장치를 새로 만들었을 때: 옛 장치에 묶인 소리 재료를 버린다 (곡·자리는 그대로)
+    reset() { waves = null; noiseBuf = null; out = null; nextT = 0; },
+    info() { return { running: !!timer && soundMode === 'all', scheduled, step, track, bars: TRACK[track].length / 16, bpm: SONGS[track].bpm, style: SONGS[track].style, boss: track === 'boss', switches }; },
   };
 })();
 function updateSoundBtn() {
@@ -2255,7 +2412,8 @@ function go(name) {
   if (name !== 'play') $('hzCard').hidden = true;
   $('app').inert = false;
   current = name;
-  Music.setTrack(name === 'play' ? 'play' : 'title');
+  // 타이틀·프롤로그만 타이틀 곡. 지도(renderMap)·플레이(startStage)는 그 월드의 곡, 스티커 북은 듣던 곡을 그대로
+  if (name === 'title' || name === 'intro') Music.setTrack('title');
   if (name === 'title') renderTitle();
   if (name === 'map') renderMap();
   if (window.JellyMonetize) { if (name === 'map') JellyMonetize.showBanner(); else JellyMonetize.hideBanner(); }
@@ -2307,7 +2465,7 @@ function updateHud() {
 function startStage(n) {
   $('result').hidden = true;
   newGame(n);
-  Music.setWorld(G.st.world - 1, !!G.st.boss);
+  Music.setTrack(Music.worldTrack(G.st.world - 1, !!G.st.boss));   // 같은 월드면 끊지 않고 이어서
   // 3D 숲 배경일 때는 게임 판 바깥(화면 위아래 여백)도 같은 숲 그림을 흐리게 깔아 한 장면처럼 보이게 한다
   const p3 = window.Jelly3D && Jelly3D.ok();
   $('play').classList.toggle('f3d', !!p3);
@@ -2596,6 +2754,7 @@ function renderMap() {
   // 월드를 넘어가면 지도가 새 월드로 바뀌고 이름이 크게 나온다
   if (walkFrom !== null && Math.floor(walkFrom / 6) < atWorld) { showWorldBanner(atWorld); walkFrom = null; mapView = null; }
   const wi = mapView === null ? atWorld : Math.min(mapView, atWorld), base = wi * 6;
+  Music.setTrack(Music.worldTrack(wi));   // 지도도 보고 있는 월드의 곡 (플레이와 같은 곡이라 이어서 들림)
   $('mapWorldNo').textContent = T('월드 ') + (wi + 1); $('mapWorldName').textContent = WORLDS[wi];
   $('mapPrev').hidden = wi === 0; $('mapNext').hidden = wi >= atWorld;
   // 그림을 화면에 덮되(cover) 칸 6개가 상단 바와 하단 버튼 사이에 들어오게 비율·위치를 고른다
@@ -2763,8 +2922,9 @@ function revive() {
 // 광고 보는 동안은 게임 소리를 멈춘다 (스토어·토스 심사 기준)
 async function withAdPause(fn) {
   const wasRunning = audio && audio.state === 'running';
-  if (wasRunning) { try { await audio.suspend(); } catch (e) {} }
-  try { return await fn(); } finally { if (wasRunning) { try { await audio.resume(); } catch (e) {} } }
+  if (wasRunning) { adPaused = true; try { await audio.suspend(); } catch (e) {} }
+  // resume 는 기다리지 않는다: 휴대폰은 터치 밖에서 resume 가 끝나지 않을 때가 있음 (그래도 다음 터치 때 다시 깨움)
+  try { return await fn(); } finally { adPaused = false; if (wasRunning && audio) { try { const r = audio.resume(); if (r && r.catch) r.catch(() => {}); } catch (e) {} } }
 }
 $('resultAd').onclick = async () => {
   const btn = $('resultAd'); if (btn.disabled || !G) return;
@@ -2853,7 +3013,7 @@ requestAnimationFrame(frame);
 // 테스트용 손잡이 (화면에는 영향 없음)
 window.__jp = {
   get G() { return G; }, lowerCeiling, showBanner, P, STAGES, Board, R, ROW_H, W, H, PIVOT, DEADLINE,
-  startStage, rescue, showResult, revive, canRevive, finish, land, hazardsAfterShot, unlockAudio, boom, audioReady: () => !!audio, audioState: () => audio && audio.state, soundHint: () => !$('soundHint').hidden, LUCKY, pickLucky, applyLucky, seenHz: () => P.seenHz, aimLimit, music: () => Music.info(), voices: () => voiceCount, soundMode: () => soundMode, sfx, CS, shoot, swapQueue, setAngle, go, seedRandom,
+  startStage, rescue, showResult, revive, canRevive, finish, land, hazardsAfterShot, unlockAudio, boom, audioReady: () => !!audio, audioState: () => audio && audio.state, soundHint: () => !$('soundHint').hidden, LUCKY, pickLucky, applyLucky, seenHz: () => P.seenHz, aimLimit, music: () => Music.info(), audioMade: () => audioMade, audioBroken: () => audioBroken, musicTrack: n => Music.setTrack(n), fakeStall() { clockSeen.n = 2; checkAudioClock(true); }, voices: () => voiceCount, soundMode: () => soundMode, sfx, CS, shoot, swapQueue, setAngle, go, seedRandom,
   reset() { Object.assign(P, { stars: new Array(NST).fill(0), stickers: {}, seenIntro: false, at: 0, seenHz: {}, seenStory: {} }); saveP(); },
   story: () => window.JellyStory,
   mapScene: wi => Jelly3D.scene().then(() => mapArtWorld(wi, true)),   // 지도 그림 굽기 도구용 (design/forest/bake-map.mjs)
