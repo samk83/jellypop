@@ -2,7 +2,7 @@
 // 처음 열 때 게임 파일을 저장해 두고, 다음부터는 인터넷이 없어도 게임이 뜬다.
 // 페이지·스크립트는 늘 새 파일 먼저(인터넷이 없을 때만 저장본) → 새 index.html 과 옛 스크립트가 섞이지 않는다.
 // 그림(webp·png)·글꼴은 저장본 먼저 → 그림을 바꿨으면 VERSION 숫자를 올리기. (tests/monetize.test.mjs 가 목록 누락을 잡는다)
-const VERSION = 'jellypop-v0.13.1';
+const VERSION = 'jellypop-v0.14.0';
 const PRECACHE = [
   './',
   'index.html',

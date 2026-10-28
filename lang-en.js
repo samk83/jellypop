@@ -477,4 +477,18 @@ JellyI18n.add({
   "보기": "View",
   "알림": "Notice",
   "위쪽 시간 게이지를 잘 보세요": "Watch the time gauge at the top",
+  // 0.14.0 지형 장애물
+  "나뭇가지": "Branch",
+  "판 아래에 나뭇가지가 걸려 있어요. 거품이 닿으면 통! 하고 튕겨 나가요.": "A branch hangs below the board. Bubbles that hit it go boing and bounce away.",
+  "가지에 튕겨 구석을 노려 봐요. 판이 내려와 닿으면 부러져요.": "Bank shots off the branch into tricky corners. It snaps when the board reaches it.",
+  "솜사탕 거미줄": "Cotton Candy Web",
+  "거미줄에 닿은 거품은 대롱대롱 걸려서 판까지 못 가요(헛방 1번).": "A bubble that touches the web gets stuck dangling and never reaches the board (counts as a miss).",
+  "한 번 걸리면 찢어져요. 피해서 쏘거나 일부러 걷어 내요.": "It tears after one catch. Shoot around it, or clear it on purpose.",
+  "풍차 날개": "Pinwheel",
+  "빙글빙글 도는 날개에 닿으면 거품이 튕겨요.": "Bubbles bounce off the spinning blade.",
+  "날개가 비켜 갈 때를 기다렸다 쏴요.": "Wait for the blade to swing aside, then shoot.",
+  "통!": "Boing!",
+  "거미줄에 걸렸어요!": "Stuck in the web!",
+  "튕겨 나갔어요!": "Bounced away!",
+  "와작!": "Crunch!",
 });

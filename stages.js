@@ -10,15 +10,17 @@
 //   drop N(N발마다 천장) · miss N(헛방 N번마다 천장) · dropSec N(이 스테이지만 더 빠른 하강 간격) · cloud {first, every, last, look}
 //   aim 'short'|'blink'|'none' · clock {sec, hard} · shotTimer N(한 발 N초) · caramel N · conveyor {every, rows} · dark
 //   nom {first, every, acts:['steal'|'block'|'take'|'junk']}
+// obs: 지형 장애물 (0.14.0) [{t, x, y, len, a, spin}] — 판 아래 빈 곳(논리 좌표 360×620)에 놓는다
+//   t 'branch' 나뭇가지(튕김) · 'web' 솜사탕 거미줄(한 발을 붙잡고 찢어짐) · 'fan' 풍차 날개(spin°/초로 돌며 튕김) · a 기울기°
 window.JellyStages = (() => {
   const WORLDS = [T('젤리마을'), T('시럽 숲'), T('푸딩 동굴'), T('디저트 공장'), T('노놈의 성')];
   const S = [
     // ---------------- 월드 1 · 젤리마을 ----------------
-    { id: 1, name: T('마을 광장'), theme: 'plaza', shots: 20, colors: 'ryb',
+    { id: 1, name: T('마을 광장'), theme: 'plaza', shots: 20, colors: 'ryb', fall: 26,   // 0.14.0: 첫 판은 천장을 느긋하게 (기본 19초)
       friends: [{ name: T('몽실'), color: '#ff5f8a' }],
       tip: T('<b>대포 근처를 좌우로 끌어</b> 대포를 돌리고, 손을 떼면 발사! 같은 색 3개를 붙여 봐요'),
       rows: ['ryyrbbryyb', 'bbryyrbrb', 'rrybrbyryy', 'bybrBybbr', 'brryyrryyr'] },   // 0.6.1: 4줄 큰 덩어리 → 5줄 2개씩 섞인 판 (Owner: 너무 쉬움)
-    { id: 2, name: T('젤리 분수'), theme: 'fountain', shots: 22, colors: 'rybg',
+    { id: 2, name: T('젤리 분수'), theme: 'fountain', shots: 22, colors: 'rybg', fall: 23,
       friends: [{ name: T('퐁당'), color: '#4fb4ff' }],
       tip: T('<b>벽에 튕겨서</b> 구석의 친구를 노려 봐요'),
       rows: ['bbyyrrggGg', 'byyrrggbb', 'yyrrggbbyy', 'rrgg..bbyy', 'rgg...byy'] },
@@ -50,17 +52,17 @@ window.JellyStages = (() => {
       friends: [{ name: T('솜솜'), color: '#ffc4ea' }],
       tip: T('<b>솜사탕 안개</b>가 위쪽을 가려요. 안개 속 거품을 터뜨리면 그 자리가 걷혀요'),
       rows: ['yyppggbggb', 'pgyybYppb', 'pgrrgbyrrp', 'ybpgppgbb', 'brpbbgrgrp', 'ryygygrbr', 'bbpgrrbggy'] },
-    { id: 9, name: T('메이플 시냇물'), theme: 'w2-stream', shots: 28, colors: 'rybgp', hz: { miss: 3 },
+    { id: 9, name: T('메이플 시냇물'), theme: 'w2-stream', shots: 28, colors: 'rybgp', hz: { miss: 3 }, obs: [{ t: 'branch', x: 92, y: 362, len: 110, a: -18 }],
       friends: [{ name: T('메이'), color: '#e0a050' }],
       tip: T('<b>헛방</b>(아무것도 못 터뜨린 발사) 3번이면 천장이 내려와요'),
       rows: ['gbbrryggpp', 'rygbgyrry', 'ryprgppgby', 'pbprbbgyp', 'pbgypYrypb', 'rgyrrgrgy', 'ryrbbgybgb'],
       kinds: ['ssssssssss', '...s.....', '.s.s....s.', '.........', '..........', '.........', '..........'] },
-    { id: 10, name: T('버섯 젤리촌'), theme: 'w2-mushroom', shots: 28, colors: 'rybgp', hz: { cloud: { first: 3, every: 8, last: 3 } },
+    { id: 10, name: T('버섯 젤리촌'), theme: 'w2-mushroom', shots: 28, colors: 'rybgp', hz: { cloud: { first: 3, every: 8, last: 3 } }, obs: [{ t: 'branch', x: 74, y: 344, len: 100, a: 22 }, { t: 'branch', x: 288, y: 372, len: 100, a: -22 }],
       friends: [{ name: T('톡이'), color: '#4fdcc4' }],
       tip: T('<b>버섯 거품</b>이 터지면 옆 거품들이 버섯 색으로 바뀌어요'),
       rows: ['ppyybbggyy', 'bbprrppbr', 'ypyyggyrby', 'ypbpprYry', 'bgbgygrbpp', 'bppbppbrb', 'pybybryyrb'],
       kinds: ['...m......', '....m....', '..m.....m.', '.........', 'm.........', '..z......', '.......z..'] },
-    { id: 11, name: T('반딧불 밤숲'), theme: 'w2-night', shots: 28, colors: 'rybgp', hz: { aim: 'short' },
+    { id: 11, name: T('반딧불 밤숲'), theme: 'w2-night', shots: 28, colors: 'rybgp', hz: { aim: 'short' }, obs: [{ t: 'branch', x: 256, y: 336, len: 104, a: 16 }],
       friends: [{ name: T('반짝'), color: '#ffe14d' }],
       tip: T('밤이라 <b>조준선이 첫 벽까지만</b> 보여요. 반딧불 거품을 터뜨리면 3발 동안 길게!'),
       rows: ['ggyygppbbp', 'rrbgrrgrr', 'ppbrbygyyb', 'ggrpPypbr', 'ybpyrrbpby', 'bgrppbggy', 'grgrbrprrb', 'yyppyypby'],
@@ -73,7 +75,7 @@ window.JellyStages = (() => {
       kinds: ['..........', '.s....ss.', '...s.....s', '.........', '........s.', '.........'] },
 
     // ---------------- 월드 3 · 푸딩 동굴 ----------------
-    { id: 13, name: T('동굴 입구'), theme: 'w3-gate', shots: 26, colors: 'rybgp', hz: { miss: 3 },
+    { id: 13, name: T('동굴 입구'), theme: 'w3-gate', shots: 26, colors: 'rybgp', hz: { miss: 3 }, obs: [{ t: 'web', x: 118, y: 336, len: 92 }],
       friends: [{ name: T('탱글'), color: '#ffe9a8' }],
       tip: T('<b>흔들 푸딩</b> 옆에 붙이면 푸딩 색이 바뀌어요'),
       rows: ['bbyyrryygb', 'grrbppbgp', 'gyyggybpbp', 'bpprPypyb', 'gybbrgrbgg', 'yrrygryby', 'gppbbpyrrg'],
@@ -83,7 +85,7 @@ window.JellyStages = (() => {
       tip: T('4발마다 <b>캐러멜 방울</b>이 떨어져 거품 판에 붙어요'),
       rows: ['rpbbggrrbb', 'gyyrrppgr', 'grppbByyrb', 'ryyrppbpp', 'pbbpryybrr', 'pyrggbpgg', 'gyryyrrbby', 'gbbggppyg'],
       kinds: ['..........', '.........', '..........', '.........', '..........', '..q......', '......q...', '....q....'] },
-    { id: 15, name: T('푸딩 호수'), theme: 'w3-lake', shots: 30, colors: 'rybgp', hz: { clock: { sec: 90, hard: false } },
+    { id: 15, name: T('푸딩 호수'), theme: 'w3-lake', shots: 30, colors: 'rybgp', hz: { clock: { sec: 90, hard: false } }, obs: [{ t: 'web', x: 84, y: 344, len: 84, a: 8 }, { t: 'web', x: 278, y: 326, len: 84, a: -8 }],
       friends: [{ name: T('출렁'), color: '#6fd0ff' }],
       tip: T('<b>90초 타임 어택!</b> 시간이 끝나면 천장이 쿵쿵 내려와요'),
       rows: ['yybbggrrgg', 'ppgrypgbb', 'rgbgyprppg', 'ypbPbbggy', 'yrpggyrypg', 'rgrrpyrbg', 'yygyggbgbr', 'gppbpbpgp'] },
@@ -92,7 +94,7 @@ window.JellyStages = (() => {
       tip: T('<b>꼬마 놈놈</b>이 거품을 훔쳐 가요! 날아다니는 놈놈을 맞혀 쫓아내요'),
       rows: ['bbyppbbrrb', 'ryrrgrggp', 'rggybgrpyp', 'byrbxPyxg', 'byryyrgygp', 'gppbgbppr', 'brbgybgbbp', 'rbgyryygr'],
       kinds: ['..........', '.........', '..........', '....c..c.', '..........', '.........', '..........', '.........'] },
-    { id: 17, name: T('어둠 미로'), theme: 'w3-dark', shots: 30, colors: 'rybgp', hz: { dark: true, aim: 'short' },
+    { id: 17, name: T('어둠 미로'), theme: 'w3-dark', shots: 30, colors: 'rybgp', hz: { dark: true, aim: 'short' }, obs: [{ t: 'web', x: 180, y: 318, len: 80 }],
       friends: [{ name: T('깜빡'), color: '#9b6bff' }],
       tip: T('<b>캄캄한 동굴</b>! 조준한 곳만 손전등처럼 밝아져요'),
       rows: ['ppbbggrrgp', 'byprrpygb', 'bpbbggYpyy', 'rrprrbbgg', 'ypypggrrpr', 'yrrbbpyyg', 'bggyypgbgp', 'byrrgbybp'],
@@ -105,7 +107,7 @@ window.JellyStages = (() => {
       kinds: ['u...u....u', '.........', '..........', '.........', '..........', '.........'] },
 
     // ---------------- 월드 4 · 디저트 공장 ----------------
-    { id: 19, name: T('정문 컨베이어'), theme: 'w4-belt', shots: 32, colors: 'rybgp', hz: { conveyor: { every: 4, rows: [1, 3] } },
+    { id: 19, name: T('정문 컨베이어'), theme: 'w4-belt', shots: 32, colors: 'rybgp', hz: { conveyor: { every: 4, rows: [1, 3] } }, obs: [{ t: 'fan', x: 180, y: 352, len: 100, spin: 60 }],
       friends: [{ name: T('톡톡'), color: '#5fe0c0' }],
       tip: T('4발마다 <b>컨베이어</b> 줄이 한 칸씩 옆으로 움직여요'),
       rows: ['rppbryyggp', 'ggrgrgppr', 'rryrbpgyrp', 'bbppGyrbp', 'rprrypbryy', 'pbbybpggp', 'ygrrbrrprg', 'ygpgppyrb'] },
@@ -114,12 +116,12 @@ window.JellyStages = (() => {
       tip: T('<b>7초 안에</b> 쏘지 않으면 자동으로 발사돼요. 쿠키 블록은 떨어뜨려야 없어져요'),
       rows: ['oyyprrggrr', 'obrbbppbb', 'ggryxggrrx', 'rppbbRbgg', 'xorggrbxop', 'oprbbgyrp', 'yryoogrybg', 'ypyryygrb'],
       kinds: ['..........', '.........', '....k....k', '.........', 'k......k..', '.z.......', '......z...', '.........'] },
-    { id: 21, name: T('아이스크림 냉동실'), theme: 'w4-freezer', shots: 32, colors: 'rybgpo', hz: { cloud: { first: 2, every: 7, last: 4, look: 'frost' } },
+    { id: 21, name: T('아이스크림 냉동실'), theme: 'w4-freezer', shots: 32, colors: 'rybgpo', hz: { cloud: { first: 2, every: 7, last: 4, look: 'frost' } }, obs: [{ t: 'fan', x: 100, y: 350, len: 90, spin: -70 }],
       friends: [{ name: T('얼음이'), color: '#bfe9ff' }],
       tip: T('<b>얼음 거품</b>은 옆 거품이 터지면 녹아요. 서리가 위쪽을 가려요'),
       rows: ['yyggpprroo', 'rpbbrggyy', 'prggrBbopp', 'pbbyyogyy', 'gryorrogbb', 'gyropproy', 'probbyrgog', 'roggyoppg'],
       kinds: ['..........', '.........', '.......i..', '.i..i...i', 'i.........', '.........', '.i....i...', '.........'] },
-    { id: 22, name: T('초콜릿 강'), theme: 'w4-choco', shots: 36, colors: 'rybgpo', hz: { dropSec: 9 },
+    { id: 22, name: T('초콜릿 강'), theme: 'w4-choco', shots: 36, colors: 'rybgpo', hz: { dropSec: 9 }, obs: [{ t: 'fan', x: 92, y: 362, len: 80, spin: 80 }, { t: 'fan', x: 268, y: 340, len: 80, spin: -80 }],
       friends: [{ name: T('초코'), color: '#8a5a3a' }],
       tip: T('<b>9초마다</b> 천장이 내려와요. 빨리빨리!'),
       rows: ['yybrrogrrb', 'popbobogg', 'gpobppgryy', 'yrpogoRpp', 'yprbygyyrr', 'robppbrbb', 'ropobyrprr'],
@@ -146,12 +148,12 @@ window.JellyStages = (() => {
       tip: T('<b>친구 3명</b>을 구해요! 놈놈이 줄 선 친구를 데려가면 맞혀서 되찾아요'),
       rows: ['ooygyryygg', 'pgpyggrbo', 'prObpoBpby', 'rgbpoprpy', 'pogoYrgybb'],
       kinds: ['..........', '.........', '..........', '......q..', '.q........'] },
-    { id: 27, name: T('거울 복도'), theme: 'w5-mirror', shots: 50, colors: 'rybgpo', fall: 16, hz: { aim: 'none' },
+    { id: 27, name: T('거울 복도'), theme: 'w5-mirror', shots: 50, colors: 'rybgpo', fall: 16, hz: { aim: 'none' }, obs: [{ t: 'web', x: 250, y: 360, len: 84 }],
       friends: [{ name: T('똑딱'), color: '#4fe0b0' }],
       tip: T('거울 때문에 <b>조준선이 안 보여요</b>! 반딧불 거품이 길을 비춰 줘요'),
       rows: ['ooyybbyyoo', 'rgororogr', 'rbypbbpybr', 'bygrYrgyb', 'oorgoogroo', 'prpryrprp'],
       kinds: ['..........', '.........', '..........', '.........', '..f....f..', '.........'] },
-    { id: 28, name: T('왕관 탑'), theme: 'w5-tower', shots: 30, colors: 'rybgpo', hz: { conveyor: { every: 4, rows: [3] }, cloud: { first: 3, every: 8, last: 3, look: 'night' }, shotTimer: 8 },
+    { id: 28, name: T('왕관 탑'), theme: 'w5-tower', shots: 30, colors: 'rybgpo', hz: { conveyor: { every: 4, rows: [3] }, cloud: { first: 3, every: 8, last: 3, look: 'night' }, shotTimer: 8 }, obs: [{ t: 'branch', x: 272, y: 362, len: 92, a: -20 }, { t: 'fan', x: 96, y: 372, len: 80, spin: 70 }],
       friends: [{ name: T('왕관'), color: '#a070ff' }],
       tip: T('컨베이어 + 얼음 + 밤 구름 + <b>8초 초침</b>. 침착하게!'),
       rows: ['rpyybyyoob', 'pgoorbbgp', 'yygrGgrgpr', 'bprpporbb', 'rgyoorogyp', 'gypygygpb', 'proogypbpb', 'ryyppopyg'],
@@ -202,6 +204,9 @@ window.JellyStages = (() => {
     'aim-blink': { title: T('깜빡 조준선'), text: T('고장 난 조준기 때문에 조준선이 깜빡여요.'), how: T('보일 때 방향을 기억해요.'), art: 'aim' },
     'nom-junk': { title: T('꼬마 놈놈 — 방해 거품'), text: T('놈놈이 색 없는 회색 거품을 던져 붙여요.'), how: T('위쪽 줄기를 끊어 떨어뜨려요.'), art: 'nom' },
     'nom-take': { title: T('꼬마 놈놈 — 친구 데려가기'), text: T('놈놈이 줄 선 친구를 데려가면 천장 시간이 4초 줄어요.'), how: T('3발 안에 놈놈을 맞히면 되찾고 4초도 돌려받아요.'), art: 'nom' },
+    'ob-branch': { title: T('나뭇가지'), text: T('판 아래에 나뭇가지가 걸려 있어요. 거품이 닿으면 통! 하고 튕겨 나가요.'), how: T('가지에 튕겨 구석을 노려 봐요. 판이 내려와 닿으면 부러져요.'), art: 'branch' },
+    'ob-web': { title: T('솜사탕 거미줄'), text: T('거미줄에 닿은 거품은 대롱대롱 걸려서 판까지 못 가요(헛방 1번).'), how: T('한 번 걸리면 찢어져요. 피해서 쏘거나 일부러 걷어 내요.'), art: 'web' },
+    'ob-fan': { title: T('풍차 날개'), text: T('빙글빙글 도는 날개에 닿으면 거품이 튕겨요.'), how: T('날개가 비켜 갈 때를 기다렸다 쏴요.'), art: 'fan' },
     'aim-none': { title: T('조준선 없음'), text: T('거울 때문에 조준선이 보이지 않아요. 대포 앞 화살표만 보여요.'), how: T('반딧불 거품이 3발 동안 길을 비춰 줘요.'), art: 'aim' },
   };
   // 스테이지에 나오는 방해 요소 열쇠 목록 (설명 카드용)
@@ -218,6 +223,7 @@ window.JellyStages = (() => {
       if (h.nom) h.nom.acts.forEach(a => add('nom-' + a));
     };
     fromHz(hz);
+    (st.obs || []).forEach(o => add('ob-' + o.t));
     if (st.boss && st.boss.sticky) add('s');
     if (st.boss && st.boss.lucky) add('q');
     if (st.boss && st.boss.phases) st.boss.phases.forEach(fromHz);

@@ -263,7 +263,7 @@ function botPlay(stageNo) {
   });
   check('스테이지 30개, 배경 30종, 친구 30명, 보스는 6·12·18·24·30', t.count === 30 && t.themes === 30 && t.friends === 30 && t.bosses === '6,12,18,24,30', JSON.stringify(t));
   check('방해 요소는 진행표에 정한 스테이지에서만 켜짐 (월드 1은 없음), 모든 스테이지에 시간 천장', t.bad.length === 0, t.bad.join(' | '));
-  check('천장 하강 간격: 1스테이지 19초 → 뒤로 갈수록 짧아짐, 5스테이지는 12초로 빠름', t.fall[0] === 19 && t.fall[4] === 12 && t.fall[28] < t.fall[6] && t.fall.every(v => v >= 8), JSON.stringify(t.fall));
+  check('천장 하강 간격: 1스테이지 26초(첫 판 느긋하게)·2스테이지 23초 → 뒤로 갈수록 짧아짐, 5스테이지는 12초로 빠름', t.fall[0] === 26 && t.fall[1] === 23 && t.fall[4] === 12 && t.fall[28] < t.fall[6] && t.fall.every(v => v >= 8), JSON.stringify(t.fall));
 
   const warn = await page.evaluate(() => {
     const j = window.__jp, out = {}, miss = a => { j.setAngle(a); j.shoot(); j.advance(); };
@@ -319,8 +319,11 @@ function botPlay(stageNo) {
   });
   check('안개: 덮이면 맨 위는 하얗게 가려짐(밝기 높음)', mist.on && mist.top > 700, JSON.stringify(mist));
   check('안개: 안개 속 거품을 터뜨리면 그 자리가 걷힘', mist.holes1 > mist.holes0, JSON.stringify(mist));
-  const aimL = await page.evaluate(() => { const j = window.__jp; return j.STAGES.map(s => j.aimLimit(s)); });
-  check('조준선: 월드 1은 끝까지, 7번부터 스테이지가 오를수록 짧아짐(30번 150px)', aimL.slice(0, 6).every(v => v === null || v > 1e9) && aimL.slice(6).every((v, i, a) => i === 0 || v <= a[i - 1]) && aimL[29] === 150 && aimL[6] === 700, JSON.stringify(aimL));
+  const aimL = await page.evaluate(() => { const j = window.__jp; return j.STAGES.map(s => { const v = j.aimLimit(s); return v === Infinity ? 1e9 : v; }); });
+  const perWorld = [0, 1, 2, 3, 4].map(w => aimL.slice(w * 6, w * 6 + 6));
+  check('조준선: 월드 1은 끝까지, 월드(테마)마다 한 단계씩 짧아짐 (월드 안에서는 같음, 월드 2는 400 이하)', perWorld[0].every(v => v === 1e9) && perWorld.every(a => a.every(v => v === a[0])) && perWorld.every((a, i) => i === 0 || a[0] < perWorld[i - 1][0]) && perWorld[1][0] <= 400 && perWorld[4][0] <= 150, JSON.stringify(perWorld.map(a => a[0])));
+  const falls = await page.evaluate(() => window.__jp.STAGES.slice(0, 3).map(s => s.fall));
+  check('첫 판은 느긋하게: 스테이지 1·2 천장 간격이 3보다 김', falls[0] > falls[1] && falls[1] > falls[2], JSON.stringify(falls));
   check('꼬마 놈놈: 1발 전에 빼꼼 예고 → 거품 1개를 훔쳐 감', warn.peek === 'peek' && warn.steal, JSON.stringify(warn));
   check('캐러멜 방울: 1발 전에 천장에 맺힘(예고) → 떨어져 붙음', warn.caramelWarn && warn.caramel, JSON.stringify(warn));
   check('컨베이어: 움직이기 1발 전에 줄이 깜빡임(예고)', warn.convWarn === true, JSON.stringify(warn));
@@ -575,6 +578,85 @@ for (const [label, dev] of [['iPhone SE (320x568)', devices['iPhone SE']], ['Gal
     return { story, banner: !document.getElementById('worldBanner').hidden, text: document.getElementById('worldBanner').textContent, world: document.getElementById('mapWorldName').textContent };
   });
   check('보스를 깨고 지도로 가면 다음 월드 이름이 크게 나옴', tr.story && tr.banner && tr.text.includes('시럽 숲') && tr.world === '시럽 숲', JSON.stringify(tr));
+  await page.close();
+}
+
+// 4-2) 지형 장애물 (0.14.0): 나뭇가지·솜사탕 거미줄·풍차 날개
+{
+  console.log('지형 장애물');
+  const page = await browser.newPage();
+  const errors = [];
+  page.on('pageerror', e => errors.push(e.message));
+  await page.goto(url + '?seed=3');
+  const r = await page.evaluate(() => {
+    const j = window.__jp, out = {}, ang = (o) => Math.atan2(o.y - j.PIVOT.y, o.x - j.PIVOT.x);
+    out.placed = j.STAGES.map(s => (s.obs || []).map(o => o.t).join('+')).map((v, i) => v && (i + 1) + ':' + v).filter(Boolean);
+    out.keys9 = j.keysOf(j.STAGES[8]); out.keys13 = j.keysOf(j.STAGES[12]); out.keys19 = j.keysOf(j.STAGES[18]);
+    // 나뭇가지: 가지를 겨누면 길이 꺾임 (장애물 없는 판과 끝점이 다름)
+    j.startStage(9); j.closeCard();
+    const br = j.G.b.obs[0], a9 = ang(br);
+    const t1 = j.Board.trace(j.G.b, a9), t0 = j.Board.trace({ ...j.G.b, obs: [] }, a9);
+    out.branchBent = t1.bounceAt >= 0 && Math.hypot(t1.x - t0.x, t1.y - t0.y) > 20;
+    // 가지 바로 아래에서 맞혀도 거품을 잃지 않고 옆 위로 미끄러져 판에 붙음
+    Object.assign(br, { x: 180, y: 420, a: 0 });
+    const n0 = j.Board.count(j.G.b), sc0 = j.G.score, e = j.evalShot(-Math.PI / 2);
+    out.lostEval = !!e && !e.lost && !!e.cell;
+    j.setAngle(-Math.PI / 2); j.shoot(); j.advance();
+    out.lost = (j.Board.count(j.G.b) !== n0 || j.G.score > sc0) && j.G.state === 'aim';
+    // 판이 내려와 닿으면 부러짐
+    j.startStage(9); j.closeCard();
+    out.beforeCrush = !j.G.b.obs[0].gone;
+    j.lowerCeiling(4); out.crushed = j.G.b.obs[0].gone && j.G.state === 'aim';
+    // 거미줄: 한 발을 붙잡고 찢어짐 → 같은 방향 다음 발은 지나감
+    j.startStage(13); j.closeCard();
+    const web = j.G.b.obs[0], a13 = ang(web), c0 = j.Board.count(j.G.b);
+    out.webEval = j.evalShot(a13).web;
+    j.setAngle(a13); j.shoot(); j.advance();
+    out.webCaught = web.gone && j.Board.count(j.G.b) === c0 && j.G.hz.misses === 1;
+    out.webPass = !j.evalShot(a13).web;
+    // 풍차 날개: 시간이 흐르면 돈다, 설명 카드가 열려 있으면 멈춤
+    j.startStage(19);
+    const f = j.G.b.obs[0], fa0 = f.a; j.G.paused = true; j.think(1); out.pausedStill = f.a === fa0;
+    j.closeCard(); j.think(1); out.spun = Math.abs(f.a - fa0) > .5;
+    // 도는 풍차는 날개가 어느 방향이든 판이 날개 원에 닿으면 부서짐 (판 속으로 돌아 들어가지 않음)
+    f.a = 0; j.lowerCeiling(2); out.fanCrushed = f.gone;
+    // 장애물 없는 판의 긴 발사(얕은 각도로 벽을 여러 번)는 3초가 넘어도 사라지지 않음
+    j.startStage(1); j.closeCard(); j.G.b.rows = j.G.b.rows.slice(0, 3);
+    const c1 = j.Board.count(j.G.b), s1 = j.G.score; j.setAngle(-0.16); j.shoot(); j.advance();
+    out.longShot = (j.Board.count(j.G.b) !== c1 || j.G.score > s1) && !j.G.falls.some(f => f.vy === 120);
+    // 보스 판에는 장애물 없음
+    out.bossFree = j.STAGES.filter(s => s.boss).every(s => !s.obs);
+    out.nomFree = j.STAGES.filter(s => s.hz.nom).every(s => !s.obs);
+    return out;
+  });
+  check('장애물이 월드 2~5에 배치됨 (나뭇가지 W2 · 거미줄 W3 · 풍차 W4 · W5 27·28)', r.placed.some(v => v.startsWith('9:branch')) && r.placed.some(v => v.startsWith('13:web')) && r.placed.some(v => v.startsWith('19:fan')) && r.placed.some(v => Number(v.split(':')[0]) >= 25) && !r.placed.some(v => Number(v.split(':')[0]) <= 6), JSON.stringify(r.placed));
+  check('처음 나오면 설명 카드 열쇠가 붙음', r.keys9.includes('ob-branch') && r.keys13.includes('ob-web') && r.keys19.includes('ob-fan'), JSON.stringify([r.keys9, r.keys13, r.keys19]));
+  check('나뭇가지: 겨누면 조준선·발사 길이 튕겨 꺾임', r.branchBent, JSON.stringify(r));
+  check('가지 아래에서 맞혀도 거품을 잃지 않고 옆 위로 미끄러져 판에 붙음', r.lostEval && r.lost, JSON.stringify(r));
+  check('풍차: 날개가 눕혀져 있어도 판이 날개 원에 닿으면 부서짐', r.fanCrushed, JSON.stringify(r));
+  check('판이 내려와 닿으면 장애물이 부러져 없어짐', r.beforeCrush && r.crushed, JSON.stringify(r));
+  check('거미줄: 한 발을 붙잡고(판 그대로·헛방 1번) 찢어짐 → 다음 발은 지나감', r.webEval && r.webCaught && r.webPass, JSON.stringify(r));
+  check('풍차 날개: 시간이 흐르면 돌고, 멈춤 중엔 안 돎', r.spun && r.pausedStill, JSON.stringify(r));
+  check('장애물 없는 판의 긴 발사는 3초가 넘어도 판에 붙음', r.longShot, JSON.stringify(r));
+  check('보스 판·꼬마 놈놈 판에는 장애물 없음 (놈놈을 맞혀야 하므로)', r.bossFree && r.nomFree);
+  // 그림: 장애물이 실제로 그려짐 (나뭇가지 자리 픽셀이 갈색 계열)
+  await page.goto(url + '?seed=3');
+  await page.evaluate(() => { const j = window.__jp; j.startStage(10); j.closeCard(); });
+  await page.waitForTimeout(600);
+  const px = await page.evaluate(() => {
+    const j = window.__jp, o = j.G.b.obs[0], cv = document.getElementById('canvas'), k = cv.width / j.W;
+    const d = cv.getContext('2d').getImageData(Math.round(o.x * k), Math.round((o.y + 1) * k), 1, 1).data;
+    return [d[0], d[1], d[2]];
+  });
+  check('나뭇가지가 화면에 그려짐 (갈색)', px[0] > px[2] + 30 && px[0] < 200, JSON.stringify(px));
+  await page.screenshot({ path: path.join(shots, 'obs-branch.png') });
+  await page.evaluate(() => { const j = window.__jp; j.startStage(19); j.closeCard(); });
+  await page.waitForTimeout(500);
+  await page.screenshot({ path: path.join(shots, 'obs-fan.png') });
+  await page.evaluate(() => { const j = window.__jp; j.startStage(15); j.closeCard(); });
+  await page.waitForTimeout(500);
+  await page.screenshot({ path: path.join(shots, 'obs-web.png') });
+  check('콘솔 에러 없음 (장애물)', errors.length === 0, errors.join(' | '));
   await page.close();
 }
 
