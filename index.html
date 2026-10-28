@@ -283,6 +283,37 @@ img{-webkit-user-drag:none}
 .result-score{font-size:14px;color:var(--ink-soft);font-weight:700;margin-top:4px}
 .result-score b{font-family:var(--font-num);font-weight:800;font-size:20px;color:#ff4f8b}
 .result-actions{display:grid;gap:10px}
+/* 점수표: 줄마다 숫자가 촤라락 올라가며 합계로 모인다 */
+.tally{width:100%;max-width:290px;margin:6px auto 0;font-size:14px;font-weight:800;color:var(--ink-soft);cursor:pointer}
+.trow{display:flex;justify-content:space-between;align-items:baseline;padding:1px 6px;opacity:0;transform:translateX(-12px);transition:opacity .2s,transform .2s}
+.trow.in{opacity:1;transform:none}
+.trow b,.ttotal b{font-family:var(--font-num);font-weight:800;color:#ff4f8b;font-variant-numeric:tabular-nums}
+.trow b{font-size:17px}
+.ttotal{display:flex;justify-content:space-between;align-items:baseline;margin-top:4px;padding:4px 6px 0;border-top:2px dashed #ffb3d1;font-size:16px;color:var(--ink)}
+.ttotal b{font-size:28px;line-height:1.1}
+.ttotal.done b{animation:wobble .5s ease;color:#ff3b7d;text-shadow:0 2px 0 #ffd54a}
+.tbest{display:inline-block;margin-top:2px;padding:2px 10px;border-radius:12px;background:linear-gradient(180deg,#fff6c8,#ffd54a);color:#7a2d5e;font:900 13px var(--font-body);border:2px solid var(--gold-dark);animation:stick .6s cubic-bezier(.3,1.6,.5,1) both}
+.result-stars span.on img{animation:starPop .45s cubic-bezier(.3,1.7,.5,1)}
+@keyframes starPop{0%{transform:scale(.3) rotate(-30deg)}100%{transform:scale(1) rotate(0)}}
+#result.win .result-mascot{height:min(130px,14vh)}
+#result.win .sticker{width:70px;height:70px;margin:6px auto 2px}
+#result.win .sticker .in{width:52px;height:52px}
+#result.win .result-msg{margin:4px 0 10px;font-size:14px}
+/* 게임 오버: 실패한 판 그대로 보이게 투명 → GAME OVER 글자가 통통 떨어지고 놈놈이 깔깔 → 아래에서 카드가 올라온다 */
+#result.lose{background:rgba(30,8,58,.28)}
+#result.lose::before,#result.lose .confetti{display:none}
+.over-title{display:flex;justify-content:center;gap:1px;font:900 clamp(40px,13vw,60px)/1 "Baloo 2",var(--font-body);letter-spacing:1px;margin-bottom:-6px}
+.over-title span{display:inline-block;color:#ffe066;text-shadow:2px 0 0 #5a1d6e,-2px 0 0 #5a1d6e,0 2px 0 #5a1d6e,0 -2px 0 #5a1d6e,2px 2px 0 #5a1d6e,-2px -2px 0 #5a1d6e,2px -2px 0 #5a1d6e,-2px 2px 0 #5a1d6e,0 5px 0 #c2457a,0 8px 0 #5a1d6e,0 12px 18px rgba(20,0,40,.5);
+  animation:overDrop .55s cubic-bezier(.3,1.6,.5,1) both;animation-delay:calc(var(--i) * 70ms)}
+.over-title span.gap{width:.35em}
+@keyframes overDrop{0%{opacity:0;transform:translateY(-120px) rotate(-20deg)}70%{opacity:1}100%{opacity:1;transform:none}}
+#result.lose .result-mascot{height:min(150px,18vh);margin:0 0 -18px}
+#result.lose .result-mascot img{animation:nomUp .6s cubic-bezier(.3,1.6,.5,1) .55s both,nomLaugh .32s ease-in-out 1.15s 5 alternate}
+@keyframes nomUp{0%{opacity:0;transform:translateY(80px) scale(.4)}100%{opacity:1;transform:none}}
+@keyframes nomLaugh{0%{transform:rotate(-6deg) scale(1,1)}100%{transform:rotate(6deg) scale(1.05,.94)}}
+#result.lose .result-card{animation:cardUp .45s cubic-bezier(.3,1.3,.5,1) .9s both}
+@keyframes cardUp{0%{opacity:0;transform:translateY(60px)}100%{opacity:1;transform:none}}
+@media (prefers-reduced-motion:reduce){.over-title span,#result.lose .result-mascot img,#result.lose .result-card{animation:none}}
 .result-actions .btn{font-size:18px;min-height:50px}
 
 /* 스티커 북 */
@@ -421,6 +452,7 @@ img{-webkit-user-drag:none}
 <div id="result" hidden>
   <div class="confetti" id="resultConfetti" aria-hidden="true"></div>
   <div class="result-hero" aria-hidden="true">
+    <div class="over-title" id="overTitle" hidden></div>
     <div class="result-stars" id="resultStars"><span></span><span></span><span></span></div>
     <div class="result-mascot" id="resultMascot"></div>
   </div>
@@ -751,6 +783,7 @@ function newGame(stageNo) {
     saved: 0, need: st.boss ? 1 : b.friendCount, bossHp: st.boss ? st.boss.hp : 0, bossHit: 0,
     shotCount: 0, score: 0, settleT: 0, queueShift: 0, y0Target: b.y0, y0Start: b.y0, continues: 0, swapT: 0, outcome: null, time: 0,
     paused: false, hz: makeHz(st),
+    tally: { pop: 0, popPts: 0, drop: 0, dropPts: 0, nom: 0, nomPts: 0 }, cameo: null, cameoAt: -99,
   };
   fillQueue();
   gaugeLast = '';
@@ -806,7 +839,7 @@ function swapQueue() {
   if (nomActive('block')) {
     // 간지럼 공격: 대포를 막은 놈놈을 쫓아낸다
     const n = G.hz.nom; n.state = 'leave'; n.t = 0; n.hit = true;
-    G.score += 30; G.texts.push({ x: PIVOT.x, y: PIVOT.y - 70, text: '+30', life: 1 });
+    G.score += 30; G.tally.nom++; G.tally.nomPts += 30; G.texts.push({ x: PIVOT.x, y: PIVOT.y - 70, text: '+30', life: 1 });
     showToast(T('간지럼 공격! 놈놈이 도망갔어요')); sfx('rescue');
     return true;
   }
@@ -850,6 +883,7 @@ function land(m) {
   const n = res.popped.length, d = res.dropped.length, u = res.unstuck.length;
   if (n || u) {
     G.score += n * 10 + d * 20 + u * 10;
+    G.tally.pop += n; G.tally.popPts += n * 10 + u * 10; G.tally.drop += d; G.tally.dropPts += d * 20;
     res.popped.forEach((p, i) => { const q = Board.pos(b, p.r, p.c); G.pops.push({ x: q.x, y: q.y, c: p.cell.c, t: -i * .03 }); burst(q.x, q.y, p.cell.c, 6); punchCloud(q.x, q.y); });
     res.dropped.forEach(p => { const q = Board.pos(b, p.r, p.c); G.falls.push({ x: q.x, y: q.y, vy: -60 - rand() * 80, vx: (rand() - .5) * 60, c: p.cell.c, friend: p.cell.friend }); punchCloud(q.x, q.y); });
     res.unstuck.forEach((p, i) => { const q = Board.pos(b, p.r, p.c); burst(q.x, q.y, '#ffb347', 8); if (i < 2) G.texts.push({ x: q.x, y: q.y - 6, text: T('시럽 벗김!'), life: 1, color: '#ffc24a' }); });
@@ -917,7 +951,7 @@ function applyLucky(e, at) {
   burst(at.x, at.y, e.good ? '#ffe27a' : '#a99bd0', 14);
   G.texts.push({ x: at.x, y: at.y - 14, text: e.good ? T('행운!') : T('꽝!'), life: 1.2, color: e.good ? '#ffe27a' : '#d9c8ff' });
   if (e.id !== 'ceil') showToast(e.text);
-  sfx(e.good ? 'rescue' : 'boss');
+  if (e.good) sfx('rescue'); else nomCameo(e.id, at, true);
   G.lucky = (G.lucky || []).concat(e.id);   // 테스트용 기록
 }
 
@@ -940,6 +974,7 @@ function lowerCeiling(rows, text) {
     G.b.y0 = G.y0Target;
     if (Board.lowestY(G.b) + R > DEADLINE) finish(false, 'line');
   }
+  nomCameo('ceil');
 }
 
 // 보스 체력이 줄면 다음 단계 (방해 요소가 늘어난다)
@@ -1061,6 +1096,7 @@ function spawnCloud(cfg) {
   // a: 짙기(0→1로 스며들고, 떠날 때 1→0으로 걷힘). depth: 거품 몇 줄 아래까지 덮는지
   G.hz.cloud = { holes: [], wisps, left: cfg.last, leaving: false, a: 0, look: cfg.look || 'cotton', rows, depth: R * 2 + rows * ROW_H + 40 };
   showToast(cfg.look === 'frost' ? T('서리가 꼈어요!') : T('구름이 덮였어요!'));
+  nomCameo('fog');
 }
 function punchCloud(x, y) {
   const cl = G.hz.cloud; if (!cl || cl.leaving) return;
@@ -1108,7 +1144,7 @@ function nomAct(act) {
 }
 function nomHit() {
   const n = G.hz.nom; n.hit = true; n.state = 'leave'; n.t = 0;
-  G.score += 50; G.texts.push({ x: n.x, y: n.y - 10, text: '+50', life: 1 });
+  G.score += 50; G.tally.nom++; G.tally.nomPts += 50; G.texts.push({ x: n.x, y: n.y - 10, text: '+50', life: 1 });
   burst(n.x, n.y, '#b8a6ff', 10);
   if (n.act === 'take') { G.hz.dropT = Math.min(G.hz.cfg.dropSec, G.hz.dropT + 4); showToast(T('친구를 되찾았어요! +4초')); }
   else if (n.carry) { G.falls.push({ x: n.x, y: n.y, vy: -80, vx: 0, c: n.carry }); showToast(T('놈놈을 쫓아냈어요!')); }
@@ -1135,9 +1171,15 @@ function finish(win, reason) {
     stars = ratio >= .35 ? 3 : ratio >= .15 ? 2 : 1;
     P.stars[st.id - 1] = Math.max(P.stars[st.id - 1] || 0, stars);
     if (!P.stickers[st.id]) { P.stickers[st.id] = true; newSticker = true; }
+    // 점수표: 판에서 얻은 점수 + 끝난 뒤 보너스(구출·남은 시간·아낀 거품)를 더해 최종 점수
+    G.outcome.rows = scoreRows(st);
+    G.score = G.outcome.rows.reduce((a, r) => a + r.pts, 0);
+    P.best = P.best || {};
+    G.outcome.best = G.score > (P.best[st.id] || 0) && !!P.best[st.id];   // 처음 깬 판은 '최고 기록' 표시 안 함
+    P.best[st.id] = Math.max(P.best[st.id] || 0, G.score);
     saveP();
     sfx('win');
-  } else sfx('lose');
+  } else gameOver(reason);
   G.outcome.stars = stars; G.outcome.newSticker = newSticker;
   const game = G;
   // 이기면 구출된 친구가 말랑이 옆에 도착할 때까지 조금 더 기다린다 (최대 2.6초)
@@ -1148,6 +1190,89 @@ function finish(win, reason) {
     if (!win ? dt >= 600 : (dt >= 1100 && landed) || dt >= 2600) showResult(); else setTimeout(wait, 100);
   };
   setTimeout(wait, win ? 1100 : 600);
+}
+// 점수표 줄: 판에서 얻은 점수(터뜨림·떨어뜨림·놈놈) + 보너스(구출·보스·남은 시간·아낀 거품)
+function scoreRows(st) {
+  const t = G.tally, h = G.hz, rows = [];
+  const other = G.score - t.popPts - t.dropPts - t.nomPts;   // 혹시 다른 곳에서 들어온 점수는 터뜨림에 합친다
+  rows.push({ label: T('터뜨린 거품 ×{n}', { n: t.pop }), pts: t.popPts + other });
+  if (t.drop) rows.push({ label: T('떨어뜨린 거품 ×{n}', { n: t.drop }), pts: t.dropPts });
+  if (t.nom) rows.push({ label: T('놈놈 쫓아내기 ×{n}', { n: t.nom }), pts: t.nomPts });
+  if (st.boss) rows.push({ label: T('보스 물리침'), pts: 1000 });
+  else rows.push({ label: T('구출한 친구 ×{n}', { n: G.saved }), pts: G.saved * 100 });
+  if (h.cfg.clock && h.clock > 0) { const s = Math.ceil(h.clock); rows.push({ label: T('남은 시간 {n}초', { n: s }), pts: s * 20 }); }
+  const spare = Math.max(0, st.shots - G.fired);
+  if (spare) rows.push({ label: T('아낀 거품 ×{n}', { n: spare }), pts: spare * 30 });
+  return rows;
+}
+
+// ---------- 게임 오버: 그 판 화면 그대로 위에 GAME OVER 글자 + 놈놈이 깔깔 ----------
+function gameOver(reason) {
+  G.over = { t: 0, reason };
+  sfx('gameover');
+  try { navigator.vibrate && navigator.vibrate([40, 60, 80]); } catch (e) {}
+}
+
+// ---------- 패널티 때 꼬마 놈놈이 잠깐 나타나 심술 부리고 사라진다 ----------
+// kind: ceil(천장 꾹) · fog(안개/구름/서리) · mix(색 뒤섞기). force = 쉬는 시간(4초) 무시
+function nomCameo(kind, at, force) {
+  if (!G || G.state === 'done') return;
+  const n = G.hz.nom;
+  if (n && n.state !== 'leave') return;                    // 진짜 놈놈이 판에 있으면 그 놈놈이 하는 일
+  if (!force && G.time - G.cameoAt < 4) return;
+  const side = at && at.x > W / 2 ? 1 : at ? -1 : (rand() < .5 ? -1 : 1);
+  const say = { ceil: T('천장 꾹!'), fog: T('안개 뿅!'), mix: T('뒤죽박죽!'), time: T('시간 끝!') }[kind] || T('히히!');
+  // 천장: 사탕 천장 위에 올라타 꾹꾹 / 안개·뒤섞기: 거품 아래 빈 곳에서 깔깔
+  const ty = kind === 'ceil' || kind === 'time' ? Math.max(34, G.b.y0 - 22) : Math.min(DEADLINE - 80, Math.max(300, Board.lowestY(G.b) + R + 110));
+  const tx = at ? Math.min(W - 150, Math.max(150, at.x)) : (side < 0 ? 80 : W - 80);
+  const again = G.cameo && G.cameo.t < .2;               // 같은 순간 두 번 불리면 소리는 한 번만
+  G.cameo = { kind, say, side, t: again ? G.cameo.t : 0, x: side < 0 ? -40 : W + 40, y: ty - 30, tx, ty };
+  G.cameoAt = G.time;
+  if (!again) sfx('nom');
+}
+function drawCameo(t, dt) {
+  const c = G.cameo; if (!c) return;
+  c.t += dt;
+  const IN = .35, STAY = 1.25, OUT = 1.7;
+  if (c.t > OUT) { G.cameo = null; return; }
+  let x, y, sx = 1, sy = 1, rot = 0;
+  if (c.t < IN) {   // 휙 날아 들어온다 (포물선)
+    const k = c.t / IN, e = 1 - (1 - k) * (1 - k);
+    x = c.x + (c.tx - c.x) * e; y = c.y + (c.ty - c.y) * e - Math.sin(k * Math.PI) * 40; rot = (1 - k) * c.side * -.6;
+  } else if (c.t < STAY) {   // 심술: 천장은 꾹꾹 누르고, 나머지는 깔깔 통통
+    const k = (c.t - IN) / (STAY - IN);
+    x = c.tx + Math.sin(k * 20) * 2; y = c.ty;
+    if (c.kind === 'ceil' || c.kind === 'time') { const p = Math.abs(Math.sin(k * Math.PI * 3)); sy = 1 - p * .22; sx = 1 + p * .18; y = c.ty - 6 + p * 5; }
+    else { y = c.ty - Math.abs(Math.sin(k * Math.PI * 4)) * 10; rot = Math.sin(k * 25) * .12; }
+  } else {   // 반대쪽으로 쌩 사라진다
+    const k = (c.t - STAY) / (OUT - STAY);
+    x = c.tx + (c.side < 0 ? 1 : -1) * k * (W * .7); y = c.ty - k * 60; rot = (c.side < 0 ? 1 : -1) * k * 2;
+  }
+  const alpha = c.t > STAY ? Math.max(0, 1 - (c.t - STAY) / (OUT - STAY)) : 1;
+  ctx.save(); ctx.translate(x, y); ctx.rotate(rot); ctx.scale(sx, sy);
+  if (!spr('nom-happy', () => SPR.nom('happy'), 0, 0, 1.5, alpha)) { ctx.globalAlpha = alpha; ctx.fillStyle = '#3b2a7a'; ctx.beginPath(); ctx.arc(0, 0, 19, 0, 7); ctx.fill(); }
+  ctx.restore();
+  // 말풍선
+  if (c.t > IN * .6 && c.t < STAY + .1) {
+    // 말풍선은 놈놈 옆(화면 안쪽)에
+    ctx.font = '900 15px "Noto Sans KR", sans-serif'; const w = ctx.measureText(c.say).width + 22, dir = c.tx < W / 2 ? 1 : -1;
+    const k = Math.min(1, (c.t - IN * .6) / .15), bx = c.tx + dir * (34 + w / 2), byy = c.ty - 22;
+    ctx.save(); ctx.globalAlpha = k; ctx.translate(bx, byy); ctx.scale(.6 + .4 * k, .6 + .4 * k);
+    ctx.fillStyle = 'rgba(255,255,255,.96)'; roundRect(-w / 2, -2, w, 26, 13); ctx.fill();
+    const ex = -dir * w / 2; ctx.beginPath(); ctx.moveTo(ex, 8); ctx.lineTo(ex - dir * 9, 18); ctx.lineTo(ex + dir * 2, 16); ctx.fill();
+    ctx.strokeStyle = '#a07ce8'; ctx.lineWidth = 2; roundRect(-w / 2, -2, w, 26, 13); ctx.stroke();
+    ctx.fillStyle = '#5a2d91'; ctx.textAlign = 'center'; ctx.fillText(c.say, 0, 16);
+    ctx.restore();
+  }
+}
+// 게임 오버 순간: 바닥 선이 빨갛게 깜빡이고 판이 어두워진다 (글자·놈놈은 결과 창 HTML)
+function drawOver(t, dt) {
+  const o = G.over; if (!o) return;
+  o.t += dt;
+  const blink = Math.sin(o.t * 18) > 0 && o.t < 1.2;
+  ctx.fillStyle = `rgba(40,10,60,${Math.min(.35, o.t * .6)})`; ctx.fillRect(0, 0, W, H);
+  ctx.strokeStyle = blink ? '#ff3b6b' : 'rgba(255,59,107,.5)'; ctx.lineWidth = 5; ctx.setLineDash([]);
+  ctx.beginPath(); ctx.moveTo(4, DEADLINE); ctx.lineTo(W - 4, DEADLINE); ctx.stroke();
 }
 
 // ============================================================
@@ -1603,6 +1728,7 @@ function render(dt) {
   if (G.moving) drawBubble(G.moving.x, G.moving.y, G.moving.c);
   if (h.cfg.dark) drawDark(t);
   drawNom(t, dt);
+  drawCameo(t, dt);
   // 양옆 유리 난간
   const rg = ctx.createLinearGradient(0, 0, 6, 0); rg.addColorStop(0, 'rgba(255,255,255,.85)'); rg.addColorStop(.5, 'rgba(255,209,232,.6)'); rg.addColorStop(1, 'rgba(255,255,255,.85)');
   ctx.fillStyle = rg; ctx.globalAlpha = .7; roundRect(0, by - 6, 6, DEADLINE - by + 6, 3); ctx.fill();
@@ -1615,6 +1741,7 @@ function render(dt) {
   G.fx = G.fx.filter(p => (p.life -= dt * 1.6) > 0);
   for (const p of G.fx) { p.vy += 600 * dt; p.x += p.vx * dt; p.y += p.vy * dt; ctx.globalAlpha = p.life; ctx.fillStyle = p.c; ctx.beginPath(); ctx.ellipse(p.x, p.y, p.r, p.r * 1.4, Math.atan2(p.vy, p.vx) + Math.PI / 2, 0, 7); ctx.fill(); }
   ctx.globalAlpha = 1;
+  drawOver(t, dt);
   // 점수 글자 (입체 글씨)
   G.texts = G.texts.filter(x => (x.life -= dt * .9) > 0);
   ctx.textAlign = 'center';
@@ -2036,6 +2163,15 @@ function sfx(k, n = 0) {
     else if (k === 'boom') boom(n);
     else if (k === 'win') [523, 659, 784, 1047].forEach((f, i) => tone(f, f * 1.01, .22, 'triangle', .2, i * .11));
     else if (k === 'lose') [392, 330, 262].forEach((f, i) => tone(f, f * .98, .3, 'triangle', .18, i * .16));
+    // 게임 오버: 8비트 "빠-밤-밤-바아앙" 내려가는 소리
+    else if (k === 'gameover') { [523, 494, 466].forEach((f, i) => tone(f, f * .99, .2, 'square', .1, i * .22)); tone(440, 220, .9, 'square', .1, .66); tone(110, 55, .9, 'triangle', .22, .66); }
+    // 꼬마 놈놈 등장: 휘익 + 낮은 쿵
+    else if (k === 'nom') { tone(1400, 300, .22, 'sine', .12); tone(140, 70, .18, 'triangle', .2, .2); }
+    // 점수표: 숫자 올라가는 똑딱 / 줄 끝 띵 / 합계 짠 / 별 반짝 (n = 몇 번째)
+    else if (k === 'count') tone(900 + Math.min(n, 30) * 25, 950 + Math.min(n, 30) * 25, .03, 'square', .035);
+    else if (k === 'ding') { tone(1320, 1320, .12, 'triangle', .14); tone(1980, 1980, .1, 'sine', .06, .02); }
+    else if (k === 'total') [784, 988, 1175, 1568].forEach((f, i) => tone(f, f, .16, 'square', .07, i * .07));
+    else if (k === 'star') { const f = 880 * Math.pow(1.26, n); tone(f, f * 1.5, .18, 'triangle', .18); tone(f * 2, f * 2, .12, 'sine', .05, .05); }
   } catch (e) {}
   // 젤리 추임새 (사람 말이 아닌 말랑한 젤리 소리)
   if (k === 'pop') { if (n >= 6) jellyVoice('yay'); else if (Math.random() < .3) jellyVoice(Math.random() < .5 ? 'pu' : 'po'); }
@@ -2043,6 +2179,8 @@ function sfx(k, n = 0) {
   else if (k === 'rescue') jellyVoice('yay', .15);
   else if (k === 'win') jellyVoice('cheer', .5);
   else if (k === 'lose') jellyVoice('aww', .3);
+  else if (k === 'gameover') jellyVoice('hehe', .45);
+  else if (k === 'nom') jellyVoice('hehe', .12);
   else if (k === 'boss') jellyVoice('hmph', .1);
   else if (k === 'boom') jellyVoice('wow', .35);
 }
@@ -2077,6 +2215,7 @@ const VOICE = {
   cheer: [['a', 700, 880, .12, 0], ['i', 900, 1100, .1, .04], ['a', 900, 1200, .25, .04]],
   aww:   [['a', 620, 560, .18, 0], ['u', 540, 400, .3, 0]],
   hmph:  [['u', 300, 230, .18, 0]],
+  hehe:  [['i', 900, 1050, .07, 0], ['e', 1000, 900, .08, .03], ['i', 950, 1100, .07, .03], ['e', 1050, 850, .1, .03]],   // 놈놈 깔깔
 };
 let voiceCount = 0, lastVoice = 0;
 function jellyVoice(word, delay = 0) {
@@ -2686,17 +2825,21 @@ function showResult() {
   const o = G.outcome, st = G.st;
   $('result').hidden = false;
   $('result').classList.toggle('lose', !o.win);
+  $('result').classList.toggle('win', !!o.win);
+  stopTally();
   $('app').inert = true;   // 결과 창 뒤 화면은 눌리거나 Tab으로 가지 않게
   $('resultMain').dataset.stage = st.id;
   const f = st.friends[0];
   if (!$('resultConfetti').firstChild) $('resultConfetti').innerHTML = cachedArt('confetti', () => Art.img(Art.confetti(5, 70, [0, 40, 390, 500]), { x: 0, y: 0, w: 390, h: 844 }));
   $('resultConfetti').hidden = !o.win;
   [...$('resultStars').children].forEach((s, i) => { if (!s.firstChild) s.innerHTML = cachedArt('bigstar' + i, () => Art.img(Art.bigStar(0, 0, 50, [-15, 0, 15][i]), { x: -62, y: -62, w: 124, h: 124 })); });
-  $('resultScore').innerHTML = T('점수 <b>{n}</b>', { n: G.score.toLocaleString() }) + (o.win ? T(' · 쏜 거품 <b>{n}</b>발', { n: G.fired }) : '');
+  $('overTitle').hidden = o.win;
+  $('resultScore').removeAttribute('data-done');
   if (o.win) {
     $('resultTitle').textContent = T('스테이지 클리어!');
     $('resultStars').hidden = false;
-    [...$('resultStars').children].forEach((s, i) => s.className = i < o.stars ? 'on' : '');
+    [...$('resultStars').children].forEach(s => s.className = '');   // 별은 점수표가 다 올라간 뒤 하나씩
+    runTally(o);
     $('resultMascot').innerHTML = cachedArt('mascotWin-' + f.color, () => Art.img(Art.jelly(240, 100, 36, f.color, { mood: 'joy' }) + Art.jelly(160, 90, 58, MAL, { ears: true, mood: 'joy', faceScale: 1.05 }) + Art.sparkle(90, 30, 9, '#ffe27a') + Art.sparkle(300, 40, 8), { x: 40, y: 10, w: 320, h: 150 }));
     $('resultSticker').innerHTML = `<div class="sticker"><div class="in">${jellyImg(f.color, 24, { mood: 'joy' })}</div></div>`;
     $('resultMsg').innerHTML = st.id === NST && totalStickers() === NST ? T('<b>모험 완주!</b> 친구 30명을 모두 구했어요!<br><small>노놈도 머쓱하게 함께 놀고 싶대요</small>')
@@ -2709,7 +2852,10 @@ function showResult() {
   } else {
     $('resultTitle').textContent = T('아쉬워요!');
     $('resultStars').hidden = true;
-    $('resultMascot').innerHTML = cachedArt('mascotLose', () => Art.img(Art.jelly(195, 95, 58, MAL, { ears: true, mood: 'worried', faceScale: 1.05 }) + `<ellipse cx="172" cy="104" rx="4" ry="7" fill="#8fd3ff" opacity="0.9"/>`, { x: 40, y: 10, w: 320, h: 150 }));
+    $('resultScore').innerHTML = T('점수 <b>{n}</b>', { n: G.score.toLocaleString() });
+    $('overTitle').innerHTML = [...'GAME OVER'].map((ch, i) => ch === ' ' ? '<span class="gap"></span>' : `<span style="--i:${i}">${ch}</span>`).join('');
+    // 놈놈이 깔깔 (말랑이는 옆에서 울먹)
+    $('resultMascot').innerHTML = cachedArt('mascotOver', () => Art.img(Art.nomnom(205, 92, 40, { mood: 'happy', mini: true }) + Art.jelly(92, 112, 30, MAL, { ears: true, mood: 'worried' }) + `<ellipse cx="80" cy="118" rx="3" ry="6" fill="#8fd3ff" opacity="0.9"/>` + Art.sparkle(275, 34, 8, '#ffe27a'), { x: 40, y: 10, w: 320, h: 150 }));
     $('resultSticker').innerHTML = '';
     $('resultMsg').textContent = o.reason === 'line' ? T('거품이 바닥 선을 넘었어요. 위쪽 줄기를 끊어 한꺼번에 떨어뜨려 봐요.') : o.reason === 'time' ? T('시간이 다 됐어요! 망설이지 말고 빨리 쏴 봐요.') : T('거품이 바닥 선을 넘었어요. 다시 해 볼까요?');
     $('resultMain').textContent = T('다시 하기');
@@ -2724,6 +2870,51 @@ function showResult() {
     $('resultAd').innerHTML = (free ? T('▶ 이어하기') : T('▶ 광고 보고 이어하기')) + `<small>${sub}</small>`;
   }
   setTimeout(() => $('resultMain').focus({ preventScroll: true }), 50);
+}
+// ---------- 점수표: 줄마다 0부터 촤라락 올라가며 합계에 쌓이고, 끝나면 별이 하나씩 (누르면 바로 끝까지) ----------
+let tally = null;
+function stopTally() { if (tally) { cancelAnimationFrame(tally.raf); tally = null; } }
+function runTally(o) {
+  const el = $('resultScore'), rows = o.rows || [], total = rows.reduce((a, r) => a + r.pts, 0);
+  el.innerHTML = '<div class="tally">' + rows.map(r => `<div class="trow"><span>${r.label}</span><b>0</b></div>`).join('')
+    + `<div class="ttotal"><span>${T('합계')}</span><b>0</b></div></div>`;
+  el.setAttribute('aria-label', T('점수 {n}', { n: total.toLocaleString() }));
+  const rowEls = [...el.querySelectorAll('.trow')], totEl = el.querySelector('.ttotal b');
+  const stars = [...$('resultStars').children];
+  // 일정: 줄마다 (나타남 0.15초 + 올라감 0.25~0.7초 + 쉼 0.12초) → 합계 짠 → 별 0.3초 간격
+  const plan = []; let at = .25;
+  rows.forEach((r, i) => { const dur = r.pts ? Math.min(.7, .25 + r.pts / 2500) : .1; plan.push({ i, start: at + .15, dur }); at += .15 + dur + .12; });
+  const totalAt = at, starAt = at + .35, endAt = starAt + o.stars * .3 + .1;
+  const t0 = performance.now(), state = { shown: -1, done: new Set(), stars: 0, total: false, ticks: 0 };
+  const sum = upto => rows.slice(0, upto).reduce((a, r) => a + r.pts, 0);
+  const finishAll = () => {
+    rowEls.forEach((e, i) => { e.classList.add('in'); e.lastChild.textContent = rows[i].pts.toLocaleString(); });
+    totEl.textContent = total.toLocaleString(); totEl.parentNode.classList.add('done');
+    stars.forEach((s, i) => s.className = i < o.stars ? 'on' : '');
+    if (o.best && !el.querySelector('.tbest')) el.querySelector('.tally').insertAdjacentHTML('beforeend', `<div class="tbest">${T('최고 기록!')}</div>`);
+    el.setAttribute('data-done', '1');
+    stopTally();
+  };
+  const step = now => {
+    if ($('result').hidden) return stopTally();
+    const t = (now - t0) / 1000;
+    let running = 0;
+    plan.forEach(p => {
+      const e = rowEls[p.i], r = rows[p.i];
+      if (t >= p.start - .15 && !e.classList.contains('in')) e.classList.add('in');
+      const k = Math.max(0, Math.min(1, (t - p.start) / p.dur)), v = Math.round(r.pts * k);
+      e.lastChild.textContent = v.toLocaleString(); running += v;
+      if (k > 0 && k < 1 && t * 30 > state.ticks) { state.ticks = Math.ceil(t * 30); if (state.ticks % 2) sfx('count', p.i * 6 + Math.round(k * 6)); }
+      if (k >= 1 && !state.done.has(p.i)) { state.done.add(p.i); sfx('ding'); }
+    });
+    totEl.textContent = running.toLocaleString();
+    if (t >= totalAt && !state.total) { state.total = true; totEl.textContent = total.toLocaleString(); totEl.parentNode.classList.add('done'); sfx('total'); }
+    while (state.stars < o.stars && t >= starAt + state.stars * .3) { stars[state.stars].className = 'on'; sfx('star', state.stars); state.stars++; }
+    if (t >= endAt) { if (o.best) sfx('rescue'); return finishAll(); }
+    tally.raf = requestAnimationFrame(step);
+  };
+  tally = { raf: requestAnimationFrame(step), skip: finishAll };
+  el.onclick = () => tally && tally.skip();
 }
 // ---------- 이어하기 (보상형 광고 · 후원 팩, monetize.js) ----------
 function canRevive() {
@@ -2751,7 +2942,7 @@ function revive() {
   h.timeUp = false;
   h.shotT = h.cfg.shotTimer || 0; G.aiming = false;   // 한 발 초침도 처음부터
   if (h.cfg.dropSec) h.dropT = h.cfg.dropSec;
-  G.outcome = null; G.state = 'aim';
+  G.outcome = null; G.state = 'aim'; G.over = null; G.cameo = null;
   $('result').hidden = true; $('app').inert = false;
   if (G.st.boss && Board.count(b) === 0) { Board.pushTop(b, [...G.st.colors]); Board.pushTop(b, [...G.st.colors]); }
   if (!G.st.boss && G.saved >= G.need) return finish(true);
