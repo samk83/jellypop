@@ -508,7 +508,7 @@ for (const [label, dev] of [['iPhone SE (320x568)', devices['iPhone SE']], ['Gal
   // 0.13.0 Owner: 스테이지가 끝나고 지도·다음 판으로 가도 음악이 처음부터 다시 시작하지 않게
   const tr = await page.evaluate(async () => {
     const j = window.__jp, wait = ms => new Promise(r => setTimeout(r, ms));
-    const a = j.music(); j.go('map'); await wait(400); const b = j.music(); j.startStage(2); await wait(300); const c = j.music(); j.startStage(2); await wait(300); const c2 = j.music();
+    await wait(1200); const a = j.music(); j.go('map'); await wait(400); const b = j.music(); j.startStage(2); await wait(300); const c = j.music(); j.startStage(2); await wait(300); const c2 = j.music();
     j.P.stars[6] = 1; j.startStage(10); await wait(400); const d = j.music(); j.startStage(6); await wait(300); const e = j.music();
     j.startStage(1); await wait(300); const f = j.music(); j.go('title'); await wait(200); const g = j.music(); j.startStage(1);
     return { a, b, c, c2, d, e, f, g };

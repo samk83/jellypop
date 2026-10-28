@@ -1972,15 +1972,16 @@ let silentEl = null;
 // 0.13.0 (Owner: "스테이지 9부터 소리가 안 남"): 휴대폰에서 다른 앱·채팅에 다녀오거나 화면이 꺼졌다 켜지면
 // 소리 장치가 '켜짐(running)'이라고 하면서 시계가 멈추거나 소리가 안 나오는 일이 있다 (특히 아이폰).
 // → 시계가 멈춘 걸 알아채거나 앱에서 1.5초 넘게 나갔다 오면, 다음 터치 때 소리 장치를 새로 만든다 (곡·자리는 그대로)
-let audioBroken = false, refreshOnTouch = false, hiddenAt = 0, audioMade = 0, adPaused = false, clockSeen = { t: -1, n: 0 };
+let audioBroken = false, refreshOnTouch = false, hiddenAt = 0, audioMade = 0, adPaused = false, lastMade = -1e9, clockSeen = { t: -1, n: 0 };
 const touchDevice = navigator.maxTouchPoints > 0 || 'ontouchstart' in window;
 function dropAudio() {
   const old = audio; audio = null; master = musicBus = sfxBus = null; boomNoise = null; Music.reset();
-  try { old.onstatechange = null; old.close(); } catch (e) {}
+  try { old.onstatechange = null; const c = old.close(); if (c && c.catch) c.catch(() => {}); } catch (e) {}
 }
 function unlockAudio() {
   if (!soundOn) { updateSoundHint(); return; }
-  if (audio && (audioBroken || refreshOnTouch)) dropAudio();
+  // 새로 만들기는 10초에 한 번까지 (통화 중처럼 정말 소리를 못 쓰는 동안 계속 만들지 않게)
+  if (audio && (audioBroken || refreshOnTouch) && performance.now() - lastMade > 10000) dropAudio();
   audioBroken = refreshOnTouch = false;
   try {
     // 아이폰 무음 스위치를 켜 둬도 게임 소리가 나게 (iOS 17+ Safari)
@@ -1993,7 +1994,7 @@ function unlockAudio() {
       sfxBus = audio.createGain(); sfxBus.connect(master);
       musicBus = audio.createGain(); musicBus.gain.value = .32; musicBus.connect(master);
       audio.onstatechange = updateSoundHint;
-      audioMade++; clockSeen = { t: -1, n: 0 };
+      audioMade++; lastMade = performance.now(); clockSeen = { t: -1, n: 0 };
       Music.start();
     }
     if (audio.state !== 'running') {
@@ -2034,7 +2035,7 @@ function checkAudioClock(fake = false) {
   if (!audio || !soundOn || document.hidden || adPaused) { clockSeen.n = 0; return; }
   const t = audio.currentTime, stuck = fake || audio.state !== 'running' || t === clockSeen.t;
   clockSeen = { t, n: stuck ? clockSeen.n + 1 : 0 };
-  if (clockSeen.n === 1 && audio.state !== 'running') { try { audio.resume(); } catch (e) {} }   // 터치 없이 깨워 보기
+  if (clockSeen.n === 1 && audio.state !== 'running') { try { const r = audio.resume(); if (r && r.catch) r.catch(() => {}); } catch (e) {} }   // 터치 없이 깨워 보기
   if (clockSeen.n >= 3 && !audioBroken) { audioBroken = true; triedSound = true; updateSoundHint(); }
 }
 setInterval(checkAudioClock, 1000);
@@ -3013,7 +3014,7 @@ requestAnimationFrame(frame);
 // 테스트용 손잡이 (화면에는 영향 없음)
 window.__jp = {
   get G() { return G; }, lowerCeiling, showBanner, P, STAGES, Board, R, ROW_H, W, H, PIVOT, DEADLINE,
-  startStage, rescue, showResult, revive, canRevive, finish, land, hazardsAfterShot, unlockAudio, boom, audioReady: () => !!audio, audioState: () => audio && audio.state, soundHint: () => !$('soundHint').hidden, LUCKY, pickLucky, applyLucky, seenHz: () => P.seenHz, aimLimit, music: () => Music.info(), audioMade: () => audioMade, audioBroken: () => audioBroken, musicTrack: n => Music.setTrack(n), fakeStall() { clockSeen.n = 2; checkAudioClock(true); }, voices: () => voiceCount, soundMode: () => soundMode, sfx, CS, shoot, swapQueue, setAngle, go, seedRandom,
+  startStage, rescue, showResult, revive, canRevive, finish, land, hazardsAfterShot, unlockAudio, boom, audioReady: () => !!audio, audioState: () => audio && audio.state, soundHint: () => !$('soundHint').hidden, LUCKY, pickLucky, applyLucky, seenHz: () => P.seenHz, aimLimit, music: () => Music.info(), audioMade: () => audioMade, audioBroken: () => audioBroken, musicTrack: n => Music.setTrack(n), fakeStall() { clockSeen.n = 2; lastMade = -1e9; checkAudioClock(true); }, voices: () => voiceCount, soundMode: () => soundMode, sfx, CS, shoot, swapQueue, setAngle, go, seedRandom,
   reset() { Object.assign(P, { stars: new Array(NST).fill(0), stickers: {}, seenIntro: false, at: 0, seenHz: {}, seenStory: {} }); saveP(); },
   story: () => window.JellyStory,
   mapScene: wi => Jelly3D.scene().then(() => mapArtWorld(wi, true)),   // 지도 그림 굽기 도구용 (design/forest/bake-map.mjs)
