@@ -104,6 +104,9 @@ console.log('게임 오버');
   await page.evaluate(() => { const j = window.__jp; j.startStage(2); j.closeCard(); j.G.need = 99; j.lowerCeiling(14); });
   const g0 = await page.evaluate(() => ({ over: !!window.__jp.G.over, cameo: window.__jp.G.cameo }));
   check('바닥 선을 넘는 순간 게임 오버 연출 시작 (패널티 놈놈은 안 나옴)', g0.over && !g0.cameo, JSON.stringify(g0));
+  // 발사 정리 중(조준 아님)에 천장이 내려와 게임 오버가 되어도 심술 놈놈이 남지 않음
+  const g1 = await page.evaluate(() => { const j = window.__jp; j.G.time = 500; j.G.state = 'settle'; j.lowerCeiling(1); const before = !!j.G.cameo; j.G.state = 'aim'; j.finish(false, 'line'); return { before, after: j.G.cameo }; });
+  check('정리 중 천장 → 게임 오버면 심술 놈놈 지워짐', g1.before && g1.after === null, JSON.stringify(g1));
   await page.waitForSelector('#result:not([hidden])', { timeout: 4000 });
   await page.waitForTimeout(1600);
   const g = await page.evaluate(() => {

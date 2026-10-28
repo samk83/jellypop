@@ -313,6 +313,11 @@ img{-webkit-user-drag:none}
 @keyframes nomLaugh{0%{transform:rotate(-6deg) scale(1,1)}100%{transform:rotate(6deg) scale(1.05,.94)}}
 #result.lose .result-card{animation:cardUp .45s cubic-bezier(.3,1.3,.5,1) .9s both}
 @keyframes cardUp{0%{opacity:0;transform:translateY(60px)}100%{opacity:1;transform:none}}
+/* 작은 휴대폰: 점수표가 길면 말랑이 그림을 빼고 별·스티커를 줄여 별이 가려지지 않게 */
+@media (max-height:740px){#result.win .result-mascot{display:none}#result.win .result-stars{height:min(84px,13vh);margin-bottom:6px}
+  #result.win .sticker{width:52px;height:52px;margin:4px auto 0}#result.win .sticker .in{width:40px;height:40px}
+  #result.win .result-card{padding:12px 14px}#result.win .result-card h2{font-size:24px}.trow b{font-size:15px}.ttotal b{font-size:22px}#result.win .result-msg{margin:2px 0 8px;font-size:13px}}
+@media (max-height:600px){#result.win #resultSticker{display:none}.tally{font-size:12px}}
 @media (prefers-reduced-motion:reduce){.over-title span,#result.lose .result-mascot img,#result.lose .result-card{animation:none}}
 .result-actions .btn{font-size:18px;min-height:50px}
 
@@ -966,7 +971,7 @@ function rescue(idx, at) {
 }
 
 // 천장 내리기 (조준 중이면 바로, 아니면 정리할 때)
-function lowerCeiling(rows, text) {
+function lowerCeiling(rows, text, kind = 'ceil') {
   G.y0Target += rows * ROW_H;
   showToast(text || T('천장이 내려와요!'));
   sfx('boss');
@@ -974,7 +979,7 @@ function lowerCeiling(rows, text) {
     G.b.y0 = G.y0Target;
     if (Board.lowestY(G.b) + R > DEADLINE) finish(false, 'line');
   }
-  nomCameo('ceil');
+  nomCameo(kind);
 }
 
 // 보스 체력이 줄면 다음 단계 (방해 요소가 늘어난다)
@@ -1074,7 +1079,7 @@ function tickHazards(dt) {
     h.clock = Math.max(0, h.clock - dt);
     if (before > 0 && h.clock === 0) {
       if (cfg.clock.hard) { if (G.state === 'aim') return finish(false, 'time'); h.timeUp = true; }
-      else { cfg.dropSec = Math.max(4, Math.round(cfg.dropSec / 2)); h.dropT = cfg.dropSec; lowerCeiling(2, T('시간 끝! 천장이 쿵!')); }
+      else { cfg.dropSec = Math.max(4, Math.round(cfg.dropSec / 2)); h.dropT = cfg.dropSec; lowerCeiling(2, T('시간 끝! 천장이 쿵!'), 'time'); }
     }
     if (before > 10 && h.clock <= 10) warn(T('10초 남았어요!'));
   }
@@ -1208,7 +1213,7 @@ function scoreRows(st) {
 
 // ---------- 게임 오버: 그 판 화면 그대로 위에 GAME OVER 글자 + 놈놈이 깔깔 ----------
 function gameOver(reason) {
-  G.over = { t: 0, reason };
+  G.over = { t: 0, reason }; G.cameo = null;   // 심술 놈놈은 게임 오버 연출에 자리를 넘긴다
   sfx('gameover');
   try { navigator.vibrate && navigator.vibrate([40, 60, 80]); } catch (e) {}
 }
@@ -2834,7 +2839,7 @@ function showResult() {
   $('resultConfetti').hidden = !o.win;
   [...$('resultStars').children].forEach((s, i) => { if (!s.firstChild) s.innerHTML = cachedArt('bigstar' + i, () => Art.img(Art.bigStar(0, 0, 50, [-15, 0, 15][i]), { x: -62, y: -62, w: 124, h: 124 })); });
   $('overTitle').hidden = o.win;
-  $('resultScore').removeAttribute('data-done');
+  $('resultScore').removeAttribute('data-done'); $('resultScore').removeAttribute('aria-label');
   if (o.win) {
     $('resultTitle').textContent = T('스테이지 클리어!');
     $('resultStars').hidden = false;
@@ -2891,7 +2896,7 @@ function runTally(o) {
     rowEls.forEach((e, i) => { e.classList.add('in'); e.lastChild.textContent = rows[i].pts.toLocaleString(); });
     totEl.textContent = total.toLocaleString(); totEl.parentNode.classList.add('done');
     stars.forEach((s, i) => s.className = i < o.stars ? 'on' : '');
-    if (o.best && !el.querySelector('.tbest')) el.querySelector('.tally').insertAdjacentHTML('beforeend', `<div class="tbest">${T('최고 기록!')}</div>`);
+    if (o.best && !el.querySelector('.tbest')) { sfx('rescue'); el.querySelector('.tally').insertAdjacentHTML('beforeend', `<div class="tbest">${T('최고 기록!')}</div>`); }
     el.setAttribute('data-done', '1');
     stopTally();
   };
@@ -2910,11 +2915,12 @@ function runTally(o) {
     totEl.textContent = running.toLocaleString();
     if (t >= totalAt && !state.total) { state.total = true; totEl.textContent = total.toLocaleString(); totEl.parentNode.classList.add('done'); sfx('total'); }
     while (state.stars < o.stars && t >= starAt + state.stars * .3) { stars[state.stars].className = 'on'; sfx('star', state.stars); state.stars++; }
-    if (t >= endAt) { if (o.best) sfx('rescue'); return finishAll(); }
+    if (t >= endAt) return finishAll();
     tally.raf = requestAnimationFrame(step);
   };
   tally = { raf: requestAnimationFrame(step), skip: finishAll };
-  el.onclick = () => tally && tally.skip();
+  // 카드 아무 데나 눌러도 바로 끝까지 (버튼은 원래 일)
+  $('result').querySelector('.result-card').onclick = e => { if (!e.target.closest('button') && tally) tally.skip(); };
 }
 // ---------- 이어하기 (보상형 광고 · 후원 팩, monetize.js) ----------
 function canRevive() {
@@ -3045,7 +3051,7 @@ requestAnimationFrame(frame);
 window.__jp = {
   get G() { return G; }, lowerCeiling, showBanner, P, STAGES, Board, R, ROW_H, W, H, PIVOT, DEADLINE,
   startStage, rescue, showResult, revive, canRevive, finish, land, hazardsAfterShot, unlockAudio, boom, audioReady: () => !!audio, audioState: () => audio && audio.state, soundHint: () => !$('soundHint').hidden, LUCKY, pickLucky, applyLucky, seenHz: () => P.seenHz, aimLimit, music: () => Music.info(), voices: () => voiceCount, soundMode: () => soundMode, sfx, CS, shoot, swapQueue, setAngle, go, seedRandom,
-  reset() { Object.assign(P, { stars: new Array(NST).fill(0), stickers: {}, seenIntro: false, at: 0, seenHz: {}, seenStory: {} }); saveP(); },
+  reset() { Object.assign(P, { stars: new Array(NST).fill(0), stickers: {}, seenIntro: false, at: 0, seenHz: {}, seenStory: {}, best: {} }); saveP(); },
   story: () => window.JellyStory,
   mapScene: wi => Jelly3D.scene().then(() => mapArtWorld(wi, true)),   // 지도 그림 굽기 도구용 (design/forest/bake-map.mjs)
   // 설명 카드 닫기 · 생각하는 시간 흘려보내기(조준 중 시계가 흐름) · 놈놈이 대포를 막았는지
