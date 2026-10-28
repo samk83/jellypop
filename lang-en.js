@@ -3,6 +3,21 @@
 // 이름 표: 말랑이 Mallang · 노놈 Nonom · 놈놈 Nomnom · 보스 뭉치 Lumpy · 찐득이 Stickum · 푸딩 골렘 Pudding Golem · 철컹이 Clank
 // 초대장 조각은 영어 어순에 맞춰 나눴다: 카드 순서 [2, 0, 1] → "Will you come" "to my birthday" "party?"
 JellyI18n.add({
+  "터뜨린 거품 ×{n}": "Bubbles popped ×{n}",
+  "떨어뜨린 거품 ×{n}": "Bubbles dropped ×{n}",
+  "놈놈 쫓아내기 ×{n}": "Nomnom chased off ×{n}",
+  "보스 물리침": "Boss defeated",
+  "구출한 친구 ×{n}": "Friends rescued ×{n}",
+  "남은 시간 {n}초": "Time left {n}s",
+  "아낀 거품 ×{n}": "Bubbles saved ×{n}",
+  "합계": "Total",
+  "점수 {n}": "Score {n}",
+  "최고 기록!": "New best!",
+  "천장 꾹!": "Squish!",
+  "안개 뿅!": "Poof, fog!",
+  "뒤죽박죽!": "Mix-up!",
+  "시간 끝!": "Time's up!",
+  "히히!": "Hehe!",
   "처음 화면으로": "Back to title",
   "이전 월드": "Previous world",
   "다음 월드": "Next world",

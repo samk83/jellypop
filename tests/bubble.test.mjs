@@ -226,6 +226,7 @@ for (const [label, dev] of [['iPhone SE (320x568)', devices['iPhone SE']], ['Gal
   const s1 = await page.evaluate(botPlay, 1);
   console.log('     스테이지 1:', JSON.stringify(s1));
   await page.waitForSelector('#result:not([hidden])', { timeout: 4000 });
+  await page.waitForSelector('#resultScore[data-done]', { timeout: 8000 });   // 점수표가 다 올라가고 별이 켜질 때까지
   const res = await page.evaluate(() => ({ title: document.getElementById('resultTitle').textContent, on: document.querySelectorAll('#resultStars .on').length, sticker: !!document.querySelector('#resultSticker .sticker'), msg: document.getElementById('resultMsg').textContent }));
   await page.screenshot({ path: path.join(shots, 'v2-06-clear-desktop.png') });
   check('친구를 구하면 클리어 창: 별 1~3개 + 친구 스티커', s1.win && res.title.includes('클리어') && res.on >= 1 && res.on <= 3 && res.sticker && res.msg.includes('몽실'), JSON.stringify(res));
