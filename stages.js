@@ -10,6 +10,8 @@
 //   drop N(N발마다 천장) · miss N(헛방 N번마다 천장) · dropSec N(이 스테이지만 더 빠른 하강 간격) · cloud {first, every, last, look}
 //   aim 'short'|'blink'|'none' · clock {sec, hard} · shotTimer N(한 발 N초) · caramel N · conveyor {every, rows} · dark
 //   nom {first, every, acts:['steal'|'block'|'take'|'junk']}
+// boss: {name, kind, hp, every, sticky, lucky, phases, sub(월드 마지막 부두목), minions(처음부터 나오는 놈놈 부하 = nom 과 같은 모양)}
+// kinds 'h' = 보너스 젤리 (0.15.0: 터뜨리거나 떨어뜨리고 판을 깨면 보너스 스테이지)
 // obs: 지형 장애물 (0.14.0) [{t, x, y, len, a, spin}] — 판 아래 빈 곳(논리 좌표 360×620)에 놓는다
 //   t 'branch' 나뭇가지(튕김) · 'web' 솜사탕 거미줄(한 발을 붙잡고 찢어짐) · 'fan' 풍차 날개(spin°/초로 돌며 튕김) · a 기울기°
 window.JellyStages = (() => {
@@ -27,7 +29,8 @@ window.JellyStages = (() => {
     { id: 3, name: T('꽃밭 언덕'), theme: 'flowers', shots: 20, colors: 'rybg',
       friends: [{ name: T('꽃잎'), color: '#ff9f7a' }],
       tip: T('위쪽 <b>줄기를 끊으면</b> 매달린 거품이 한꺼번에 떨어져요'),
-      rows: ['rr..bb..gg', 'r...b...g', '...ryyg...', '..rrYgg..', '..bbrrgg..', '..bbyygg.'] },
+      rows: ['rr..bb..gg', 'r...b...g', '...ryyg...', '..rrYgg..', '..bbrrgg..', '..bbyygg.'],
+      kinds: ['..........', '.........', '..........', '.........', '....h.....', '.........'] },
     { id: 4, name: T('폭포 다리'), theme: 'falls', shots: 26, colors: 'rybgp',
       friends: [{ name: T('찰랑'), color: '#ffd23f' }, { name: T('살랑'), color: '#4fdcc4' }],
       tip: T('이번엔 <b>친구가 두 명</b> 갇혀 있어요'),
@@ -37,9 +40,9 @@ window.JellyStages = (() => {
       friends: [{ name: T('포도알'), color: '#a76bff' }],
       tip: T('위쪽 <b>시간 게이지</b>가 다 닳으면 천장이 한 칸 내려와요. 이번엔 더 빨라요!'),
       rows: ['rrggbbyypp', 'rggbbyypp', 'ggbbyypprr', 'gbbyPpprr', 'bbyypprrgg'] },
-    { id: 6, name: T('마을 입구'), theme: 'gate', shots: 30, colors: 'rybgp', boss: { name: T('뭉치'), kind: 'mungchi', hp: 36, every: 5 },
+    { id: 6, name: T('마을 입구'), theme: 'gate', shots: 30, colors: 'rybgp', boss: { name: T('뭉치'), kind: 'mungchi', hp: 36, every: 5, sub: true, minions: { first: 3, every: 6, acts: ['steal'] } },
       friends: [{ name: T('뭉게'), color: '#ffb3e0' }],
-      tip: T('<b>보스 뭉치!</b> 거품을 터뜨리고 떨어뜨릴수록 뭉치가 약해져요'),
+      tip: T('<b>부두목 뭉치!</b> 놈놈 부하가 거품을 훔쳐 가요. 날아다니는 부하를 맞혀 쫓아내요'),
       rows: ['rryybbggpp', 'ryybbggpp', 'yybbggpprr', 'ybbggpprr', 'bbggpprryy'] },
 
     // ---------------- 월드 2 · 시럽 숲 ----------------
@@ -51,7 +54,8 @@ window.JellyStages = (() => {
     { id: 8, name: T('솜사탕 나무'), theme: 'w2-cotton', shots: 26, colors: 'rybgp', hz: { cloud: { first: 2, every: 7, last: 4 } },
       friends: [{ name: T('솜솜'), color: '#ffc4ea' }],
       tip: T('<b>솜사탕 안개</b>가 위쪽을 가려요. 안개 속 거품을 터뜨리면 그 자리가 걷혀요'),
-      rows: ['yyppggbggb', 'pgyybYppb', 'pgrrgbyrrp', 'ybpgppgbb', 'brpbbgrgrp', 'ryygygrbr', 'bbpgrrbggy'] },
+      rows: ['yyppggbggb', 'pgyybYppb', 'pgrrgbyrrp', 'ybpgppgbb', 'brpbbgrgrp', 'ryygygrbr', 'bbpgrrbggy'],
+      kinds: ['..........', '.........', '..........', '..h......', '..........', '.........', '..........'] },
     { id: 9, name: T('메이플 시냇물'), theme: 'w2-stream', shots: 28, colors: 'rybgp', hz: { miss: 3 }, obs: [{ t: 'branch', x: 92, y: 362, len: 110, a: -18 }],
       friends: [{ name: T('메이'), color: '#e0a050' }],
       tip: T('<b>헛방</b>(아무것도 못 터뜨린 발사) 3번이면 천장이 내려와요'),
@@ -68,9 +72,9 @@ window.JellyStages = (() => {
       rows: ['ggyygppbbp', 'rrbgrrgrr', 'ppbrbygyyb', 'ggrpPypbr', 'ybpyrrbpby', 'bgrppbggy', 'grgrbrprrb', 'yyppyypby'],
       kinds: ['..........', '.........', '..........', '.........', '.f........', '....f....', '......f...', '.........'] },
     { id: 12, name: T('숲의 심장'), theme: 'w2-heart', shots: 32, colors: 'rybgp', fall: 30,
-      boss: { name: T('찐득이'), kind: 'syrup', hp: 60, every: 5, sticky: .3, phases: [{ at: .5, cloud: { every: 7, last: 3 } }] },
+      boss: { name: T('찐득이'), kind: 'syrup', hp: 60, every: 5, sticky: .3, sub: true, minions: { first: 3, every: 6, acts: ['junk', 'steal'] }, phases: [{ at: .5, cloud: { every: 7, last: 3 } }] },
       friends: [{ name: T('달콩'), color: '#ff6f8f' }],
-      tip: T('<b>보스 찐득이!</b> 끈적 거품을 던지고, 약해지면 구름을 뿜어요'),
+      tip: T('<b>부두목 찐득이!</b> 끈적 거품을 던지고, 놈놈 부하들이 회색 거품을 붙여요'),
       rows: ['ggppybbrrp', 'ryrgppggp', 'rgygryyrbb', 'grbybpryp', 'yybgypbgyb', 'gryrggbpp'],
       kinds: ['..........', '.s....ss.', '...s.....s', '.........', '........s.', '.........'] },
 
@@ -84,7 +88,7 @@ window.JellyStages = (() => {
       friends: [{ name: T('캬라'), color: '#d98c3a' }],
       tip: T('4발마다 <b>캐러멜 방울</b>이 떨어져 거품 판에 붙어요'),
       rows: ['rpbbggrrbb', 'gyyrrppgr', 'grppbByyrb', 'ryyrppbpp', 'pbbpryybrr', 'pyrggbpgg', 'gyryyrrbby', 'gbbggppyg'],
-      kinds: ['..........', '.........', '..........', '.........', '..........', '..q......', '......q...', '....q....'] },
+      kinds: ['..........', '.........', '..........', '.........', '.......h..', '..q......', '......q...', '....q....'] },
     { id: 15, name: T('푸딩 호수'), theme: 'w3-lake', shots: 30, colors: 'rybgp', hz: { clock: { sec: 90, hard: false } }, obs: [{ t: 'web', x: 84, y: 344, len: 84, a: 8 }, { t: 'web', x: 278, y: 326, len: 84, a: -8 }],
       friends: [{ name: T('출렁'), color: '#6fd0ff' }],
       tip: T('<b>90초 타임 어택!</b> 시간이 끝나면 천장이 쿵쿵 내려와요'),
@@ -100,9 +104,9 @@ window.JellyStages = (() => {
       rows: ['ppbbggrrgp', 'byprrpygb', 'bpbbggYpyy', 'rrprrbbgg', 'ypypggrrpr', 'yrrbbpyyg', 'bggyypgbgp', 'byrrgbybp'],
       kinds: ['..........', '.........', '..........', '.........', '...f......', '...f.....', '.f...q....', '..q......'] },
     { id: 18, name: T('동굴 깊은 곳'), theme: 'w3-heart', shots: 34, colors: 'rybgp', hz: { cloud: { first: 4, every: 8, last: 3 } },
-      boss: { name: T('푸딩 골렘'), kind: 'pudding', hp: 85, every: 5, lucky: .5 },
+      boss: { name: T('푸딩 골렘'), kind: 'pudding', hp: 85, every: 5, lucky: .5, sub: true, minions: { first: 3, every: 6, acts: ['steal', 'block'] } },
       friends: [{ name: T('푸디'), color: '#ffaa85' }],
-      tip: T('<b>보스 푸딩 골렘!</b> 거품 줄과 구름을 함께 조심해요'),
+      tip: T('<b>부두목 푸딩 골렘!</b> 놈놈 부하가 대포를 막으면 맨 앞 친구를 눌러요'),
       rows: ['yyggyypggy', 'gpbppgpyp', 'pgpbrgrgyg', 'rbyppygrg', 'rgbrbybbpp', 'yyrbppyyg'],
       kinds: ['u...u....u', '.........', '..........', '.........', '..........', '.........'] },
 
@@ -115,7 +119,7 @@ window.JellyStages = (() => {
       friends: [{ name: T('쿠키'), color: '#c98a4a' }],
       tip: T('<b>7초 안에</b> 쏘지 않으면 자동으로 발사돼요. 쿠키 블록은 떨어뜨려야 없어져요'),
       rows: ['oyyprrggrr', 'obrbbppbb', 'ggryxggrrx', 'rppbbRbgg', 'xorggrbxop', 'oprbbgyrp', 'yryoogrybg', 'ypyryygrb'],
-      kinds: ['..........', '.........', '....k....k', '.........', 'k......k..', '.z.......', '......z...', '.........'] },
+      kinds: ['..........', '.........', '....k....k', '..h......', 'k......k..', '.z.......', '......z...', '.........'] },
     { id: 21, name: T('아이스크림 냉동실'), theme: 'w4-freezer', shots: 32, colors: 'rybgpo', hz: { cloud: { first: 2, every: 7, last: 4, look: 'frost' } }, obs: [{ t: 'fan', x: 100, y: 350, len: 90, spin: -70 }],
       friends: [{ name: T('얼음이'), color: '#bfe9ff' }],
       tip: T('<b>얼음 거품</b>은 옆 거품이 터지면 녹아요. 서리가 위쪽을 가려요'),
@@ -132,9 +136,9 @@ window.JellyStages = (() => {
       rows: ['brroobbggy', 'boyrppooy', 'orgbRgyypb', 'ogoyoropb', 'rrbyggoggp', 'ybgppbbpy', 'rrgrroyybb', 'pybygpoor'],
       kinds: ['..........', '.........', '..........', '...g.....', '......g...', '.........', '.........g', '.........'] },
     { id: 24, name: T('공장장실'), theme: 'w4-boss', shots: 36, colors: 'rybgpo', hz: { conveyor: { every: 4, rows: [2] }, aim: 'blink' },
-      boss: { name: T('철컹이'), kind: 'robot', hp: 64, every: 5, lucky: .6 },
+      boss: { name: T('철컹이'), kind: 'robot', hp: 64, every: 5, lucky: .6, sub: true, minions: { first: 3, every: 6, acts: ['block', 'take'] } },
       friends: [{ name: T('무지'), color: '#5b6dff' }],
-      tip: T('<b>보스 철컹이!</b> 고장 난 조준기가 깜빡여요'),
+      tip: T('<b>부두목 철컹이!</b> 조준기가 깜빡이고, 놈놈 부하가 친구를 데려가요'),
       rows: ['ooybrrooby', 'bbybgbbry', 'yygrgpgrpr', 'pprbbpgpr', 'obbpggoyyo'] },
 
     // ---------------- 월드 5 · 노놈의 성 ----------------
@@ -147,7 +151,7 @@ window.JellyStages = (() => {
       friends: [{ name: T('방울'), color: '#5fc8ff' }, { name: T('보글'), color: '#7fd8ff' }, { name: T('송이'), color: '#ffd0a0' }],
       tip: T('<b>친구 3명</b>을 구해요! 놈놈이 줄 선 친구를 데려가면 맞혀서 되찾아요'),
       rows: ['ooygyryygg', 'pgpyggrbo', 'prObpoBpby', 'rgbpoprpy', 'pogoYrgybb'],
-      kinds: ['..........', '.........', '..........', '......q..', '.q........'] },
+      kinds: ['..........', '......h..', '..........', '......q..', '.q........'] },
     { id: 27, name: T('거울 복도'), theme: 'w5-mirror', shots: 50, colors: 'rybgpo', fall: 16, hz: { aim: 'none' }, obs: [{ t: 'web', x: 250, y: 360, len: 84 }],
       friends: [{ name: T('똑딱'), color: '#4fe0b0' }],
       tip: T('거울 때문에 <b>조준선이 안 보여요</b>! 반딧불 거품이 길을 비춰 줘요'),
@@ -164,7 +168,7 @@ window.JellyStages = (() => {
       rows: ['pprooyyoyg', 'gbpggrbbg', 'pbgbOoryro', 'prrbyypro', 'bggppbggyr', 'bryyboory'],
       kinds: ['..........', '.........', '..........', '.........', '..q.......', '......q..'] },
     { id: 30, name: T('왕좌의 방'), theme: 'w5-throne', shots: 40, colors: 'rybgpo',
-      boss: { name: T('노놈'), kind: 'nomnom', hp: 95, every: 5, lucky: .7, phases: [
+      boss: { name: T('노놈'), kind: 'nomnom', hp: 95, every: 5, lucky: .7, minions: { first: 4, every: 7, acts: ['steal'] }, phases: [
         { at: .67, nom: { first: 1, every: 4, acts: ['steal', 'block'] }, cloud: { every: 7, last: 3 }, say: T('부하들아, 나와라!') },
         { at: .34, dropSec: 18, aim: 'short', red: true, off: ['nom', 'cloud'], say: T('이제 진짜 화났다!') }] },
       friends: [{ name: T('촌장님'), color: '#9ad85a' }],
@@ -191,6 +195,7 @@ window.JellyStages = (() => {
     'clock-hard': { title: T('진짜 타임 어택'), text: T('시간이 끝나기 전에 친구를 구하지 못하면 실패예요.'), how: T('망설이지 말고 빨리!'), art: 'clock' },
     z: { title: T('폭탄 거품'), text: T('심지 달린 폭탄 거품에 거품을 붙이면 펑! 둘레 두 칸까지 색 상관없이 한꺼번에 터져요.'), how: T('친구 옆 폭탄을 노려요. 폭탄끼리는 연쇄 폭발!'), art: 'z' },
     q: { title: T('랜덤 거품'), text: T('물음표 거품에 거품을 붙이면 터지면서 무언가 나와요. 폭탄·무지개·반딧불·시간 충전이 나오면 행운!'), how: T('가끔은 안개·천장 한 칸·색 섞기 같은 꽝도 있어요. 운을 걸어 봐요!'), art: 'q' },
+    h: { title: T('보너스 젤리'), text: T('별이 달린 금빛 젤리를 터뜨리거나 떨어뜨린 뒤 판을 깨면 보너스 스테이지가 열려요.'), how: T('보너스 스테이지에서 젤리를 8명 이상 구하면 생명 +1!'), art: 'h' },
     c: { title: T('수정 거품'), text: T('무지개 수정은 아무 색과도 짝이 돼요.'), how: T('묶음에 끼워 넣어 크게 터뜨려요.'), art: 'c' },
     'nom-steal': { title: T('꼬마 놈놈 — 거품 도둑'), text: T('놈놈이 거품을 하나 들고 날아가요. 판 모양이 바뀌어요.'), how: T('날아다니는 놈놈을 맞히면 쫓아내고 점수!'), art: 'nom' },
     dark: { title: T('캄캄한 동굴'), text: T('판이 어두워서 조준하는 곳 주변만 밝아요.'), how: T('친구 거품은 반짝여서 보여요.'), art: 'dark' },
@@ -226,6 +231,7 @@ window.JellyStages = (() => {
     (st.obs || []).forEach(o => add('ob-' + o.t));
     if (st.boss && st.boss.sticky) add('s');
     if (st.boss && st.boss.lucky) add('q');
+    if (st.boss && st.boss.minions) fromHz({ nom: st.boss.minions });   // 부두목전: 놈놈 부하
     if (st.boss && st.boss.phases) st.boss.phases.forEach(fromHz);
     return out;
   }

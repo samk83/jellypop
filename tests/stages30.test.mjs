@@ -380,7 +380,7 @@ function botPlay(stageNo) {
     const la = j.G.fired; j.think(7.2); out.autoHold = j.G.fired === la + 1 && !j.G.aiming;
     // 진짜 타임 어택 (29): 시간이 끝나면 실패
     j.startStage(29); j.closeCard();
-    j.G.hz.clock = 1; j.think(1.5); out.hard = j.G.outcome && j.G.outcome.reason;
+    j.G.hz.clock = 1; j.P.lives = 1; j.think(1.5); out.hard = j.G.outcome && j.G.outcome.reason;
     // 부드러운 타임 어택 (15): 시간이 끝나면 천장 2칸
     j.startStage(15); j.closeCard();
     const y0 = j.G.b.y0; j.G.hz.clock = .5; j.think(1);
@@ -567,7 +567,7 @@ for (const [label, dev] of [['iPhone SE (320x568)', devices['iPhone SE']], ['Gal
   check('최종 보스를 쓰러뜨리면 "모험 완주" (스티커 30/30)', fin && fin.win && res.title.includes('최종') && res.msg.includes('30명') && res.main === '지도로', JSON.stringify(res));
   await page.evaluate(() => { const j = window.__jp; j.reset(); j.P.seenIntro = true; for (let i = 0; i < 5; i++) j.P.stars[i] = 1; });
   const tr = await page.evaluate(async () => {
-    const j = window.__jp; j.startStage(6); j.G.bossHp = 1; let ok = false;
+    const j = window.__jp; j.startStage(6); j.closeCard(); j.G.bossHp = 1; let ok = false;
     for (let a = -2.9; a < -0.2 && !ok; a += 0.02) { const r = j.evalShot(a); if (r && r.popped) { j.setAngle(a); ok = true; } }
     j.shoot(); j.advance();
     for (let i = 0; i < 40 && document.getElementById('result').hidden; i++) await new Promise(r => setTimeout(r, 100));

@@ -193,7 +193,7 @@ for (const [label, dev] of [['iPhone SE (320x568)', devices['iPhone SE']], ['Gal
   });
   const bad = [];
   const checkScreen = async name => { const l = await layoutOf(); if (l.scrollX || l.small.length) bad.push(name + ':' + JSON.stringify(l)); };
-  await page.evaluate(() => { const j = window.__jp; j.G.need = 99; j.lowerCeiling(12); });
+  await page.evaluate(() => { const j = window.__jp; j.G.need = 99; j.P.lives = 1; j.lowerCeiling(12); });
   await page.waitForSelector('#result:not([hidden])', { timeout: 3000 });
   await checkScreen('result');
   await page.keyboard.press('Tab'); await page.keyboard.press('Tab'); await page.keyboard.press('Tab');
@@ -280,7 +280,7 @@ for (const [label, dev] of [['iPhone SE (320x568)', devices['iPhone SE']], ['Gal
   check('기준 발 수를 넘겨 쏴도 실패하지 않음 (발사 수 제한 없음)', many.fired > many.par || many.outcome === 'line', JSON.stringify(many));
   // 실패: 천장이 내려와 바닥 선을 넘음 → 실패 창
   const f1 = await page.evaluate(() => {
-    const j = window.__jp; j.startStage(1); j.G.need = 99; j.lowerCeiling(12); return j.G.outcome;
+    const j = window.__jp; j.startStage(1); j.G.need = 99; j.P.lives = 1; j.lowerCeiling(12); return j.G.outcome;
   });
   await page.waitForSelector('#result:not([hidden])', { timeout: 3000 });
   const fr = await page.evaluate(() => ({ title: document.getElementById('resultTitle').textContent, main: document.getElementById('resultMain').textContent, sub: document.getElementById('resultSub').textContent }));
@@ -288,7 +288,7 @@ for (const [label, dev] of [['iPhone SE (320x568)', devices['iPhone SE']], ['Gal
   check('천장이 바닥 선까지 내려오면 실패 창 (다시 하기·지도로)', f1 && !f1.win && f1.reason === 'line' && fr.main === '다시 하기' && fr.sub === '지도로', JSON.stringify([f1, fr]));
   // 실패: 바닥 선
   const f2 = await page.evaluate(() => {
-    const j = window.__jp; j.startStage(5); j.G.y0Target = 380; j.G.need = 99;
+    const j = window.__jp; j.startStage(5); j.G.y0Target = 380; j.G.need = 99; j.P.lives = 1;
     j.setAngle(-Math.PI / 2); j.shoot(); j.advance(); return j.G.outcome;
   });
   check('거품이 바닥 선을 넘으면 실패', f2 && !f2.win && f2.reason === 'line', JSON.stringify(f2));

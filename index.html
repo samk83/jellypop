@@ -210,6 +210,7 @@ img{-webkit-user-drag:none}
 #banner .bdots{position:absolute;right:12px;top:6px;display:flex;gap:4px}
 #banner .bdots i{width:5px;height:5px;border-radius:50%;background:rgba(194,69,122,.3)}#banner .bdots i.on{width:12px;border-radius:3px;background:#ff4f8b}
 #tbar{flex:none;margin-top:8px;height:28px;display:flex;align-items:center;gap:8px;padding:0 2px}
+#tbar .tmeter{flex:1;min-width:0;display:flex;align-items:center;gap:8px}
 #tbar .tic{flex:none;width:28px;height:28px;border-radius:50%;display:grid;place-items:center;font-size:15px;background:radial-gradient(circle at 35% 30%,#fff,#ffd1e8 60%,#f59ac4);box-shadow:0 2px 4px rgba(26,10,58,.35)}
 #tbar .track{flex:1;height:16px;border-radius:9px;background:rgba(42,11,78,.55);border:2px solid rgba(255,255,255,.75);position:relative;overflow:hidden;box-shadow:inset 0 2px 3px rgba(0,0,0,.35)}
 #tbar .fill{position:absolute;left:0;top:0;bottom:0;border-radius:7px;background:linear-gradient(#bff7d0,#3fd27a 55%,#25a85c)}
@@ -219,6 +220,14 @@ img{-webkit-user-drag:none}
 @keyframes tshake{0%,100%{transform:translateX(0)}25%{transform:translateX(-1.5px)}75%{transform:translateX(1.5px)}}
 #tbar .lbl{flex:none;min-width:92px;text-align:center;font:900 13px var(--font-body);color:#fff;background:rgba(90,45,145,.88);border-radius:12px;padding:4px 8px;border:1.5px solid rgba(255,255,255,.4)}
 #tbar.hot .lbl{background:#ff4f8b}
+#lives{flex:none;display:flex;align-items:center;gap:1px;height:28px;padding:0 6px;border-radius:14px;background:rgba(90,45,145,.88);border:1.5px solid rgba(255,255,255,.4)}
+#lives svg{width:19px;height:18px;display:block;filter:drop-shadow(0 1px 1px rgba(42,11,78,.5))}
+#lives .off{opacity:.35;filter:grayscale(1)}
+#lives .lost{animation:hplost .9s ease-out}
+#lives .gain{animation:hpgain .9s ease-out}
+@keyframes hplost{0%{transform:scale(1.5);opacity:1;filter:none}40%{transform:scale(1.2) rotate(-12deg)}100%{transform:none}}
+@keyframes hpgain{0%{transform:scale(0)}60%{transform:scale(1.5)}100%{transform:none}}
+@media (prefers-reduced-motion:reduce){#lives .lost,#lives .gain{animation:none}}
 @media (max-height:700px){#banner{display:none}}
 @media (prefers-reduced-motion:reduce){#tbar.hot .track{animation:none}}
 #stageWrap{flex:1;min-height:0;display:grid;place-items:center;margin-top:8px;position:relative}
@@ -229,7 +238,7 @@ img{-webkit-user-drag:none}
   filter:drop-shadow(0 2px 0 #4a1d7a) drop-shadow(0 2px 0 #4a1d7a) drop-shadow(0 6px 10px rgba(42,11,78,.35))}
 .toast.show{opacity:1;transform:translate(-50%,-50%) scale(1) rotate(-2deg)}
 /* 첫 판 안내: 말랑이 머리 위 작은 반투명 말풍선 (판·조준선을 가리지 않게 왼쪽 아래, 몇 초 뒤 저절로 사라짐) */
-.tip{position:absolute;left:10px;bottom:21%;max-width:min(52%,210px);background:rgba(255,255,255,.86);color:#5a2d91;border-radius:14px;padding:7px 11px;font-size:13px;line-height:1.4;font-weight:700;
+.tip{position:absolute;left:10px;bottom:31%;max-width:min(52%,210px);background:rgba(255,255,255,.86);color:#5a2d91;border-radius:14px;padding:7px 11px;font-size:13px;line-height:1.4;font-weight:700;
   text-align:left;word-break:keep-all;pointer-events:none;transition:opacity .4s;box-shadow:0 6px 14px rgba(42,11,78,.2)}
 .tip::after{content:"";position:absolute;left:86px;bottom:-8px;margin-left:-6px;border:7px solid transparent;border-top-color:rgba(255,255,255,.86);border-bottom:0}
 .tip b{font-family:var(--font-display);font-weight:900;color:#ff4f8b}
@@ -417,7 +426,7 @@ img{-webkit-user-drag:none}
       <button class="icon-btn" id="soundBtn" aria-label="소리 켜기/끄기"></button>
     </div>
     <div id="banner" role="region" aria-label="배너"><div class="bimg" id="bannerImg"></div><div class="btxt"><small id="bannerTag"></small><b id="bannerTitle"></b><span id="bannerSub"></span></div><button class="bgo" id="bannerBtn" type="button"></button><div class="bdots" id="bannerDots"></div></div>
-    <div id="tbar" role="meter" aria-label="천장이 내려오기까지 남은 시간" aria-valuemin="0" aria-valuemax="20" aria-valuenow="20"><div class="tic" aria-hidden="true">⏳</div><div class="track"><div class="fill" id="tfill"></div></div><div class="lbl" id="tlbl"></div></div>
+    <div id="tbar"><div id="lives" role="img"></div><div class="tmeter" role="meter" aria-label="천장이 내려오기까지 남은 시간" aria-valuemin="0" aria-valuemax="20" aria-valuenow="20"><div class="tic" aria-hidden="true">⏳</div><div class="track"><div class="fill" id="tfill"></div></div><div class="lbl" id="tlbl"></div></div></div>
     <div id="stageWrap">
       <canvas id="canvas" tabindex="0" aria-label="게임 판. 대포 근처를 좌우로 끌어 대포를 돌리고, 떼면 발사. 키보드는 왼쪽·오른쪽 화살표로 조준, 스페이스로 발사, X로 순서 바꾸기"></canvas>
       <div class="toast" id="toast" role="status" aria-live="polite"></div>
@@ -504,7 +513,10 @@ document.title = T('젤리팝 젤리마을 대소동');
 const W = 360, H = 620;                       // 게임 판 논리 크기 (화면에 맞춰 확대·축소)
 const R = 18, D = R * 2, ROW_H = R * Math.sqrt(3);
 const PIVOT = { x: 180, y: 556 };              // 대포 회전 중심
-const FLOOR_Y = 512, DEADLINE = 478;           // 바닥, 바닥 선
+const FLOOR_Y = 512, DEADLINE = 478;           // 바닥, 터치 구역 윗선 (대포 근처만 터치)
+// 게임 오버 선 (0.15.0 Owner: "완전 바닥·말랑이·대포에 닿을 때만"): 거품 아래쪽이 말랑이 머리·대포 몸통 높이에 닿으면 생명 -1
+const LOSE_Y = 532;
+const MAX_LIVES = 5, START_LIVES = 3;
 const SPEED = 820;                             // 발사 속도 (px/초)
 const MIN_A = -Math.PI + 0.16, MAX_A = -0.16;  // 조준 각도 한계
 const COLORS = {
@@ -541,6 +553,8 @@ const P = Object.assign({ stars: [], stickers: {}, seenIntro: false, at: 0, seen
 while (P.stars.length < NST) P.stars.push(0);   // 월드 1(6칸)만 있던 저장도 30칸으로
 P.seenHz = P.seenHz || {};
 P.seenStory = P.seenStory || {};
+// 생명 (0.15.0): 3개로 시작, 거품이 바닥(말랑이·대포)에 닿을 때마다 1개씩. 다 쓰면 게임 오버 → 다시 하면 3개. 보너스 스테이지로 최대 5개까지
+if (!(P.lives >= 0)) P.lives = START_LIVES;
 function saveP() { store.set('progress', P); }
 let soundOn = store.get('sound', true);
 
@@ -743,6 +757,7 @@ const Board = {
     out.gifts = [...out.popped, ...out.dropped].filter(p => p.cell.k === 'g').length;
     out.randoms = [...out.popped, ...out.dropped].filter(p => p.cell.k === 'q').map(p => ({ r: p.r, c: p.c }));
     out.fireflies = [...out.popped, ...out.dropped].filter(p => p.cell.k === 'f').length;
+    out.bonus = [...out.popped, ...out.dropped].filter(p => p.cell.k === 'h').length;
     while (b.rows.length && b.rows[b.rows.length - 1].every(x => !x)) b.rows.pop();
     return out;
   },
@@ -771,7 +786,7 @@ const Board = {
   stealable(b) {
     const out = [];
     b.rows.forEach((row, r) => row.forEach((cell, c) => {
-      if (!cell || cell.solid || cell.friend !== undefined || Board.trigger(cell)) return;   // 폭탄·랜덤은 안 훔침
+      if (!cell || cell.solid || cell.friend !== undefined || Board.trigger(cell) || cell.k === 'h') return;   // 폭탄·랜덤·보너스는 안 훔침
       b.rows[r][c] = null;
       if (!Board.floating(b).length) out.push([r, c]);
       b.rows[r][c] = cell;
@@ -828,6 +843,7 @@ function newGame(stageNo) {
     shotCount: 0, score: 0, settleT: 0, queueShift: 0, y0Target: b.y0, y0Start: b.y0, continues: 0, swapT: 0, outcome: null, time: 0,
     paused: false, hz: makeHz(st),
     tally: { pop: 0, popPts: 0, drop: 0, dropPts: 0, nom: 0, nomPts: 0 }, cameo: null, cameoAt: -99,
+    jigs: [], face: null, mood0: 'happy', streak: 0, bonusTicket: false,
   };
   fillQueue();
   gaugeLast = '';
@@ -838,6 +854,7 @@ function aimLimit(st) { return AIM_BY_WORLD[st.world - 1]; }
 // 방해 요소 상태 (설정 cfg 는 보스 단계가 바뀌면 늘어난다)
 function makeHz(st) {
   const cfg = { ...st.hz };
+  if (st.boss && st.boss.minions && !cfg.nom) cfg.nom = st.boss.minions;   // 부두목전: 처음부터 놈놈 부하가 나온다
   const h = { cfg, misses: 0, cloud: null, nom: null, aimBoost: 0, warn: null, ceilWarn: 0, phase: 0, red: false,
     clock: cfg.clock ? cfg.clock.sec : null, shotT: cfg.shotTimer || 0, dropT: 0,
     cloudNext: cfg.cloud ? cfg.cloud.first : -1, nomNext: cfg.nom ? cfg.nom.first : -1, nomIdx: 0, caramelX: null, convWarn: false, timeUp: false };
@@ -856,6 +873,7 @@ function warn(text) { G.hz.warn = { text, t: 0 }; }
 const nomActive = act => { const n = G && G.hz.nom; return !!n && n.act === act && (n.state === 'block' || n.state === 'hover' || n.state === 'fly'); };
 
 function shoot() {
+  if (G && G.mode === 'bonus') return bonusShoot();
   if (!G || G.state !== 'aim' || G.paused || !G.queue.length) return false;
   const color = G.queue.shift();
   G.fired++;
@@ -931,6 +949,14 @@ function land(m) {
   const [r, c] = cell;
   const res = Board.place(b, r, c, m.c);
   const n = res.popped.length, d = res.dropped.length, u = res.unstuck.length;
+  const at0 = Board.pos(b, r, c);
+  jiggle(at0.x, at0.y, n ? .2 : .13);
+  G.streak = n ? G.streak + 1 : 0;
+  if (n) {
+    // 연속으로 잘 터뜨리면 젤리들이 활짝 (2연속부터 글자, 3연속부터 말랑이도 신남)
+    if (G.streak >= 2) { G.texts.push({ x: at0.x, y: at0.y - 30, text: T('{n}연속!', { n: G.streak }), life: 1.1, color: '#9ff0ff' }); if (G.streak >= 3) jellyVoice('yay'); }
+    if (G.streak >= 2 || n + d >= 6) setFace('joy', 1.5, at0);
+  }
   if (n || u) {
     G.score += n * 10 + d * 20 + u * 10;
     G.tally.pop += n; G.tally.popPts += n * 10 + u * 10; G.tally.drop += d; G.tally.dropPts += d * 20;
@@ -951,6 +977,7 @@ function land(m) {
     // 선물 상자: 다음 거품이 무지개(60%) 또는 폭탄(40%)
     if (res.gifts && G.queue.length) { const bomb = rand() < .4; G.queue[0] = bomb ? 'z' : 'w'; showToast(bomb ? T('선물 상자! 폭탄 거품') : T('선물 상자! 무지개 거품')); }
     if (res.fireflies) { G.hz.aimBoost = 3; showToast(T('반딧불! 3발 동안 조준선이 길어요')); }
+    if (res.bonus && !G.bonusTicket) { G.bonusTicket = true; G.texts.push({ x: at0.x, y: at0.y - 50, text: T('보너스!'), life: 1.5, color: '#ffe27a' }); showToast(T('보너스 젤리! 판을 깨면 보너스 스테이지')); sfx('rescue'); }
     if (res.bombs) {
       res.popped.filter(p => p.cell.k === 'z').forEach(p => { const q = Board.pos(b, p.r, p.c); burst(q.x, q.y, '#ffb347', 18); burst(q.x, q.y, '#ff5f3a', 10); });
       G.impact = Math.max(G.impact || 0, .4); showToast(res.bombs > 1 ? T('연쇄 폭발! 펑펑!') : T('폭탄 펑!')); sfx('boom', res.bombs);
@@ -1050,21 +1077,24 @@ function applyLucky(e, at) {
 function rescue(idx, at) {
   const f = G.st.friends[idx] || G.st.friends[0];
   G.saved++;
+  setFace('joy', 1.6, at);
   // 거품에서 풀려나 위로 톡 튀어 오른 뒤 떨어진다 → 땅에서 통통 → 데굴데굴 → 말랑이 옆 자리로 폴짝 (stepRescue)
   const slot = RESCUE_SLOTS[G.rescues.length % RESCUE_SLOTS.length];
   G.rescues.push({ x: at.x, y: at.y, vx: (at.x < W / 2 ? 1 : -1) * (40 + Math.random() * 50), vy: -260, rot: 0, sq: 0, t: 0, phase: 'fall', bounces: 0, slot, color: f.color, name: f.name });
-  showToast(f.name + T(' 구출!'));
+  if (f.name) showToast(f.name + T(' 구출!'));
   sfx('rescue');
 }
 
 // 천장 내리기 (조준 중이면 바로, 아니면 정리할 때)
 function lowerCeiling(rows, text, kind = 'ceil') {
   G.y0Target += rows * ROW_H;
+  setFace('o', 1.1, { x: W / 2, y: G.b.y0 });
+  jiggle(W / 2, G.b.y0, .12);
   showToast(text || T('천장이 내려와요!'));
   sfx('boss');
   if (G.state === 'aim') {
     G.b.y0 = G.y0Target;
-    if (Board.lowestY(G.b) + R > DEADLINE) finish(false, 'line');
+    if (Board.lowestY(G.b) + R > LOSE_Y) finish(false, 'line');
     else obsCrush();
   }
   nomCameo(kind);
@@ -1084,6 +1114,7 @@ function bossPhases() {
     // 마지막 단계는 방해를 바꿔 끼운다 (동시에 3개까지)
     (ph.off || []).forEach(k => { h.cfg[k] = null; if (k === 'nom' && h.nom && h.nom.state !== 'gone') { h.nom.state = 'leave'; h.nom.t = 0; } if (k === 'cloud' && h.cloud) h.cloud.leaving = true; });
     G.texts.push({ x: 180, y: 150, text: ph.say || (bs.name + T('이(가) 화났어요!')), life: 1.6, color: '#ffb3d4' });
+    setFace('worried', 1.8, { x: W / 2, y: G.b.y0 });
     sfx('boss');
   });
 }
@@ -1132,6 +1163,7 @@ function hazardsAfterShot() {
     Board.pushTop(b, [...st.colors], i => (i === qi ? 'q' : st.boss.sticky && rand() < st.boss.sticky ? 's' : null));
     if (qi >= 0) G.texts.push({ x: 180, y: 172, text: T('랜덤알도 섞였어요!'), life: 1.2, color: '#ffe27a' });
     G.texts.push({ x: 180, y: 150, text: st.boss.name + T('의 거품 공격!'), life: 1.2, color: '#ffb3d4' }); sfx('boss');
+    setFace('o', 1.2, { x: W / 2, y: G.b.y0 }); jiggle(W / 2, G.b.y0, .16);
   } else if (st.boss && (n + 1) % st.boss.every === 0) h.ceilWarn = 1;
   if (st.boss && Board.count(b) === 0) { Board.pushTop(b, [...st.colors]); Board.pushTop(b, [...st.colors]); }
 }
@@ -1150,7 +1182,7 @@ function afterSettle() {
   if (G.state === 'done') return;
   if (!st.boss && G.saved >= G.need) return finish(true);   // 컨베이어로 떨어진 친구
   b.y0 = G.y0Target;
-  if (Board.lowestY(b) + R > DEADLINE) return finish(false, 'line');
+  if (Board.lowestY(b) + R > LOSE_Y) return finish(false, 'line');
   obsCrush();
   refreshQueueColors();
   G.hz.shotT = G.hz.cfg.shotTimer || 0;
@@ -1201,6 +1233,7 @@ function punchCloud(x, y) {
 const NOM_SAY = { steal: T('놈놈이 거품을 노려요!'), take: T('놈놈이 친구를 노려요!'), block: T('놈놈이 대포로 와요!'), junk: T('놈놈이 거품을 던지려 해요!') };
 function nomPeek(act) {
   const side = rand() < .5 ? -1 : 1;
+  setFace('o', .9, { x: side < 0 ? 0 : W, y: 330 });
   G.hz.nom = { act, state: 'peek', side, x: side < 0 ? -6 : W + 6, y: 330, tx: side < 0 ? 16 : W - 16, ty: 330, t: 0 };
   warn(NOM_SAY[act]);
 }
@@ -1238,6 +1271,7 @@ function nomAct(act) {
 }
 function nomHit() {
   const n = G.hz.nom; n.hit = true; n.state = 'leave'; n.t = 0;
+  setFace('joy', 1.4, { x: n.x, y: n.y });
   G.score += 50; G.tally.nom++; G.tally.nomPts += 50; G.texts.push({ x: n.x, y: n.y - 10, text: '+50', life: 1 });
   burst(n.x, n.y, '#b8a6ff', 10);
   if (n.act === 'take') { G.hz.dropT = Math.min(G.hz.cfg.dropSec, G.hz.dropT + 4); showToast(T('친구를 되찾았어요! +4초')); }
@@ -1255,6 +1289,8 @@ function stepNom(dt) {
 }
 
 function finish(win, reason) {
+  if (!win && (reason === 'line' || reason === 'time') && G.state !== 'done' && P.lives > 1) return loseLife(reason);
+  if (!win && (reason === 'line' || reason === 'time')) { P.lives = 0; saveP(); updateLives(); }
   G.state = 'done';
   G.outcome = { win, reason };
   const st = G.st;
@@ -1321,6 +1357,7 @@ function nomCameo(kind, at, force) {
   const tx = at ? Math.min(W - 150, Math.max(150, at.x)) : (side < 0 ? 80 : W - 80);
   const again = G.cameo && G.cameo.t < .2;               // 같은 순간 두 번 불리면 소리는 한 번만
   G.cameo = { kind, say, side, t: again ? G.cameo.t : 0, x: side < 0 ? -40 : W + 40, y: ty - 30, tx, ty };
+  if (!again) setFace('o', 1, { x: tx, y: ty });
   G.cameoAt = G.time;
   if (!again) sfx('nom');
 }
@@ -1366,7 +1403,33 @@ function drawOver(t, dt) {
   const blink = Math.sin(o.t * 18) > 0 && o.t < 1.2;
   ctx.fillStyle = `rgba(40,10,60,${Math.min(.35, o.t * .6)})`; ctx.fillRect(0, 0, W, H);
   ctx.strokeStyle = blink ? '#ff3b6b' : 'rgba(255,59,107,.5)'; ctx.lineWidth = 5; ctx.setLineDash([]);
-  ctx.beginPath(); ctx.moveTo(4, DEADLINE); ctx.lineTo(W - 4, DEADLINE); ctx.stroke();
+  ctx.beginPath(); ctx.moveTo(4, LOSE_Y); ctx.lineTo(W - 4, LOSE_Y); ctx.stroke();
+}
+// 위험 경고: 거품 아래쪽이 게임 오버 선에서 2줄 안으로 오면 바닥 쪽이 빨갛게 숨 쉬듯 깜빡인다
+function dangerLevel() { const low = Board.lowestY(G.b) + R; return Math.max(0, Math.min(1, 1 - (LOSE_Y - low) / (2 * ROW_H))); }
+function drawDanger(t) {
+  const k = G.state === 'done' ? 0 : dangerLevel(); if (!k) return;
+  const a = k * (.35 + .25 * Math.sin(t * 8));
+  const g = ctx.createLinearGradient(0, LOSE_Y - 70, 0, LOSE_Y + 6);
+  g.addColorStop(0, 'rgba(255,59,107,0)'); g.addColorStop(1, `rgba(255,59,107,${a})`);
+  ctx.fillStyle = g; ctx.fillRect(0, LOSE_Y - 70, W, 76);
+  ctx.strokeStyle = `rgba(255,79,139,${Math.min(1, a * 2)})`; ctx.lineWidth = 2; ctx.setLineDash([6, 6]);
+  ctx.beginPath(); ctx.moveTo(6, LOSE_Y); ctx.lineTo(W - 6, LOSE_Y); ctx.stroke(); ctx.setLineDash([]);
+}
+// 생명을 잃은 순간: 화면 가장자리가 빨갛게 번쩍 + 말랑이 머리 위로 깨진 하트가 떠오른다
+function drawLifeLost(dt) {
+  const l = G.lifeLost; if (!l) return;
+  l.t += dt; if (l.t > 1.4) { G.lifeLost = null; return; }
+  const k = Math.max(0, 1 - l.t / .7);
+  if (k) { const g = ctx.createRadialGradient(W / 2, H / 2, H * .25, W / 2, H / 2, H * .7); g.addColorStop(0, 'rgba(255,59,107,0)'); g.addColorStop(1, `rgba(255,59,107,${.55 * k})`); ctx.fillStyle = g; ctx.fillRect(0, 0, W, H); }
+  const y = MASCOT.y - 46 - l.t * 40, a = Math.min(1, (1.4 - l.t) * 2);
+  ctx.save(); ctx.globalAlpha = a; ctx.translate(MASCOT.x, y); ctx.scale(1.4, 1.4);
+  ctx.fillStyle = '#ff4f8b'; ctx.strokeStyle = '#fff'; ctx.lineWidth = 1.5;
+  [-1, 1].forEach(sd => {   // 반쪽씩 벌어진다
+    ctx.save(); ctx.translate(sd * l.t * 6, 0); ctx.rotate(sd * l.t * .4); ctx.beginPath();
+    ctx.moveTo(0, -5); ctx.bezierCurveTo(sd * 2, -10, sd * 11, -10, sd * 11, -3); ctx.bezierCurveTo(sd * 11, 3, sd * 4, 6, 0, 10); ctx.lineTo(sd * 2, 4); ctx.lineTo(-sd * 1, 0); ctx.closePath(); ctx.fill(); ctx.stroke(); ctx.restore();
+  });
+  ctx.restore();
 }
 
 // ============================================================
@@ -1388,6 +1451,8 @@ const SPR = {
   nom: mood => ({ body: Art.nomnom(0, 0, 16, { mood, mini: true }), box: { x: -26, y: -32, w: 52, h: 56 } }),
   friend: (c, fc) => ({ body: Art.bubble(0, 0, R, COLORS[c].base, { trapped: fc }), box: { x: -R * 1.3, y: -R * 1.3, w: R * 2.6, h: R * 2.6 } }),
   jelly: (color, r, opt) => ({ body: Art.jelly(0, 0, r, color, opt), box: jellyBox(r) }),
+  // 판 위 젤리 (0.15.0: 유리구슬 → 말랑한 구미 젤리). 특수 거품 표시는 젤리 위에 그대로 얹는다
+  bjel: (c, mood, k) => ({ body: Art.jelly(0, JEL_DY, JEL_R, COLORS[c].base, { mood, shadow: false }) + (k ? Art.bubbleExtra(0, 0, R, k) : ''), box: { x: -R * 1.3, y: -R * 1.55, w: R * 2.6, h: R * 2.85 } }),
   boss: (kind, mood, red) => ({ body: kind === 'nomnom' ? Art.nomnom(0, 0, 30, { mood, red: red ? .7 : 0 }) : Art.boss(0, 0, 28, { mood, kind }), box: { x: -56, y: -54, w: 112, h: 96 } }),
   cannonBase: () => ({ body: Art.cannonBase(0, 0, CS), box: { x: -42 * CK, y: -16 * CK, w: 84 * CK, h: 30 * CK } }),
   barrel: () => ({ body: Art.cannonBarrel(0, 0, CS), box: { x: -18 * CK, y: -62 * CK, w: 36 * CK, h: 70 * CK } }),
@@ -1407,20 +1472,72 @@ function spr(key, def, x, y, s = 1, alpha = 1, rot = 0) {
   ctx.restore();
   return true;
 }
-function drawBubble(x, y, color, s = 1, alpha = 1) {
+// 판 거품 = 구미 젤리 (보통 색만. 수정·폭탄·랜덤·쿠키·회색 거품은 그대로)
+const JEL_R = R * 1.02, JEL_DY = -R * 0.04;
+const isJel = c => 'rygbpo'.includes(c) && c.length === 1;
+function drawJel(x, y, c, s = 1, alpha = 1, mood = 'happy', k = '', sx = 1, sy = 1, rot = 0) {
+  const key = 'bj-' + c + '-' + mood + k;
+  ctx.save(); ctx.translate(x, y); if (rot) ctx.rotate(rot); ctx.scale(sx, sy);
+  const ok = spr(key, () => SPR.bjel(c, mood, k), 0, 0, s, alpha);
+  ctx.restore();
+  return ok;
+}
+function drawBubble(x, y, color, s = 1, alpha = 1, mood = 'happy', sx = 1, sy = 1, rot = 0) {
+  if (isJel(color) && drawJel(x, y, color, s, alpha, mood, '', sx, sy, rot)) return;
   if (!spr('bub-' + color, () => SPR.bubble(color), x, y, s, alpha)) {
     // 아직 굽는 중이면 단순 원
     ctx.globalAlpha = alpha; ctx.fillStyle = COLORS[color] ? COLORS[color].base : '#b98a50'; ctx.beginPath(); ctx.arc(x, y, R * s - 1, 0, 7); ctx.fill(); ctx.globalAlpha = 1;
   }
 }
 // 판 위 칸 하나 그리기 (보통 · 특수 · 친구)
-function drawCell(x, y, cell, t, s = 1) {
+function drawCell(x, y, cell, t, s = 1, mood = 'happy', sx = 1, sy = 1) {
   if (cell.friend !== undefined) return drawFriendBubble(x, y, cell, t);
+  if (cell.k === 'h') return drawBonusCell(x, y, cell, t, s, mood, sx, sy);
   if (cell.k && 'simugf'.includes(cell.k)) {
+    if (isJel(cell.c) && drawJel(x, y, cell.c, s, 1, mood, cell.k, sx, sy)) return;
     if (!spr('bx-' + cell.c + cell.k, () => SPR.bubx(cell.c, cell.k), x, y, s)) drawBubble(x, y, cell.c, s);
     return;
   }
-  drawBubble(x, y, cell.c, s);
+  drawBubble(x, y, cell.c, s, 1, mood, sx, sy);
+}
+// 보너스 젤리: 금빛 고리가 빙글 + 머리 위 별 (터뜨리거나 떨어뜨리고 판을 깨면 보너스 스테이지)
+function drawBonusCell(x, y, cell, t, s, mood, sx, sy) {
+  const pulse = .5 + .5 * Math.sin(t * 5);
+  const g = ctx.createRadialGradient(x, y, R * .4, x, y, R * 1.35); g.addColorStop(0, 'rgba(255,230,120,0)'); g.addColorStop(.7, `rgba(255,214,90,${.5 + .35 * pulse})`); g.addColorStop(1, 'rgba(255,214,90,0)');
+  ctx.fillStyle = g; ctx.beginPath(); ctx.arc(x, y, R * 1.35, 0, 7); ctx.fill();
+  if (!drawJel(x, y, cell.c, s, 1, 'joy', '', sx, sy)) drawBubble(x, y, cell.c, s);
+  ctx.save(); ctx.translate(x + R * .62, y - R * .7); ctx.rotate(Math.sin(t * 3) * .25); ctx.scale(1 + pulse * .12, 1 + pulse * .12);
+  ctx.fillStyle = '#ffd23f'; ctx.strokeStyle = '#c47a00'; ctx.lineWidth = 1.4; ctx.beginPath();
+  for (let i = 0; i < 10; i++) { const a = -Math.PI / 2 + i * Math.PI / 5, rr = i % 2 ? 4.6 : 10.5; ctx.lineTo(Math.cos(a) * rr, Math.sin(a) * rr); }
+  ctx.closePath(); ctx.fill(); ctx.stroke();
+  ctx.fillStyle = 'rgba(255,255,255,.85)'; ctx.beginPath(); ctx.arc(-2, -2.5, 1.6, 0, 7); ctx.fill();
+  ctx.restore();
+}
+// ---------- 젤리 표정 (0.15.0): 놈놈이 오면 걱정, 천장·보스 공격엔 깜짝, 연속으로 잘 터뜨리면 활짝 ----------
+// 표정은 일이 생긴 자리에서 물결처럼 퍼져 나간다
+function setFace(mood, sec, at) {
+  if (!G) return;
+  G.face = { mood, until: G.time + sec, t0: G.time, at: at || { x: W / 2, y: G.b.y0 + 40 } };
+}
+function baseMood() {
+  if (G.state === 'done') return G.outcome && G.outcome.win ? 'joy' : 'worried';
+  const n = G.hz.nom;
+  return (n && n.state !== 'leave') || G.cameo || dangerLevel() > .35 ? 'worried' : 'happy';
+}
+function cellMood(p) {
+  const f = G.face;
+  if (!f || G.time > f.until) return G.mood0;
+  return G.time - f.t0 >= Math.hypot(p.x - f.at.x, p.y - f.at.y) / 520 ? f.mood : G.mood0;
+}
+// ---------- 젤리 출렁임: 가만히 있어도 말랑말랑 숨 쉬고, 거품이 붙거나 터지면 둘레가 물결처럼 출렁 ----------
+function jiggle(x, y, at) { if (G) G.jigs.push({ x, y, t: 0, a: at }); }
+function jigAt(p, r, c, t) {
+  let k = stillMotion ? 0 : Math.sin(t * 2.6 + r * .9 + c * 1.7) * .028;
+  for (const j of G.jigs) {
+    const d = Math.hypot(p.x - j.x, p.y - j.y); if (d > 170) continue;
+    k += j.a * Math.exp(-j.t * 4.5) * (1 - d / 170) * Math.sin(j.t * 26 - d / 28);
+  }
+  return Math.max(-.22, Math.min(.22, k));
 }
 function drawJellySprite(color, r, opt, x, y, s = 1, alpha = 1) {
   const key = 'jel-' + color + '-' + r + '-' + (opt.ears ? 'e' : '') + (opt.mood || 'happy');
@@ -1682,7 +1799,8 @@ function warmSprites(st) {
   kinds.forEach(k => { for (const c of st.colors) Art.sprite('bx-' + c + k, () => SPR.bubx(c, k), dpr, spriteReady); });
   if (keysOf(st).some(k => k.startsWith('nom'))) for (const m of ['angry', 'worried']) Art.sprite('nom-' + m, () => SPR.nom(m), dpr, spriteReady);
   st.friends.forEach((f, i) => { for (const c of st.colors) Art.sprite('fr-' + c + '-' + f.color, () => SPR.friend(c, f.color), dpr, spriteReady); Art.sprite('jel-' + f.color + '-14-joy', () => SPR.jelly(f.color, 14, { mood: 'joy' }), dpr, spriteReady); });
-  for (const m of ['happy', 'joy']) Art.sprite('jel-' + MAL + '-' + MASCOT.r + '-e' + m, () => SPR.jelly(MAL, MASCOT.r, { ears: true, mood: m }), dpr, spriteReady);
+  for (const c of st.colors) for (const m of ['happy', 'joy', 'worried', 'o']) Art.sprite('bj-' + c + '-' + m, () => SPR.bjel(c, m), dpr, spriteReady);
+  for (const m of ['happy', 'joy', 'worried']) Art.sprite('jel-' + MAL + '-' + MASCOT.r + '-e' + m, () => SPR.jelly(MAL, MASCOT.r, { ears: true, mood: m }), dpr, spriteReady);
   Art.sprite('cannonBase', SPR.cannonBase, dpr, spriteReady); Art.sprite('barrel', SPR.barrel, dpr, spriteReady); Art.sprite('housing', SPR.housing, dpr, spriteReady);
   Art.sprite('wheel-' + CANNON.wheel.r, () => SPR.wheel(CANNON.wheel.r), dpr, spriteReady); Art.sprite('wheel-' + CANNON.front.r, () => SPR.wheel(CANNON.front.r), dpr, spriteReady);
   if (st.boss) for (const m of ['angry', 'worried', 'o']) for (const red of st.boss.kind === 'nomnom' ? [0, 1] : [0]) Art.sprite(bossKey(m, red), () => SPR.boss(st.boss.kind, m, red), dpr, spriteReady);
@@ -1724,6 +1842,11 @@ function fallShake(dt) {
 }
 // 위쪽 시간 게이지 (HTML): 다음 천장 하강까지 남은 시간
 let gaugeLast = '';
+function updateBonusGauge() {
+  const B = G.bonus, k = B.left / BONUS_SEC, label = T('남은 시간 {n}초', { n: Math.ceil(B.left) }), key = 'b' + Math.round(k * 200) + label;
+  if (key === gaugeLast) return; gaugeLast = key;
+  $('tfill').style.width = (k * 100).toFixed(1) + '%'; $('tlbl').textContent = label; $('tbar').classList.toggle('hot', B.left < 5 && B.ready <= 0);
+}
 function updateGauge() {
   const h = G.hz, sec = h.cfg.dropSec || 0, k = sec ? Math.max(0, h.dropT / sec) : 0, hot = h.dropT < 3;
   const label = !h.started ? T('첫 발부터 {n}초', { n: Math.ceil(h.dropT) }) : h.dropT < .6 ? T('⚠ 한 칸 내려와요!') : T('하강까지 {n}초', { n: Math.ceil(h.dropT) });
@@ -1732,7 +1855,7 @@ function updateGauge() {
   $('tfill').style.width = (k * 100).toFixed(1) + '%';
   $('tlbl').textContent = label;
   $('tbar').classList.toggle('hot', hot);
-  const tb = $('tbar'); tb.setAttribute('aria-valuemax', Math.ceil(sec)); tb.setAttribute('aria-valuenow', Math.ceil(h.dropT)); tb.setAttribute('aria-valuetext', label);
+  const tb = $('tbar').querySelector('.tmeter'); tb.setAttribute('aria-valuemax', Math.ceil(sec)); tb.setAttribute('aria-valuenow', Math.ceil(h.dropT)); tb.setAttribute('aria-valuetext', label);
 }
 
 function render(dt) {
@@ -1740,9 +1863,8 @@ function render(dt) {
   ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
   drawBackground(G.st.theme);
   const b = G.b;
-  // 바닥 선
-  ctx.strokeStyle = dusk() ? 'rgba(255,209,232,.85)' : 'rgba(255,143,177,.8)'; ctx.setLineDash([8, 8]); ctx.lineWidth = 2;
-  ctx.beginPath(); ctx.moveTo(6, DEADLINE); ctx.lineTo(W - 6, DEADLINE); ctx.stroke(); ctx.setLineDash([]);
+  // 바닥 선은 없앴다 (0.15.0): 거품이 말랑이·대포 가까이 오면 그때만 바닥이 빨갛게 깜빡이며 경고
+  drawDanger(t);
   // 천장 (내려오는 스테이지는 분홍 사탕 블록이 내려온다)
   if (b.y0 > 12 && !G.st.boss) {
     const cg = ctx.createLinearGradient(0, 0, 0, b.y0); cg.addColorStop(0, 'rgba(255,214,230,.95)'); cg.addColorStop(1, 'rgba(245,184,214,.95)');
@@ -1769,13 +1891,15 @@ function render(dt) {
   if (G.st.boss) drawBoss(t);
   // 거품 (흔들림은 위 줄일수록 세다)
   const nRows = b.rows.length;
+  G.mood0 = baseMood();
+  G.jigs = G.jigs.filter(j => (j.t += dt) < 1.2);
   if (fs.slide) { ctx.save(); ctx.translate(0, fs.slide); }
   for (let r = 0; r < nRows; r++) for (let c = 0; c < b.rows[r].length; c++) {
     const cell = b.rows[r][c]; if (!cell) continue;
     const p = Board.pos(b, r, c);
     if (fs.amp) { const k = 1 - r / (nRows + 3); p.x += Math.sin(t * 46 + r * 1.7) * fs.amp * k; p.y += Math.cos(t * 39 + c) * fs.amp * .4 * k; }
-    const wb = G.wobbles.find(w => w.r === r && w.c === c);
-    drawCell(p.x, p.y, cell, t, wb ? 1 + Math.sin(wb.t * 30) * .12 * (1 - wb.t / .6) : 1);
+    const wb = G.wobbles.find(w => w.r === r && w.c === c), jk = jigAt(p, r, c, t);
+    drawCell(p.x, p.y, cell, t, wb ? 1 + Math.sin(wb.t * 30) * .12 * (1 - wb.t / .6) : 1, cellMood(p), 1 + jk, 1 - jk);
   }
   if (fs.slide) ctx.restore();
   G.wobbles = G.wobbles.filter(w => (w.t += dt) < .6);
@@ -1814,13 +1938,14 @@ function render(dt) {
     const k = p.t / .3;
     const fg = ctx.createRadialGradient(p.x, p.y, 0, p.x, p.y, R * (1 + k)); fg.addColorStop(0, `rgba(255,255,255,${.9 * (1 - k)})`); fg.addColorStop(1, 'rgba(255,255,255,0)');
     ctx.fillStyle = fg; ctx.beginPath(); ctx.arc(p.x, p.y, R * (1 + k), 0, 7); ctx.fill();
-    drawBubble(p.x, p.y, p.c, 1 + k * .5, 1 - k);
+    // 젤리는 납작하게 퍼졌다가 톡 터진다
+    drawBubble(p.x, p.y + k * 6, p.c, 1, 1 - k, 'joy', 1 + k * .7, 1 - k * .55);
   }
   // 떨어지는 거품
   G.falls = G.falls.filter(f => f.y < H + 40);
-  for (const f of G.falls) { f.vy += 1400 * dt; f.y += f.vy * dt; f.x += f.vx * dt; drawBubble(f.x, f.y, f.c, 1, .9); }
-  // 날아가는 거품
-  if (G.moving) drawBubble(G.moving.x, G.moving.y, G.moving.c);
+  for (const f of G.falls) { f.vy += 1400 * dt; f.y += f.vy * dt; f.x += f.vx * dt; f.rot = (f.rot || 0) + f.vx * dt / 30; drawBubble(f.x, f.y, f.c, 1, .9, 'o', 1, 1, f.rot); }
+  // 날아가는 거품: 날아가는 쪽으로 쭉 늘어난 젤리
+  if (G.moving) { const m = G.moving, a = Math.atan2(m.vy, m.vx) + Math.PI / 2; drawBubble(m.x, m.y, m.c, 1, 1, 'joy', .86, 1.16, isJel(m.c) ? a : 0); }
   if (h.cfg.dark) drawDark(t);
   drawNom(t, dt);
   drawCameo(t, dt);
@@ -1837,6 +1962,7 @@ function render(dt) {
   for (const p of G.fx) { p.vy += 600 * dt; p.x += p.vx * dt; p.y += p.vy * dt; ctx.globalAlpha = p.life; ctx.fillStyle = p.c; ctx.beginPath(); ctx.ellipse(p.x, p.y, p.r, p.r * 1.4, Math.atan2(p.vy, p.vx) + Math.PI / 2, 0, 7); ctx.fill(); }
   ctx.globalAlpha = 1;
   drawOver(t, dt);
+  drawLifeLost(dt);
   // 점수 글자 (입체 글씨)
   G.texts = G.texts.filter(x => (x.life -= dt * .9) > 0);
   ctx.textAlign = 'center';
@@ -2048,13 +2174,22 @@ function drawBoss(t) {
     for (let i = 0; i < 3; i++) { const a = t * 6 + i * 2.09; ctx.beginPath(); ctx.arc(x + Math.cos(a) * 26 * sq, by - 34 * sq + Math.sin(a) * 6, 3.5, 0, 7); ctx.fill(); }
     ctx.restore();
   }
+  // 놈놈 부하 둘이 보스 양옆을 지킨다. 부하가 판으로 나가 있으면 그 자리는 비고, 보스가 쓰러지면 허둥지둥 달아난다
+  if (G.st.boss.minions) {
+    const n = G.hz.nom, out = n && n.state !== 'leave' ? (n.side < 0 ? 0 : 1) : -1;
+    [-1, 1].forEach((sd, i) => {
+      if (i === out) return;
+      const gx = 180 + sd * (66 + (down ? down * 160 : 0)), gy = 58 + Math.sin(t * 4 + i * 2) * 4 - (down ? down * 30 : 0);
+      if (!spr(down ? 'nom-worried' : 'nom-angry', () => SPR.nom(down ? 'worried' : 'angry'), gx, gy, .9, 1 - down)) { ctx.fillStyle = '#3b2a7a'; ctx.beginPath(); ctx.arc(gx, gy, 13, 0, 7); ctx.fill(); }
+    });
+  }
   // 체력 막대 (분홍 유리 패널)
   ctx.fillStyle = 'rgba(217,84,138,.9)'; roundRect(30, 4, 300, 16, 8); ctx.fill();
   ctx.strokeStyle = 'rgba(255,255,255,.35)'; ctx.lineWidth = 1.5; roundRect(30, 4, 300, 16, 8); ctx.stroke();
   // 이름표 칸은 48px: 영어 등 다른 언어에서 긴 이름은 글자를 줄여 맞춘다 (한국어는 예전 그대로)
-  const bossLabel = (G.st.id === NST ? T('최종 ') : T('보스 ')) + G.st.boss.name;
+  const bossLabel = (G.st.id === NST ? T('최종 ') : G.st.boss.sub ? T('부두목 ') : T('보스 ')) + G.st.boss.name;
   let bossFs = 10; ctx.font = '900 10px "Noto Sans KR", sans-serif';
-  while (JellyI18n.lang !== 'ko' && ctx.measureText(bossLabel).width > 46 && bossFs > 6) { bossFs -= .5; ctx.font = '900 ' + bossFs + 'px "Noto Sans KR", sans-serif'; }
+  while (ctx.measureText(bossLabel).width > 46 && bossFs > 6) { bossFs -= .5; ctx.font = '900 ' + bossFs + 'px "Noto Sans KR", sans-serif'; }
   ctx.textAlign = 'left'; ctx.fillStyle = '#fff'; ctx.fillText(bossLabel, 40, 15.5);
   ctx.fillStyle = '#4a1d3a'; roundRect(88, 7, 190, 10, 5); ctx.fill();
   if (hpRatio > 0) { const hg = ctx.createLinearGradient(0, 7, 0, 17); hg.addColorStop(0, '#ffd1e8'); hg.addColorStop(1, '#ff4f8b'); ctx.fillStyle = hg; roundRect(88, 7, Math.max(10, 190 * hpRatio), 10, 5); ctx.fill();
@@ -2106,7 +2241,9 @@ function drawCannonArea(t, dt) {
   // 말랑이 (핸들을 돌릴수록 귀가 팔락)
   const turning = Math.min(1, Math.abs(G.crankV || 0) * 2);
   const mx = MASCOT.x, my = MASCOT.y + Math.sin(t * 3) * 1.5 - turning * 2;
-  const mood = G.state === 'done' && G.outcome && G.outcome.win ? 'joy' : 'happy';
+  // 말랑이도 판 젤리들과 같은 기분 (신나면 활짝, 놈놈·위험·깜짝이면 걱정)
+  const fm = G.face && G.time <= G.face.until ? G.face.mood : G.mood0;
+  const mood = G.state === 'done' ? (G.outcome && G.outcome.win ? 'joy' : 'worried') : fm === 'joy' ? 'joy' : fm === 'happy' ? 'happy' : 'worried';
   const sq = 1 + Math.sin(t * 3) * .015;
   // 핸들 손잡이: 핸들이 돌아도 말랑이 쪽(왼쪽)에서 크게 벗어나지 않게 반원 안에서만 오간다
   const ka = Math.PI + Math.sin(G.crank) * .55, kx = wh.x + Math.cos(ka) * wh.r * .7, ky = wh.y + Math.sin(ka) * wh.r * .7;
@@ -2183,11 +2320,149 @@ function drawTurnHint(t, dt) {
 function queuePos(i) { return { x: i <= 1 ? 234 + i * 22 : 256 + (i - 1) * 16, y: 584 + (i > 1 ? 4 : 0) }; }
 function roundRect(x, y, w, h, r) { ctx.beginPath(); ctx.moveTo(x + r, y); ctx.arcTo(x + w, y, x + w, y + h, r); ctx.arcTo(x + w, y + h, x, y + h, r); ctx.arcTo(x, y + h, x, y, r); ctx.arcTo(x, y, x + w, y, r); ctx.closePath(); }
 
+
+// ============================================================
+// 보너스 스테이지 (0.15.0): 보너스 젤리를 터뜨리고 스테이지를 깨면 → 대포로 젤리 구하기
+// 거품에 갇힌 젤리들이 세 줄로 둥실둥실 지나간다. 20초 안에 8명 이상 구하면 생명 +1 (최대 5)
+// ============================================================
+const BONUS_SEC = 20, BONUS_GOAL = 8, BONUS_N = 12, BONUS_READY = 1.6;
+const BONUS_LANES = [{ y: 92, sp: 52 }, { y: 178, sp: -74 }, { y: 264, sp: 96 }];
+const BONUS_FRIENDS = ['#ff9f7a', '#4fdcc4', '#ffe14d', '#a8e05f', '#6fd0ff', '#ffb3e0', '#9b6bff', '#ffd0a0', '#5fe0c0', '#ff6f8f', '#bfe9ff', '#e0a050'];
+function startBonus(fromSt, then) {
+  $('result').hidden = true; $('app').inert = false;
+  stopTally();
+  const colors = fromSt.colors;
+  const friends = BONUS_FRIENDS.map(color => ({ name: '', color }));
+  const st = { id: fromSt.id, world: fromSt.world, theme: fromSt.theme, name: T('젤리 구하기'), colors, hz: {}, fall: 999, friends, kinds: [], bonus: true };
+  const targets = [];
+  for (let i = 0; i < BONUS_N; i++) {
+    const lane = i % 3, k = Math.floor(i / 3);
+    targets.push({ lane, x: (k + (lane === 1 ? .5 : lane * .3)) * (W + 2 * D) / 4 - D, y: BONUS_LANES[lane].y, c: colors[i % colors.length], f: i, alive: true, ph: i * 1.3 });
+  }
+  G = {
+    mode: 'bonus', st, b: { rows: [], parity: 0, y0: 10, friendCount: 0, palette: colors, obs: [] },
+    fired: 0, queue: [], angle: -Math.PI / 2, crank: 0, aiming: false, state: 'aim', moving: null,
+    fx: [], falls: [], pops: [], texts: [], rescues: [], wobbles: [], jigs: [], face: null, mood0: 'happy', streak: 0,
+    saved: 0, need: BONUS_GOAL, score: 0, settleT: 0, queueShift: 0, swapT: 0, outcome: null, time: 0, paused: false,
+    hz: makeHz(st), tally: { pop: 0, popPts: 0, drop: 0, dropPts: 0, nom: 0, nomPts: 0 }, cameo: null, cameoAt: -99,
+    bonus: { left: BONUS_SEC, ready: BONUS_READY, shots: [], cool: 0, targets, then, endT: 0, ok: false },
+  };
+  fillQueue();
+  go('play');
+  warmSprites(st);
+  hideTip(); $('hzCard').hidden = true;
+  updateHud();
+  gaugeLast = '';
+  sfx('rescue'); jellyVoice('yay', .1);
+}
+function bonusShoot() {
+  const B = G.bonus;
+  if (G.state !== 'aim' || B.ready > 0 || B.cool > 0 || !G.queue.length) return false;
+  const c = G.queue.shift(), a = G.angle; fillQueue();
+  G.fired++; G.queueShift = 1; B.cool = .3;
+  B.shots.push({ x: PIVOT.x + Math.cos(a) * 34, y: PIVOT.y + Math.sin(a) * 34, vx: Math.cos(a) * SPEED, vy: Math.sin(a) * SPEED, c });
+  sfx('shoot');
+  return true;
+}
+function updateBonus(dt) {
+  const B = G.bonus;
+  if (G.state === 'done') { B.endT += dt; if (B.endT > 3.2) endBonus(); return; }
+  if (G.paused || document.hidden) return;
+  if (B.ready > 0) { B.ready -= dt; return; }
+  B.cool = Math.max(0, B.cool - dt);
+  B.left = Math.max(0, B.left - dt);
+  B.targets.forEach(tg => { const ln = BONUS_LANES[tg.lane]; tg.x += ln.sp * dt; if (tg.x > W + D) tg.x -= W + 2 * D; if (tg.x < -D) tg.x += W + 2 * D; });
+  B.shots = B.shots.filter(m => {
+    const steps = Math.ceil(SPEED * dt / 4);
+    for (let i = 0; i < steps; i++) {
+      m.x += m.vx * dt / steps; m.y += m.vy * dt / steps;
+      if (m.x < R) { m.x = 2 * R - m.x; m.vx = -m.vx; sfx('bounce'); }
+      if (m.x > W - R) { m.x = 2 * (W - R) - m.x; m.vx = -m.vx; sfx('bounce'); }
+      if (m.y < -R) return false;
+      for (const tg of B.targets) {
+        if (!tg.alive) continue;
+        const ty = tg.y + Math.sin(G.time * 3 + tg.ph) * 6;
+        if ((tg.x - m.x) ** 2 + (ty - m.y) ** 2 < (D * .92) ** 2) {
+          tg.alive = false; B.got = (B.got || 0) + 1;
+          G.score += 100; G.texts.push({ x: tg.x, y: ty - 10, text: '+100', life: 1 });
+          G.pops.push({ x: tg.x, y: ty, c: tg.c, t: 0 }); burst(tg.x, ty, tg.c, 8); burst(tg.x, ty, '#fff6a8', 5);
+          rescue(tg.f, { x: tg.x, y: ty });
+          sfx('pop', 3); updateHud();
+          return false;
+        }
+      }
+    }
+    return true;
+  });
+  if (B.left <= 0 || B.targets.every(tg => !tg.alive)) {
+    G.state = 'done'; B.ok = (B.got || 0) >= BONUS_GOAL; G.outcome = { win: B.ok, bonus: true };
+    if (B.ok) { P.lives = Math.min(MAX_LIVES, P.lives + 1); saveP(); updateLives('gain'); sfx('win'); setFace('joy', 9); }
+    else sfx('stick');
+  }
+}
+function endBonus() {
+  if (!G || G.mode !== 'bonus' || G.bonus.done) return;
+  G.bonus.done = true;
+  const then = G.bonus.then; G = null;
+  then && then();
+}
+function renderBonus(dt) {
+  const t = G.time, B = G.bonus;
+  ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+  drawBackground(G.st.theme);
+  // 반짝이는 띠 (젤리가 지나가는 길)
+  BONUS_LANES.forEach(ln => { ctx.fillStyle = 'rgba(255,246,168,.16)'; roundRect(0, ln.y - D * .75, W, D * 1.5, 18); ctx.fill(); });
+  for (const tg of B.targets) {
+    if (!tg.alive) continue;
+    const y = tg.y + Math.sin(t * 3 + tg.ph) * 6;
+    drawFriendBubble(tg.x, y, { c: tg.c, friend: tg.f }, t);
+  }
+  for (const m of B.shots) { const a = Math.atan2(m.vy, m.vx) + Math.PI / 2; drawBubble(m.x, m.y, m.c, 1, 1, 'joy', .86, 1.16, a); }
+  G.pops = G.pops.filter(p => (p.t += dt) < .3);
+  for (const p of G.pops) { const k = p.t / .3; drawBubble(p.x, p.y, p.c, 1 + k * .5, 1 - k, 'joy'); }
+  G.mood0 = 'happy';
+  if (B.ready <= 0 && G.state === 'aim' && G.queue.length) {
+    // 짧은 조준선 (보너스는 끝까지 보여 준다)
+    const a = G.angle; ctx.fillStyle = '#fff38a';
+    for (let i = 0; i < 16; i++) { const d = 70 + i * 22; ctx.globalAlpha = 1 - i / 18; ctx.beginPath(); ctx.arc(PIVOT.x + Math.cos(a) * d, PIVOT.y + Math.sin(a) * d, 2.8, 0, 7); ctx.fill(); }
+    ctx.globalAlpha = 1;
+  }
+  drawCannonArea(t, dt);
+  for (const r of G.rescues) { stepRescue(r, dt); drawRescue(r, t); }
+  G.fx = G.fx.filter(p => (p.life -= dt * 1.6) > 0);
+  for (const p of G.fx) { p.vy += 600 * dt; p.x += p.vx * dt; p.y += p.vy * dt; ctx.globalAlpha = p.life; ctx.fillStyle = p.c; ctx.beginPath(); ctx.ellipse(p.x, p.y, p.r, p.r * 1.4, Math.atan2(p.vy, p.vx) + Math.PI / 2, 0, 7); ctx.fill(); }
+  ctx.globalAlpha = 1;
+  G.texts = G.texts.filter(x => (x.life -= dt * .9) > 0);
+  ctx.textAlign = 'center';
+  for (const x of G.texts) {
+    const y = x.y - (1 - x.life) * 40; ctx.globalAlpha = Math.min(1, x.life * 2);
+    ctx.font = '800 22px "Baloo 2", "Noto Sans KR", sans-serif'; ctx.lineWidth = 5; ctx.lineJoin = 'round'; ctx.strokeStyle = '#4a1d7a'; ctx.strokeText(x.text, x.x, y);
+    ctx.fillStyle = x.color || '#ffd54a'; ctx.fillText(x.text, x.x, y);
+  }
+  ctx.globalAlpha = 1;
+  // 시작 안내 · 끝 카드
+  const card = (title, sub, k, hot) => {
+    ctx.save(); ctx.globalAlpha = k; ctx.translate(W / 2, 360); ctx.scale(.85 + .15 * k, .85 + .15 * k);
+    ctx.fillStyle = 'rgba(255,255,255,.95)'; roundRect(-150, -52, 300, 104, 24); ctx.fill();
+    ctx.strokeStyle = hot ? '#ffb300' : '#ff8fb1'; ctx.lineWidth = 3; roundRect(-150, -52, 300, 104, 24); ctx.stroke();
+    ctx.textAlign = 'center'; ctx.fillStyle = '#ff4f8b'; ctx.font = '900 24px "Noto Sans KR", sans-serif'; ctx.fillText(title, 0, -10);
+    ctx.fillStyle = '#5a2d91'; ctx.font = '800 15px "Noto Sans KR", sans-serif'; ctx.fillText(sub, 0, 22);
+    ctx.restore();
+  };
+  if (B.ready > 0) card(T('🎁 보너스 스테이지!'), T('{s}초 안에 젤리 {n}명을 구하면 생명 +1', { s: BONUS_SEC, n: BONUS_GOAL }), Math.min(1, B.ready * 3), true);
+  if (G.state === 'done') {
+    const k = Math.min(1, B.endT * 4);
+    if (B.ok) card(T('생명 +1!'), T('젤리 {n}명을 구했어요!', { n: B.got || 0 }), k, true);
+    else card(T('보너스 끝!'), T('젤리 {n}명 구출 · 다음엔 {g}명!', { n: B.got || 0, g: BONUS_GOAL }), k, false);
+  }
+}
+
 // ============================================================
 // 루프
 // ============================================================
 let last = performance.now(), lastAngle = 0;
 function update(dt) {
+  if (G.mode === 'bonus') return updateBonus(dt);
   tickHazards(dt);
   if (!G.paused && G.state !== 'done') (G.b.obs || []).forEach(o => { o.a += o.spin * dt; o.hitT += dt; });
   if (G.state === 'flying' && G.moving) stepMoving(dt);
@@ -2199,8 +2474,9 @@ function frame(now) {
     G.time += dt;
     G.crankV = (G.crankV || 0) * .85 + (G.angle - lastAngle) / Math.max(dt, .001) * .15; lastAngle = G.angle;
     update(dt);
-    render(dt);
-    updateGauge();
+    if (!G) { requestAnimationFrame(frame); return; }   // 보너스가 끝나 다음 화면으로 넘어간 순간
+    if (G.mode === 'bonus') { renderBonus(dt); updateBonusGauge(); }
+    else { render(dt); updateGauge(); }
   }
   requestAnimationFrame(frame);
 }
@@ -2224,6 +2500,7 @@ let kbUsed = false, zoneHintT = 0;
 canvas.addEventListener('pointerdown', e => {
   e.preventDefault(); unlockAudio(); kbUsed = false;
   canvas.focus({ preventScroll: true });
+  if (G && G.mode === 'bonus' && G.state === 'done' && G.bonus.endT > 1) return endBonus();   // 보너스 끝 카드는 눌러서 넘기기
   if (!G || G.state === 'done') return;
   const p = toLogical(e), q = queuePos(1);
   if (p.y < TOUCH_TOP) { if (G.time - zoneHintT > 2) { zoneHintT = G.time; G.zoneHint = 1.6; } return; }   // 위쪽은 안 눌림
@@ -2760,9 +3037,17 @@ let tipTimer;
 function hideTip() { clearTimeout(tipTimer); $('tip').classList.add('hide'); }
 // 판 안내는 6초 뒤 저절로 사라진다 (첫 발을 쏴도 바로 사라짐)
 function showTip() { $('tip').innerHTML = G.st.tip; $('tip').classList.remove('hide'); clearTimeout(tipTimer); tipTimer = setTimeout(hideTip, 6000); }
+// 생명 하트 (위쪽 시간 게이지 왼쪽). bump: 방금 잃음(true) / 얻음('gain')
+const HEART_SVG = '<svg viewBox="0 0 24 22" aria-hidden="true"><defs><radialGradient id="hpg" cx=".35" cy=".3" r=".8"><stop offset="0" stop-color="#fff"/><stop offset=".35" stop-color="#ff9cc4"/><stop offset="1" stop-color="#e0306e"/></radialGradient></defs><path d="M12 21C5 15.5 1.5 11.6 1.5 7.2 1.5 3.9 4 1.5 7 1.5c2.1 0 3.8 1.1 5 2.8 1.2-1.7 2.9-2.8 5-2.8 3 0 5.5 2.4 5.5 5.7 0 4.4-3.5 8.3-10.5 13.8z" fill="url(#hpg)" stroke="#fff" stroke-width="1.4"/><ellipse cx="7.2" cy="6.4" rx="2.4" ry="1.5" fill="#fff" opacity=".85" transform="rotate(-30 7.2 6.4)"/></svg>';
+function updateLives(bump) {
+  const el = $('lives'), n = Math.max(0, P.lives), shown = Math.max(START_LIVES, n);
+  el.innerHTML = Array.from({ length: shown }, (_, i) => `<span class="${i < n ? '' : 'off'}${bump === true && i === n ? ' lost' : ''}${bump === 'gain' && i === n - 1 ? ' gain' : ''}">${HEART_SVG}</span>`).join('');
+  el.setAttribute('aria-label', T('생명 {n}', { n }));
+}
 function updateHud() {
   if (!G) return;
-  $('hudStage').textContent = T('스테이지 ') + G.st.id + (G.st.boss ? T(' · 보스') : '');
+  if (G.mode === 'bonus') { $('hudStage').textContent = T('보너스 스테이지'); $('hudName').textContent = G.st.name; $('hudGoalLabel').textContent = T('구한 젤리'); $('hudGoal').textContent = (G.bonus.got || 0) + ' / ' + BONUS_GOAL; return; }
+  $('hudStage').textContent = T('스테이지 ') + G.st.id + (G.st.boss ? (G.st.boss.sub ? T(' · 부두목') : T(' · 보스')) : '');
   $('hudName').textContent = G.st.name;
   if (G.st.boss) { $('hudGoalLabel').textContent = T('보스 체력'); $('hudGoal').textContent = G.bossHp; }
   else { $('hudGoalLabel').textContent = T('구할 친구'); $('hudGoal').textContent = G.saved + ' / ' + G.need; }
@@ -2770,7 +3055,9 @@ function updateHud() {
 
 function startStage(n) {
   $('result').hidden = true;
+  if (P.lives <= 0) { P.lives = START_LIVES; saveP(); }   // 게임 오버 뒤 새로 하면 생명 3개
   newGame(n);
+  updateLives();
   Music.setTrack(Music.worldTrack(G.st.world - 1, !!G.st.boss));   // 같은 월드면 끊지 않고 이어서
   // 3D 숲 배경일 때는 게임 판 바깥(화면 위아래 여백)도 같은 숲 그림을 흐리게 깔아 한 장면처럼 보이게 한다
   const p3 = window.Jelly3D && Jelly3D.ok();
@@ -2781,10 +3068,11 @@ function startStage(n) {
   updateHud();
   // 새 방해 요소가 처음 나오면 설명 카드 (월드 2부터). 카드를 보는 동안 시계는 멈춘다
   // 폭탄·랜덤 거품은 월드 1(4스테이지)부터 나오니 월드 1에서도 카드를 보여 준다
-  const fresh = keysOf(G.st).filter(k => !P.seenHz[k] && (G.st.world > 1 || 'zq'.includes(k)));
+  const fresh = keysOf(G.st).filter(k => !P.seenHz[k] && (G.st.world > 1 || 'zqh'.includes(k) || k.startsWith('nom')));
   if (fresh.length) showHzCard(fresh);
   else { $('hzCard').hidden = true; showTip(); }
   showToast(T('스테이지 ') + n);
+  if (G.st.boss && G.st.boss.minions) G.texts.push({ x: 180, y: 150, text: G.st.boss.sub ? T('놈놈 부하들아, 나와라!') : T('부하들아, 나와라!'), life: 1.8, color: '#ffb3d4' });
 }
 function hzIcon(art) {
   const bx = { x: -R * 1.4, y: -R * 1.6, w: R * 2.8, h: R * 3 };
@@ -2792,19 +3080,28 @@ function hzIcon(art) {
     if ('smugfi'.includes(art)) return Art.img(Art.bubble(0, 0, R, COLORS.b.base) + Art.bubbleExtra(0, 0, R, art), bx);
     if (art === 'c') return Art.img(Art.crystalBubble(0, 0, R), bx);
     if (art === 'z' || art === 'q') return Art.img(SPR.bubble(art).body, bx);
+    if (art === 'h') return Art.img(Art.jelly(0, 0, R, COLORS.y.base, { mood: 'joy', shadow: false }) + Art.starSvg(R * .62, -R * .7, 9, '#ffd23f'), bx);
     if (art === 'k') return Art.img(Art.cookie(0, 0, R), bx);
     if (art === 'nom') return Art.img(Art.nomnom(0, 0, 18, { mini: true }), { x: -28, y: -32, w: 56, h: 56 });
     if (art === 'cloud') return Art.img(Art.cloud(0, 0, .6), { x: -36, y: -26, w: 72, h: 50 });
     return { miss: '●●○', clock: '⏱', aim: '⋯', caramel: '💧', dark: '🔦', conveyor: '⇄', branch: '🌿', web: '🕸️', fan: '🎡' }[art] || '!';
   });
 }
+// 안내 창은 대포 위를 가리지 않게 (0.15.0 Owner: 대포 속 거품 색이 안 보임): 창 아래 끝을 대포 포신 끝보다 위에 둔다
+function placeAboveCannon(el) {
+  const r = canvas.getBoundingClientRect();
+  if (!r.height) return;
+  const cut = r.top + (PIVOT.y - 100) * r.height / H;
+  el.style.bottom = Math.max(8, Math.round(window.innerHeight - cut)) + 'px';
+}
 function showHzCard(keys) {
   G.paused = true;
   hideTip();
   // 도움 거품(수정·선물·반딧불·폭탄·랜덤)만 새로 나오면 "새 거품" 제목
-  $('hzTitle').textContent = keys.every(k => 'cgfzq'.includes(k) && k.length === 1) ? T('새로운 거품이 나타났어요!') : T('새로운 방해가 나타났어요!');
+  $('hzTitle').textContent = keys.every(k => 'cgfzqh'.includes(k) && k.length === 1) ? T('새로운 거품이 나타났어요!') : T('새로운 방해가 나타났어요!');
   $('hzList').innerHTML = keys.map(k => { const f = HZ_INFO[k]; return `<div class="hzitem"><div class="ic">${hzIcon(f.art)}</div><div><b>${f.title}</b><p>${f.text}</p><p class="how">${f.how}</p></div></div>`; }).join('');
   $('hzCard').hidden = false;
+  placeAboveCannon($('hzCard'));
   $('hzOk').onclick = () => {
     keys.forEach(k => { P.seenHz[k] = true; }); saveP();
     $('hzCard').hidden = true; if (G) { G.paused = false; showTip(); }
@@ -3090,7 +3387,7 @@ function renderMap() {
     btn.innerHTML = cachedArt('coin-' + sizes[i] + '-' + state + (st.boss ? '-b' : ''), () => coinImg(sizes[i], state, st.boss ? '#b47cff' : '#ffd04a')) +
       (st.boss ? cachedArt('bossNode-' + st.boss.kind, () => Art.img(bossArt, { x: -34, y: -31, w: 68, h: 56 }, 'class="bj"')) : '') +
       `<span class="n">${st.boss || locked ? '' : (gi + 1)}</span>` +
-      (done ? `<span class="st">${'★'.repeat(P.stars[gi])}${'☆'.repeat(3 - P.stars[gi])}</span>` : '') + `<span class="nm">${st.boss ? T('보스 · ') : ''}${st.name}</span>`;
+      (done ? `<span class="st">${'★'.repeat(P.stars[gi])}${'☆'.repeat(3 - P.stars[gi])}</span>` : '') + `<span class="nm">${st.boss ? (st.boss.sub ? T('부두목 · ') : T('보스 · ')) : ''}${st.name}</span>`;
     btn.onclick = () => startStage(gi + 1);
     btn.dataset.stage = gi + 1;
     world.appendChild(btn);
@@ -3173,6 +3470,12 @@ function showResult() {
     if (st.id === NST) $('resultTitle').textContent = T('최종 보스 클리어!');
     $('resultMain').textContent = st.id < NST ? T('다음 스테이지로') : T('지도로');
     $('resultMain').onclick = () => { $('result').hidden = true; walkFrom = st.id - 1; playStory(st.id, () => go('map')); };
+    if (G.bonusTicket) {
+      // 보너스 젤리를 터뜨렸으면 다음으로 가기 전에 보너스 스테이지
+      $('resultMsg').innerHTML += `<br><b class="bonus-note">${T('🎁 보너스 젤리를 구했어요! 보너스 스테이지로!')}</b>`;
+      $('resultMain').textContent = T('🎁 보너스 스테이지');
+      $('resultMain').onclick = () => { walkFrom = st.id - 1; startBonus(st, () => playStory(st.id, () => go('map'))); };
+    }
     $('resultSub').textContent = T('다시 하기');
     $('resultSub').onclick = () => startStage(st.id);
   } else {
@@ -3183,7 +3486,7 @@ function showResult() {
     // 놈놈이 깔깔 (말랑이는 옆에서 울먹)
     $('resultMascot').innerHTML = cachedArt('mascotOver', () => Art.img(Art.nomnom(205, 92, 40, { mood: 'happy', mini: true }) + Art.jelly(92, 112, 30, MAL, { ears: true, mood: 'worried' }) + `<ellipse cx="80" cy="118" rx="3" ry="6" fill="#8fd3ff" opacity="0.9"/>` + Art.sparkle(275, 34, 8, '#ffe27a'), { x: 40, y: 10, w: 320, h: 150 }));
     $('resultSticker').innerHTML = '';
-    $('resultMsg').textContent = o.reason === 'line' ? T('거품이 바닥 선을 넘었어요. 위쪽 줄기를 끊어 한꺼번에 떨어뜨려 봐요.') : o.reason === 'time' ? T('시간이 다 됐어요! 망설이지 말고 빨리 쏴 봐요.') : T('거품이 바닥 선을 넘었어요. 다시 해 볼까요?');
+    $('resultMsg').textContent = o.reason === 'line' ? T('생명 3개를 다 썼어요! 위쪽 줄기를 끊어 한꺼번에 떨어뜨려 봐요.') : o.reason === 'time' ? T('시간이 다 됐어요! 망설이지 말고 빨리 쏴 봐요.') : T('생명을 다 썼어요. 다시 해 볼까요?');
     $('resultMain').textContent = T('다시 하기');
     $('resultMain').onclick = () => startStage(st.id);
     $('resultSub').textContent = T('지도로');
@@ -3252,9 +3555,30 @@ function canRevive() {
 // 같은 판 이어하기: 천장 3칸 올리기(바닥 선과 3칸 여유가 생길 때까지 더, 단 시작 높이까지만)
 // → 그래도 바닥 선 근처면 아래쪽 거품만 걷어 낸다(갇힌 친구는 구출). 시간 끝이면 +20초
 function revive() {
-  const b = G.b, h = G.hz, o = G.outcome;
   G.continues = (G.continues || 0) + 1;
-  const safe = DEADLINE - 3 * ROW_H;
+  P.lives = Math.max(P.lives, 1); saveP(); updateLives();   // 이어하기 = 마지막 생명 1개로 계속
+  pushBack(G.outcome && G.outcome.reason);
+  $('result').hidden = true; $('app').inert = false;
+  if (G.state === 'done') return;
+  showToast(T('이어서 해 봐요!'));
+  setTimeout(() => canvas.focus({ preventScroll: true }), 50);
+}
+// 생명 하나를 쓰고 같은 판을 계속: 판이 위로 밀려 올라가고 말랑이가 "으쌰!"
+function loseLife(reason) {
+  P.lives--; saveP();
+  G.lifeLost = { t: 0 }; G.cameo = null;
+  updateLives(true);
+  sfx('stick'); setTimeout(() => sfx('boing', 2), 160);
+  try { navigator.vibrate && navigator.vibrate([30, 40, 30]); } catch (e) {}
+  setFace('worried', 2.2);
+  pushBack(reason);
+  if (G.state === 'done') return;
+  showToast(T('생명 -1! 남은 생명 {n}', { n: P.lives }));
+}
+// 판을 밀어 올리기 (생명 쓰기 · 이어하기 공통)
+function pushBack(reason) {
+  const b = G.b, h = G.hz;
+  const safe = LOSE_Y - 3 * ROW_H;
   G.y0Target = Math.max(G.y0Start, G.y0Target - 3 * ROW_H); b.y0 = G.y0Target;
   while (Board.lowestY(b) + R > safe && G.y0Target > G.y0Start) { G.y0Target = Math.max(G.y0Start, G.y0Target - ROW_H); b.y0 = G.y0Target; }
   b.rows.forEach((row, r) => row.forEach((cell, c) => {
@@ -3265,18 +3589,16 @@ function revive() {
     if (cell.friend !== undefined) rescue(cell.friend, q);
   }));
   Board.floating(b).forEach(([y, x]) => { const cell = b.rows[y][x], q = Board.pos(b, y, x); b.rows[y][x] = null; G.falls.push({ x: q.x, y: q.y, vy: -40, vx: 0, c: cell.c, friend: cell.friend }); if (cell.friend !== undefined) rescue(cell.friend, q); });
-  if (o && o.reason === 'time' && h.clock !== null) h.clock += 20;
+  if (reason === 'time' && h.clock !== null) h.clock += 20;
   h.timeUp = false;
   h.shotT = h.cfg.shotTimer || 0; G.aiming = false;   // 한 발 초침도 처음부터
   if (h.cfg.dropSec) h.dropT = h.cfg.dropSec;
-  G.outcome = null; G.state = 'aim'; G.over = null; G.cameo = null;
-  $('result').hidden = true; $('app').inert = false;
+  G.outcome = null; G.state = 'aim'; G.over = null; G.moving = null;
+  obsCrush();
   if (G.st.boss && Board.count(b) === 0) { Board.pushTop(b, [...G.st.colors]); Board.pushTop(b, [...G.st.colors]); }
   if (!G.st.boss && G.saved >= G.need) return finish(true);
   refreshQueueColors();
-  showToast(T('이어서 해 봐요!'));
   updateHud();
-  setTimeout(() => canvas.focus({ preventScroll: true }), 50);
 }
 // 광고 보는 동안은 게임 소리를 멈춘다 (스토어·토스 심사 기준)
 async function withAdPause(fn) {
@@ -3371,16 +3693,16 @@ requestAnimationFrame(frame);
 
 // 테스트용 손잡이 (화면에는 영향 없음)
 window.__jp = {
-  get G() { return G; }, lowerCeiling, showBanner, P, STAGES, Board, R, ROW_H, W, H, PIVOT, DEADLINE,
+  get G() { return G; }, lowerCeiling, showBanner, P, STAGES, Board, R, ROW_H, W, H, PIVOT, DEADLINE, LOSE_Y,
   startStage, rescue, showResult, revive, canRevive, finish, land, hazardsAfterShot, unlockAudio, boom, audioReady: () => !!audio, audioState: () => audio && audio.state, soundHint: () => !$('soundHint').hidden, LUCKY, pickLucky, applyLucky, seenHz: () => P.seenHz, aimLimit, music: () => Music.info(), audioMade: () => audioMade, audioBroken: () => audioBroken, musicTrack: n => Music.setTrack(n), fakeStall() { clockSeen.n = 2; lastMade = -1e9; checkAudioClock(true); }, voices: () => voiceCount, soundMode: () => soundMode, sfx, CS, shoot, swapQueue, setAngle, go, seedRandom,
-  reset() { Object.assign(P, { stars: new Array(NST).fill(0), stickers: {}, seenIntro: false, at: 0, seenHz: {}, seenStory: {}, best: {} }); saveP(); },
+  reset() { Object.assign(P, { stars: new Array(NST).fill(0), stickers: {}, seenIntro: false, at: 0, seenHz: {}, seenStory: {}, best: {}, lives: START_LIVES }); saveP(); },
   story: () => window.JellyStory,
   mapScene: wi => Jelly3D.scene().then(() => mapArtWorld(wi, true)),   // 지도 그림 굽기 도구용 (design/forest/bake-map.mjs)
   // 설명 카드 닫기 · 생각하는 시간 흘려보내기(조준 중 시계가 흐름) · 놈놈이 대포를 막았는지
   closeCard() { if (!$('hzCard').hidden) $('hzOk').click(); },
   think(sec) { let n = 0; while (G && G.state === 'aim' && n++ < sec * 30) update(1 / 30); return G && G.state; },
   blocked() { return nomActive('block'); },
-  keysOf, NST, save: saveP,
+  keysOf, NST, save: saveP, update: dt => update(dt), baseMood: () => baseMood(),
   // 날아가는 중·정리 중인 시간을 한 번에 넘기기 (자동 플레이 테스트용)
   advance() { let n = 0; while (G && (G.state === 'flying' || G.state === 'settle') && n++ < 2000) update(1 / 60); return G && G.state; },
   // 이 각도로 쏘면 어디에 붙고 몇 개가 터지는지 (판은 바꾸지 않음)

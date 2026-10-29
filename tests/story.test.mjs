@@ -153,7 +153,7 @@ for (const [tag, vp] of [['390', { width: 390, height: 844 }], ['360x640', { wid
   await page.click('#csSkip');
 
   const lose = await page.evaluate(async () => {
-    const j = window.__jp; j.startStage(2); j.closeCard(); j.G.need = 99; j.lowerCeiling(12);
+    const j = window.__jp; j.startStage(2); j.closeCard(); j.G.need = 99; j.P.lives = 1; j.lowerCeiling(12);
     const t0 = performance.now(); while (document.getElementById('result').hidden && performance.now() - t0 < 3000) await new Promise(r => setTimeout(r, 20));
     return Math.round(performance.now() - t0);
   });
