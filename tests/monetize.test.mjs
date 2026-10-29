@@ -23,7 +23,7 @@ delete phone.defaultBrowserType;
 
 // 1판 지게 만들기: 천장을 크게 내려 바닥 선을 넘긴다 → 결과 창이 뜰 때까지 기다림
 async function loseStage(page, n = 1) {
-  await page.evaluate(n => { const j = window.__jp; j.reset(); j.startStage(n); j.closeCard(); j.lowerCeiling(14); }, n);
+  await page.evaluate(n => { const j = window.__jp; j.reset(); j.startStage(n); j.closeCard(); j.P.lives = 1; j.lowerCeiling(14); }, n);
   await page.waitForFunction(() => !document.getElementById('result').hidden, null, { timeout: 4000 });
 }
 
@@ -67,11 +67,11 @@ async function loseStage(page, n = 1) {
   check('이어하기 횟수 1', r.cont === 1);
   check('천장만 올리고 거품은 그대로(공짜 클리어 없음)', await page.evaluate(() => window.__jp.Board.count(window.__jp.G.b)) === before);
   // 다시 지면 이번 판에서는 더 이어하기 없음
-  await page.evaluate(() => window.__jp.lowerCeiling(14));
+  await page.evaluate(() => { window.__jp.P.lives = 1; window.__jp.lowerCeiling(14); });
   await page.waitForFunction(() => !document.getElementById('result').hidden, null, { timeout: 4000 });
   check('한 판에 한 번만 (두 번째 실패엔 버튼 없음)', await page.locator('#resultAd').isHidden());
   // 진짜 타임 어택(29스테이지): 시간 끝 → 이어하기 = +20초
-  await page.evaluate(() => { const j = window.__jp; j.startStage(29); j.closeCard(); j.G.hz.clock = 0.01; j.G.hz.started = true; j.think(0.2); });
+  await page.evaluate(() => { const j = window.__jp; j.startStage(29); j.closeCard(); j.P.lives = 1; j.G.hz.clock = 0.01; j.G.hz.started = true; j.think(0.2); });
   await page.waitForFunction(() => !document.getElementById('result').hidden, null, { timeout: 4000 });
   check('시간 끝 실패 → 버튼에 "+20초"', (await page.textContent('#resultAd')).includes('+20초'));
   await page.click('#resultAd');
