@@ -1094,8 +1094,8 @@ function lowerCeiling(rows, text, kind = 'ceil') {
   sfx('boss');
   if (G.state === 'aim') {
     G.b.y0 = G.y0Target;
-    if (Board.lowestY(G.b) + R > LOSE_Y) finish(false, 'line');
-    else obsCrush();
+    if (Board.lowestY(G.b) + R > LOSE_Y) { finish(false, 'line'); return; }   // 생명을 잃었거나 게임 오버: 심술 놈놈은 안 나옴
+    obsCrush();
   }
   nomCameo(kind);
 }
@@ -1152,7 +1152,7 @@ function hazardsAfterShot() {
     if (n % cv.every === 0) {
       cv.rows.forEach((r, i) => Board.shiftRow(b, r, i % 2 ? -1 : 1));
       const fl = Board.floating(b);
-      fl.forEach(([y, x]) => { const cell = b.rows[y][x], q = Board.pos(b, y, x); b.rows[y][x] = null; G.falls.push({ x: q.x, y: q.y, vy: -40, vx: 0, c: cell.c, friend: cell.friend }); if (cell.friend !== undefined) rescue(cell.friend, q); });
+      fl.forEach(([y, x]) => { const cell = b.rows[y][x], q = Board.pos(b, y, x); b.rows[y][x] = null; G.falls.push({ x: q.x, y: q.y, vy: -40, vx: 0, c: cell.c, friend: cell.friend }); if (cell.friend !== undefined) rescue(cell.friend, q); if (cell.k === 'h') G.bonusTicket = true; });
       showToast(T('컨베이어가 움직여요!')); sfx('swap');
     } else if ((n + 1) % cv.every === 0) { h.convWarn = true; }
   }
@@ -1796,7 +1796,8 @@ function warmSprites(st) {
   if ((st.kinds || []).join('').includes('q') || (st.boss && st.boss.lucky)) Art.sprite('bub-q', () => SPR.bubble('q'), dpr, spriteReady);
   const kinds = new Set((st.kinds || []).join('').replace(/[.ckzq]/g, ''));
   if (st.boss && st.boss.sticky) kinds.add('s');
-  kinds.forEach(k => { for (const c of st.colors) Art.sprite('bx-' + c + k, () => SPR.bubx(c, k), dpr, spriteReady); });
+  kinds.delete('h');
+  kinds.forEach(k => { for (const c of st.colors) { Art.sprite('bx-' + c + k, () => SPR.bubx(c, k), dpr, spriteReady); for (const m of ['happy', 'joy', 'worried', 'o']) if (isJel(c)) Art.sprite('bj-' + c + '-' + m + k, () => SPR.bjel(c, m, k), dpr, spriteReady); } });
   if (keysOf(st).some(k => k.startsWith('nom'))) for (const m of ['angry', 'worried']) Art.sprite('nom-' + m, () => SPR.nom(m), dpr, spriteReady);
   st.friends.forEach((f, i) => { for (const c of st.colors) Art.sprite('fr-' + c + '-' + f.color, () => SPR.friend(c, f.color), dpr, spriteReady); Art.sprite('jel-' + f.color + '-14-joy', () => SPR.jelly(f.color, 14, { mood: 'joy' }), dpr, spriteReady); });
   for (const c of st.colors) for (const m of ['happy', 'joy', 'worried', 'o']) Art.sprite('bj-' + c + '-' + m, () => SPR.bjel(c, m), dpr, spriteReady);
@@ -1818,7 +1819,7 @@ function resize() {
   if (G) warmSprites(G.st);
 }
 let resizeTimer;
-window.addEventListener('resize', () => { clearTimeout(resizeTimer); resizeTimer = setTimeout(() => { if (!$('play').hidden) resize(); }, 150); });
+window.addEventListener('resize', () => { clearTimeout(resizeTimer); resizeTimer = setTimeout(() => { if (!$('play').hidden) { resize(); placeTip(); if (!$('hzCard').hidden) placeAboveCannon($('hzCard')); } }, 150); });
 
 function burst(x, y, c, n) {
   for (let i = 0; i < n; i++) {
@@ -3036,7 +3037,7 @@ function showToast(text) { const el = $('toast'); el.textContent = text; el.clas
 let tipTimer;
 function hideTip() { clearTimeout(tipTimer); $('tip').classList.add('hide'); }
 // 판 안내는 6초 뒤 저절로 사라진다 (첫 발을 쏴도 바로 사라짐)
-function showTip() { $('tip').innerHTML = G.st.tip; $('tip').classList.remove('hide'); clearTimeout(tipTimer); tipTimer = setTimeout(hideTip, 6000); }
+function showTip() { $('tip').innerHTML = G.st.tip; $('tip').classList.remove('hide'); placeTip(); clearTimeout(tipTimer); tipTimer = setTimeout(hideTip, 6000); }
 // 생명 하트 (위쪽 시간 게이지 왼쪽). bump: 방금 잃음(true) / 얻음('gain')
 const HEART_SVG = '<svg viewBox="0 0 24 22" aria-hidden="true"><defs><radialGradient id="hpg" cx=".35" cy=".3" r=".8"><stop offset="0" stop-color="#fff"/><stop offset=".35" stop-color="#ff9cc4"/><stop offset="1" stop-color="#e0306e"/></radialGradient></defs><path d="M12 21C5 15.5 1.5 11.6 1.5 7.2 1.5 3.9 4 1.5 7 1.5c2.1 0 3.8 1.1 5 2.8 1.2-1.7 2.9-2.8 5-2.8 3 0 5.5 2.4 5.5 5.7 0 4.4-3.5 8.3-10.5 13.8z" fill="url(#hpg)" stroke="#fff" stroke-width="1.4"/><ellipse cx="7.2" cy="6.4" rx="2.4" ry="1.5" fill="#fff" opacity=".85" transform="rotate(-30 7.2 6.4)"/></svg>';
 function updateLives(bump) {
@@ -3088,6 +3089,13 @@ function hzIcon(art) {
   });
 }
 // 안내 창은 대포 위를 가리지 않게 (0.15.0 Owner: 대포 속 거품 색이 안 보임): 창 아래 끝을 대포 포신 끝보다 위에 둔다
+// 시작 안내 말풍선: #stageWrap 안에서 아래 끝을 포신 끝(+대포 속 거품)보다 위로
+function placeTip() {
+  const wrap = $('stageWrap').getBoundingClientRect(), r = canvas.getBoundingClientRect();
+  if (!r.height) return;
+  const cut = r.top + (PIVOT.y - 120) * r.height / H;
+  $('tip').style.bottom = Math.max(8, Math.round(wrap.bottom - cut)) + 'px';
+}
 function placeAboveCannon(el) {
   const r = canvas.getBoundingClientRect();
   if (!r.height) return;
@@ -3486,7 +3494,7 @@ function showResult() {
     // 놈놈이 깔깔 (말랑이는 옆에서 울먹)
     $('resultMascot').innerHTML = cachedArt('mascotOver', () => Art.img(Art.nomnom(205, 92, 40, { mood: 'happy', mini: true }) + Art.jelly(92, 112, 30, MAL, { ears: true, mood: 'worried' }) + `<ellipse cx="80" cy="118" rx="3" ry="6" fill="#8fd3ff" opacity="0.9"/>` + Art.sparkle(275, 34, 8, '#ffe27a'), { x: 40, y: 10, w: 320, h: 150 }));
     $('resultSticker').innerHTML = '';
-    $('resultMsg').textContent = o.reason === 'line' ? T('생명 3개를 다 썼어요! 위쪽 줄기를 끊어 한꺼번에 떨어뜨려 봐요.') : o.reason === 'time' ? T('시간이 다 됐어요! 망설이지 말고 빨리 쏴 봐요.') : T('생명을 다 썼어요. 다시 해 볼까요?');
+    $('resultMsg').textContent = o.reason === 'line' ? T('생명을 다 썼어요! 위쪽 줄기를 끊어 한꺼번에 떨어뜨려 봐요.') : o.reason === 'time' ? T('시간이 다 됐어요! 망설이지 말고 빨리 쏴 봐요.') : T('생명을 다 썼어요. 다시 해 볼까요?');
     $('resultMain').textContent = T('다시 하기');
     $('resultMain').onclick = () => startStage(st.id);
     $('resultSub').textContent = T('지도로');
@@ -3558,6 +3566,7 @@ function revive() {
   G.continues = (G.continues || 0) + 1;
   P.lives = Math.max(P.lives, 1); saveP(); updateLives();   // 이어하기 = 마지막 생명 1개로 계속
   pushBack(G.outcome && G.outcome.reason);
+  G.cameo = null; G.face = null;
   $('result').hidden = true; $('app').inert = false;
   if (G.state === 'done') return;
   showToast(T('이어서 해 봐요!'));
@@ -3587,8 +3596,9 @@ function pushBack(reason) {
     if (q.y + R <= safe) return;
     row[c] = null; G.falls.push({ x: q.x, y: q.y, vy: -40, vx: 0, c: cell.c, friend: cell.friend });
     if (cell.friend !== undefined) rescue(cell.friend, q);
+    if (cell.k === 'h') G.bonusTicket = true;   // 치워진 보너스 젤리도 받은 것으로
   }));
-  Board.floating(b).forEach(([y, x]) => { const cell = b.rows[y][x], q = Board.pos(b, y, x); b.rows[y][x] = null; G.falls.push({ x: q.x, y: q.y, vy: -40, vx: 0, c: cell.c, friend: cell.friend }); if (cell.friend !== undefined) rescue(cell.friend, q); });
+  Board.floating(b).forEach(([y, x]) => { const cell = b.rows[y][x], q = Board.pos(b, y, x); b.rows[y][x] = null; G.falls.push({ x: q.x, y: q.y, vy: -40, vx: 0, c: cell.c, friend: cell.friend }); if (cell.friend !== undefined) rescue(cell.friend, q); if (cell.k === 'h') G.bonusTicket = true; });
   if (reason === 'time' && h.clock !== null) h.clock += 20;
   h.timeUp = false;
   h.shotT = h.cfg.shotTimer || 0; G.aiming = false;   // 한 발 초침도 처음부터
@@ -3647,7 +3657,7 @@ function playStory(id, then) {
   $('app').inert = true;
   sceneReady(() => JellyStory.open(id, () => { $('app').inert = false; then(); }, { sfx }));
 }
-$('playMap').onclick = () => { G = null; $('result').hidden = true; go('map'); };
+$('playMap').onclick = () => { if (G && G.mode === 'bonus') return endBonus(); G = null; $('result').hidden = true; go('map'); };   // 보너스 중이면 이야기 컷신까지 원래 흐름대로
 // 결과 창: 포커스를 창 안에 가두고, Esc는 지도로
 $('result').addEventListener('keydown', e => {
   const btns = [$('resultAd'), $('resultMain'), $('resultSub')].filter(b => !b.hidden);
@@ -3656,6 +3666,7 @@ $('result').addEventListener('keydown', e => {
     btns[(i + (e.shiftKey ? btns.length - 1 : 1)) % btns.length].focus(); e.preventDefault();
   } else if (e.key === 'Escape') {
     const win = G && G.outcome && G.outcome.win;
+    if (win && G.bonusTicket) return $('resultMain').click();   // 보너스는 건너뛰지 않는다
     $('result').hidden = true; G = null;
     if (win) { const id = Number($('resultMain').dataset.stage); walkFrom = id - 1; playStory(id, () => go('map')); }   // Esc로 나가도 처음 깬 이야기는 보여 준다
     else go('map');

@@ -71,7 +71,7 @@ async function loseStage(page, n = 1) {
   await page.waitForFunction(() => !document.getElementById('result').hidden, null, { timeout: 4000 });
   check('한 판에 한 번만 (두 번째 실패엔 버튼 없음)', await page.locator('#resultAd').isHidden());
   // 진짜 타임 어택(29스테이지): 시간 끝 → 이어하기 = +20초
-  await page.evaluate(() => { const j = window.__jp; j.startStage(29); j.closeCard(); j.G.hz.clock = 0.01; j.G.hz.started = true; j.think(0.2); });
+  await page.evaluate(() => { const j = window.__jp; j.startStage(29); j.closeCard(); j.P.lives = 1; j.G.hz.clock = 0.01; j.G.hz.started = true; j.think(0.2); });
   await page.waitForFunction(() => !document.getElementById('result').hidden, null, { timeout: 4000 });
   check('시간 끝 실패 → 버튼에 "+20초"', (await page.textContent('#resultAd')).includes('+20초'));
   await page.click('#resultAd');
