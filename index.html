@@ -1556,8 +1556,10 @@ function spr(key, def, x, y, s = 1, alpha = 1, rot = 0) {
   return true;
 }
 // 판 거품 = 구미 젤리 (보통 색만. 수정·폭탄·랜덤·쿠키·회색 거품은 그대로)
+// 0.15.2 (Owner: "그냥 기존 알이 좋은거 같아"): 판 거품은 0.14 구슬 그림으로 되돌림. 젤리 그림 코드는 남겨 두고 이 스위치로 끈다
+const JELLY_BUBBLES = false;
 const JEL_R = R * 1.02, JEL_DY = -R * 0.04;
-const isJel = c => 'rygbpo'.includes(c) && c.length === 1;
+const isJel = c => JELLY_BUBBLES && 'rygbpo'.includes(c) && c.length === 1;
 function drawJel(x, y, c, s = 1, alpha = 1, mood = 'happy', k = '', sx = 1, sy = 1, rot = 0) {
   const key = 'bj-' + c + '-' + mood + k;
   ctx.save(); ctx.translate(x, y); if (rot) ctx.rotate(rot); ctx.scale(sx, sy);
@@ -1588,7 +1590,7 @@ function drawBonusCell(x, y, cell, t, s, mood, sx, sy) {
   const pulse = .5 + .5 * Math.sin(t * 5);
   const g = ctx.createRadialGradient(x, y, R * .4, x, y, R * 1.35); g.addColorStop(0, 'rgba(255,230,120,0)'); g.addColorStop(.7, `rgba(255,214,90,${.5 + .35 * pulse})`); g.addColorStop(1, 'rgba(255,214,90,0)');
   ctx.fillStyle = g; ctx.beginPath(); ctx.arc(x, y, R * 1.35, 0, 7); ctx.fill();
-  if (!drawJel(x, y, cell.c, s, 1, 'joy', '', sx, sy)) drawBubble(x, y, cell.c, s);
+  if (!isJel(cell.c) || !drawJel(x, y, cell.c, s, 1, 'joy', '', sx, sy)) drawBubble(x, y, cell.c, s);
   ctx.save(); ctx.translate(x + R * .62, y - R * .7); ctx.rotate(Math.sin(t * 3) * .25); ctx.scale(1 + pulse * .12, 1 + pulse * .12);
   ctx.fillStyle = '#ffd23f'; ctx.strokeStyle = '#c47a00'; ctx.lineWidth = 1.4; ctx.beginPath();
   for (let i = 0; i < 10; i++) { const a = -Math.PI / 2 + i * Math.PI / 5, rr = i % 2 ? 4.6 : 10.5; ctx.lineTo(Math.cos(a) * rr, Math.sin(a) * rr); }
@@ -1883,7 +1885,7 @@ function warmSprites(st) {
   kinds.forEach(k => { for (const c of st.colors) { Art.sprite('bx-' + c + k, () => SPR.bubx(c, k), dpr, spriteReady); for (const m of ['happy', 'joy', 'worried', 'o']) if (isJel(c)) Art.sprite('bj-' + c + '-' + m + k, () => SPR.bjel(c, m, k), dpr, spriteReady); } });
   if (keysOf(st).some(k => k.startsWith('nom'))) for (const m of ['angry', 'worried']) Art.sprite('nom-' + m, () => SPR.nom(m), dpr, spriteReady);
   st.friends.forEach((f, i) => { for (const c of st.colors) Art.sprite('fr-' + c + '-' + f.color, () => SPR.friend(c, f.color), dpr, spriteReady); Art.sprite('jel-' + f.color + '-14-joy', () => SPR.jelly(f.color, 14, { mood: 'joy' }), dpr, spriteReady); });
-  for (const c of st.colors) for (const m of ['happy', 'joy', 'worried', 'o']) Art.sprite('bj-' + c + '-' + m, () => SPR.bjel(c, m), dpr, spriteReady);
+  for (const c of st.colors) for (const m of ['happy', 'joy', 'worried', 'o']) if (isJel(c)) Art.sprite('bj-' + c + '-' + m, () => SPR.bjel(c, m), dpr, spriteReady);
   for (const m of ['happy', 'joy', 'worried']) Art.sprite('jel-' + MAL + '-' + MASCOT.r + '-e' + m, () => SPR.jelly(MAL, MASCOT.r, { ears: true, mood: m }), dpr, spriteReady);
   Art.sprite('cannonBase', SPR.cannonBase, dpr, spriteReady); Art.sprite('barrel', SPR.barrel, dpr, spriteReady); Art.sprite('housing', SPR.housing, dpr, spriteReady);
   Art.sprite('wheel-' + CANNON.wheel.r, () => SPR.wheel(CANNON.wheel.r), dpr, spriteReady); Art.sprite('wheel-' + CANNON.front.r, () => SPR.wheel(CANNON.front.r), dpr, spriteReady);
