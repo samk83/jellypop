@@ -31,13 +31,16 @@ console.log('생명 3개');
   const a = await page.evaluate(() => {
     const j = window.__jp; let n = 0;
     while (j.P.lives === 3 && n++ < 40) j.lowerCeiling(1);
+    const hitState = j.G.state, hit = j.G.loseHit && j.G.loseHit.what;
+    j.advance();   // 0.15.1: 닿은 자리를 0.9초 보여 준 뒤 밀어 올린다
     const G = j.G;
-    return { lives: j.P.lives, state: G.state, safe: j.Board.lowestY(G.b) + j.R <= j.LOSE_Y, result: !document.getElementById('result').hidden, hearts: document.querySelectorAll('#lives span:not(.off)').length };
+    return { lives: j.P.lives, state: G.state, safe: j.Board.lowestY(G.b) + j.R <= j.LOSE_Y, result: !document.getElementById('result').hidden, hearts: document.querySelectorAll('#lives span:not(.off)').length, hitState, hit };
   });
+  check('닿으면 잠깐 멈춰 닿은 곳 표시', a.hitState === 'hit' && !!a.hit, JSON.stringify(a));
   check('바닥에 닿으면 생명 -1 (3→2), 결과 창 없이 판이 밀려 올라가 계속', a.lives === 2 && a.state === 'aim' && a.safe && !a.result && a.hearts === 2, JSON.stringify(a));
   const b = await page.evaluate(() => {
     const j = window.__jp; let n = 0;
-    while (j.G.state !== 'done' && n++ < 120) j.lowerCeiling(1);
+    while (j.G.state !== 'done' && n++ < 120) { j.lowerCeiling(1); if (j.G.state === 'hit') j.advance(); }
     return { lives: j.P.lives, state: j.G.state, reason: j.G.outcome && j.G.outcome.reason };
   });
   check('생명 3개를 다 쓰면 게임 오버', b.lives === 0 && b.state === 'done' && b.reason === 'line', JSON.stringify(b));
@@ -48,11 +51,12 @@ console.log('생명 3개');
   check('다시 하기 → 생명 3개로 새로 시작', c.lives === 3 && c.hearts === 3 && c.state === 'aim', JSON.stringify(c));
 }
 
-console.log('게임 오버 선 (말랑이·대포 높이)');
+console.log('경고 선을 넘어도 닿기 전에는 계속');
 {
   const r = await page.evaluate(() => {
     const j = window.__jp, G = j.G, b = G.b;
     // 맨 아래 거품이 예전 바닥 선(DEADLINE)은 넘었지만 새 선(LOSE_Y)에는 안 닿게 내린다
+    j.setAngle(-Math.PI / 2 + 1.1);   // 0.15.1: 위를 겨누면 대포 속 젤리에 닿으니 옆으로
     const low = j.Board.lowestY(b) + j.R, want = (j.DEADLINE + j.LOSE_Y) / 2;
     b.y0 += want - low; G.y0Target = b.y0;
     G.state = 'settle'; G.settleT = 0; j.advance();

@@ -118,7 +118,7 @@ console.log('게임 오버');
     };
   });
   check('"GAME OVER" 글자가 보임', g.titleShown && g.title === 'GAMEOVER', JSON.stringify(g));
-  check('다른 화면으로 안 넘어감: 판 화면이 그대로 뒤에 보임 (배경 그림 없음)', g.play && g.bg === 'none', g.bg);
+  check('다른 화면으로 안 넘어감: 판 화면이 그대로 뒤에 보임 (배경 그림 없음)', g.play && !/url\(/.test(g.bg) && (g.bg === 'none' || /rgba\(30, 8, 58, 0\)/.test(g.bg)), g.bg);   // 0.15.1: 위쪽만 살짝 어둡고 아래는 투명
   check('놈놈·말랑이 그림 + 다시 하기·지도로 버튼', g.nom && g.main === '다시 하기' && g.sub === '지도로', JSON.stringify(g));
   await page.screenshot({ path: path.join(shots, 'gameover-iphone13.png') });
   // 다시 하기 → 연출 지워짐
