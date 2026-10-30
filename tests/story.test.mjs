@@ -157,7 +157,7 @@ for (const [tag, vp] of [['390', { width: 390, height: 844 }], ['360x640', { wid
     const t0 = performance.now(); while (document.getElementById('result').hidden && performance.now() - t0 < 3000) await new Promise(r => setTimeout(r, 20));
     return Math.round(performance.now() - t0);
   });
-  check('실패하면 결과 창이 예전처럼 빨리 나옴 (1초 이내)', lose < 1000, lose);
+  check('실패하면 결과 창이 빨리 나옴 (닿은 자리 1.3초 보여 준 뒤, 1.6초 이내)', lose < 1600, lose);   // 0.15.1
   check('콘솔 에러 없음', errors.length === 0, errors.join(' | '));
   await page.close();
 }

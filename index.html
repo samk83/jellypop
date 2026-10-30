@@ -322,6 +322,18 @@ img{-webkit-user-drag:none}
 @keyframes nomLaugh{0%{transform:rotate(-6deg) scale(1,1)}100%{transform:rotate(6deg) scale(1.05,.94)}}
 #result.lose .result-card{animation:cardUp .45s cubic-bezier(.3,1.3,.5,1) .9s both}
 @keyframes cardUp{0%{opacity:0;transform:translateY(60px)}100%{opacity:1;transform:none}}
+/* 0.15.1 (Owner): 게임 오버 창은 작게 위쪽에 → 판 아래쪽(말랑이·대포, 닿은 자리)이 그대로 보여 왜 졌는지 알 수 있게 */
+#result.lose{justify-content:flex-start;background:linear-gradient(180deg,rgba(30,8,58,.5) 0%,rgba(30,8,58,.18) 45%,rgba(30,8,58,0) 60%);padding-top:calc(env(safe-area-inset-top) + 10px)}
+#result.lose .result-mascot{display:none}
+#result.lose .over-title{font-size:clamp(30px,10vw,42px);margin-bottom:6px}
+#result.lose .over-title span{text-shadow:2px 0 0 #5a1d6e,-2px 0 0 #5a1d6e,0 2px 0 #5a1d6e,0 -2px 0 #5a1d6e,0 4px 0 #c2457a,0 6px 0 #5a1d6e,0 8px 12px rgba(20,0,40,.5)}
+#result.lose .result-card{width:min(100%,320px);padding:10px 14px 12px;border-radius:20px;animation-delay:.5s}
+#result.lose .result-card h2{font-size:22px}
+#result.lose .result-score{margin-top:0}
+#result.lose .result-msg{margin:4px 0 10px;font-size:13px;line-height:1.4}
+#result.lose .result-actions{grid-template-columns:1fr 1fr;gap:8px}
+#result.lose .result-actions .btn{min-height:46px;padding:0 10px;font-size:17px}
+#result.lose #resultAd{grid-column:1 / -1}
 /* 작은 휴대폰: 점수표가 길면 말랑이 그림을 빼고 별·스티커를 줄여 별이 가려지지 않게 */
 @media (max-height:740px){#result.win .result-mascot{display:none}#result.win .result-stars{height:min(84px,13vh);margin-bottom:6px}
   #result.win .sticker{width:52px;height:52px;margin:4px auto 0}#result.win .sticker .in{width:40px;height:40px}
@@ -515,7 +527,7 @@ const R = 18, D = R * 2, ROW_H = R * Math.sqrt(3);
 const PIVOT = { x: 180, y: 556 };              // 대포 회전 중심
 const FLOOR_Y = 512, DEADLINE = 478;           // 바닥, 터치 구역 윗선 (대포 근처만 터치)
 // 게임 오버 선 (0.15.0 Owner: "완전 바닥·말랑이·대포에 닿을 때만"): 거품 아래쪽이 말랑이 머리·대포 몸통 높이에 닿으면 생명 -1
-const LOSE_Y = 532;
+const LOSE_Y = 532;   // 0.15.1부터는 선이 아니라 '닿으면' 실패 (touchHit). 이 값은 말랑이 머리·대포 몸통 높이 참고값
 const MAX_LIVES = 5, START_LIVES = 3;
 const SPEED = 820;                             // 발사 속도 (px/초)
 const MIN_A = -Math.PI + 0.16, MAX_A = -0.16;  // 조준 각도 한계
@@ -1094,8 +1106,8 @@ function lowerCeiling(rows, text, kind = 'ceil') {
   sfx('boss');
   if (G.state === 'aim') {
     G.b.y0 = G.y0Target;
-    if (Board.lowestY(G.b) + R > LOSE_Y) { finish(false, 'line'); return; }   // 생명을 잃었거나 게임 오버: 심술 놈놈은 안 나옴
-    obsCrush();
+    if (loseIfTouching()) return;   // 생명을 잃었거나 게임 오버: 심술 놈놈은 안 나옴
+    obsCrush(); checkWarn();
   }
   nomCameo(kind);
 }
@@ -1182,8 +1194,8 @@ function afterSettle() {
   if (G.state === 'done') return;
   if (!st.boss && G.saved >= G.need) return finish(true);   // 컨베이어로 떨어진 친구
   b.y0 = G.y0Target;
-  if (Board.lowestY(b) + R > LOSE_Y) return finish(false, 'line');
-  obsCrush();
+  if (loseIfTouching()) return;
+  obsCrush(); checkWarn();
   refreshQueueColors();
   G.hz.shotT = G.hz.cfg.shotTimer || 0;
   G.state = 'aim';
@@ -1193,7 +1205,7 @@ function afterSettle() {
 function tickHazards(dt) {
   const h = G.hz, cfg = h.cfg;
   if (h.warn && (h.warn.t += dt) > 1.8) h.warn = null;
-  if (G.state === 'done' || G.paused || document.hidden) return;
+  if (G.state === 'done' || G.state === 'hit' || G.paused || document.hidden) return;   // 닿은 자리 보여 주는 0.9초도 멈춤
   h.elapsed = (h.elapsed || 0) + dt;   // 판이 실제로 흐른 시간
   if (h.clock !== null) {
     const before = h.clock;
@@ -1317,9 +1329,9 @@ function finish(win, reason) {
   const wait = () => {
     if (G !== game) return;
     const dt = performance.now() - t0, landed = game.rescues.every(r => r.phase === 'stay');
-    if (!win ? dt >= 600 : (dt >= 1100 && landed) || dt >= 2600) showResult(); else setTimeout(wait, 100);
+    if (!win ? dt >= (game.loseHit ? 1300 : 600) : (dt >= 1100 && landed) || dt >= 2600) showResult(); else setTimeout(wait, 100);
   };
-  setTimeout(wait, win ? 1100 : 600);
+  setTimeout(wait, win ? 1100 : G.loseHit ? 1300 : 600);   // 닿아서 졌으면 닿은 자리를 먼저 보여 준다
 }
 // 점수표 줄: 판에서 얻은 점수(터뜨림·떨어뜨림·놈놈) + 보너스(구출·보스·남은 시간·아낀 거품)
 function scoreRows(st) {
@@ -1338,7 +1350,7 @@ function scoreRows(st) {
 
 // ---------- 게임 오버: 그 판 화면 그대로 위에 GAME OVER 글자 + 놈놈이 깔깔 ----------
 function gameOver(reason) {
-  G.over = { t: 0, reason }; G.cameo = null;   // 심술 놈놈은 게임 오버 연출에 자리를 넘긴다
+  G.over = { t: 0, reason }; G.cameo = null; hideTip();   // 안내 말풍선이 닿은 자리를 가리지 않게   // 심술 놈놈은 게임 오버 연출에 자리를 넘긴다
   sfx('gameover');
   try { navigator.vibrate && navigator.vibrate([40, 60, 80]); } catch (e) {}
 }
@@ -1402,19 +1414,90 @@ function drawOver(t, dt) {
   o.t += dt;
   const blink = Math.sin(o.t * 18) > 0 && o.t < 1.2;
   ctx.fillStyle = `rgba(40,10,60,${Math.min(.35, o.t * .6)})`; ctx.fillRect(0, 0, W, H);
-  ctx.strokeStyle = blink ? '#ff3b6b' : 'rgba(255,59,107,.5)'; ctx.lineWidth = 5; ctx.setLineDash([]);
-  ctx.beginPath(); ctx.moveTo(4, LOSE_Y); ctx.lineTo(W - 4, LOSE_Y); ctx.stroke();
+  drawHitMark(o.t);
 }
-// 위험 경고: 거품 아래쪽이 게임 오버 선에서 2줄 안으로 오면 바닥 쪽이 빨갛게 숨 쉬듯 깜빡인다
-function dangerLevel() { const low = Board.lowestY(G.b) + R; return Math.max(0, Math.min(1, 1 - (LOSE_Y - low) / (2 * ROW_H))); }
+// 닿은 자리 표시: 빨간 고리가 깜빡이고 "말랑이에 닿았어요!" 같은 말풍선
+const HIT_SAY = { mascot: '말랑이에 닿았어요!', cannon: '대포에 닿았어요!', queue: '기다리는 젤리에 닿았어요!', ground: '바닥에 닿았어요!' };
+function drawHitMark(t) {
+  const h = G.loseHit; if (!h) return;
+  const blink = Math.sin(t * 14) > 0 || t > 1.4, pulse = 1 + Math.sin(t * 9) * .08;
+  ctx.save();
+  ctx.strokeStyle = blink ? '#ff3b6b' : 'rgba(255,255,255,.9)'; ctx.lineWidth = 4;
+  ctx.beginPath(); ctx.arc(h.x, h.y, (R + 5) * pulse, 0, 7); ctx.stroke();
+  ctx.beginPath(); ctx.arc(h.tx, h.ty, (h.tr + 4) * pulse, 0, 7); ctx.stroke();
+  // 두 고리가 맞닿은 곳에 별 모양 '쿵'
+  const mx = (h.x + h.tx) / 2, my = (h.y + h.ty) / 2;
+  ctx.fillStyle = '#ffe066'; ctx.strokeStyle = '#c2245a'; ctx.lineWidth = 2;
+  ctx.beginPath(); for (let i = 0; i < 16; i++) { const a = i * Math.PI / 8, rr = (i % 2 ? 5 : 12) * pulse; ctx.lineTo(mx + Math.cos(a) * rr, my + Math.sin(a) * rr); } ctx.closePath(); ctx.fill(); ctx.stroke();
+  const text = T(HIT_SAY[h.what] || HIT_SAY.ground);
+  ctx.font = '900 15px "Noto Sans KR", sans-serif'; const w = ctx.measureText(text).width + 24;
+  const bx = Math.min(W - w / 2 - 6, Math.max(w / 2 + 6, h.x)), byy = Math.max(70, h.y - R - 40);
+  ctx.fillStyle = 'rgba(255,255,255,.97)'; roundRect(bx - w / 2, byy - 15, w, 30, 15); ctx.fill();
+  ctx.strokeStyle = '#ff3b6b'; ctx.lineWidth = 2.5; roundRect(bx - w / 2, byy - 15, w, 30, 15); ctx.stroke();
+  ctx.fillStyle = '#c2245a'; ctx.textAlign = 'center'; ctx.fillText(text, bx, byy + 5);
+  ctx.restore();
+}
+// ---------- 게임 오버 판정 (0.15.1 Owner): 선이 아니라 거품이 진짜로 닿을 때 ----------
+// 말랑이 · 대포(몸통·바퀴) · 기다리는 젤리 · 맨 바닥(땅). 경고 선(DEADLINE)을 넘으면 강한 경고만 준다
+function touchTargets() {
+  const L = [{ what: 'mascot', x: MASCOT.x, y: MASCOT.y + 2, r: MASCOT.r },
+    { what: 'cannon', x: PIVOT.x, y: PIVOT.y, r: 19 * CK },
+    { what: 'cannon', x: CANNON.wheel.x, y: CANNON.wheel.y, r: CANNON.wheel.r },
+    { what: 'cannon', x: CANNON.front.x, y: CANNON.front.y, r: CANNON.front.r },
+    { what: 'cannon', x: PIVOT.x + Math.cos(G.angle) * 44 * CK, y: PIVOT.y + Math.sin(G.angle) * 44 * CK, r: 13 }];   // 대포 속 준비된 젤리
+  for (let i = 1; i <= Math.min(3, G.queue.length - 1); i++) { const q = queuePos(i); L.push({ what: 'queue', x: q.x, y: q.y, r: 10 }); }
+  return L;
+}
+function touchHit(b) {
+  if (Board.lowestY(b) + R <= DEADLINE) return null;   // 경고 선 위쪽이면 닿을 일이 없다
+  const T2 = touchTargets(), ground = RESCUE_GROUND - 4;
+  for (let r = b.rows.length - 1; r >= 0; r--) for (let c = 0; c < b.rows[r].length; c++) {
+    if (!b.rows[r][c]) continue;
+    const p = Board.pos(b, r, c);
+    if (p.y + R <= DEADLINE) continue;
+    for (const o of T2) if ((p.x - o.x) ** 2 + (p.y - o.y) ** 2 < (R + o.r - 2) ** 2) return { what: o.what, x: p.x, y: p.y, tx: o.x, ty: o.y, tr: o.r };
+    if (p.y + R >= ground) return { what: 'ground', x: p.x, y: p.y, tx: p.x, ty: ground + 6, tr: 6 };
+  }
+  return null;
+}
+function loseIfTouching() {
+  const hit = touchHit(G.b); if (!hit) return false;
+  G.loseHit = hit; finish(false, 'line'); return true;
+}
+// 경고 선을 넘은 순간: 경고음 + 진동 + 걱정 얼굴 (넘어 있는 동안은 drawWarn 이 화면을 빨갛게)
+function checkWarn() {
+  const on = Board.lowestY(G.b) + R > DEADLINE;
+  if (on && !G.warnOn) { sfx('alarm'); try { navigator.vibrate && navigator.vibrate([60, 50, 60]); } catch (e) {} setFace('worried', 1.5); G.warnT = 0; }
+  G.warnOn = on;
+}
+function drawWarn(t, dt) {
+  if (!G.warnOn || G.state === 'done' || G.state === 'hit') return;
+  G.warnT = (G.warnT || 0) + dt;
+  const k = .55 + .45 * Math.sin(t * 9);
+  const g = ctx.createRadialGradient(W / 2, H / 2, H * .22, W / 2, H / 2, H * .68); g.addColorStop(0, 'rgba(255,40,90,0)'); g.addColorStop(1, `rgba(255,40,90,${.5 * k})`);
+  ctx.fillStyle = g; ctx.fillRect(0, 0, W, H);
+  ctx.strokeStyle = `rgba(255,59,107,${.6 + .4 * k})`; ctx.lineWidth = 6; ctx.strokeRect(3, 3, W - 6, H - 6);
+  // 경고 띠: 처음 2초는 크게, 그 뒤엔 작게 계속
+  const big = G.warnT < 2, y = big ? 168 : 150, s = big ? 1 + Math.max(0, .25 - G.warnT) : .8;
+  ctx.save(); ctx.translate(W / 2, y); ctx.scale(s, s);
+  ctx.fillStyle = `rgba(200,20,70,${.85 + .15 * k})`; roundRect(-128, -20, 256, 40, 20); ctx.fill();
+  ctx.strokeStyle = '#fff'; ctx.lineWidth = 2.5; roundRect(-128, -20, 256, 40, 20); ctx.stroke();
+  const msg = T('⚠ 위험! 말랑이·대포에 닿으면 끝!'); let fs = 17;
+  ctx.font = '900 17px "Noto Sans KR", sans-serif';
+  while (ctx.measureText(msg).width > 236 && fs > 10) { fs -= .5; ctx.font = '900 ' + fs + 'px "Noto Sans KR", sans-serif'; }   // 띠 안에 맞게 (영어는 길다)
+  ctx.fillStyle = '#fff'; ctx.textAlign = 'center'; ctx.fillText(msg, 0, 6);
+  ctx.restore();
+}
+// 위험 경고: 거품 아래쪽이 경고 선(DEADLINE) 2줄 위부터 바닥 쪽이 빨갛게 숨 쉬듯 깜빡인다
+function dangerLevel() { const low = Board.lowestY(G.b) + R; return Math.max(0, Math.min(1, 1 - (DEADLINE - low) / (2 * ROW_H))); }
 function drawDanger(t) {
   const k = G.state === 'done' ? 0 : dangerLevel(); if (!k) return;
   const a = k * (.35 + .25 * Math.sin(t * 8));
-  const g = ctx.createLinearGradient(0, LOSE_Y - 70, 0, LOSE_Y + 6);
+  const g = ctx.createLinearGradient(0, DEADLINE - 70, 0, DEADLINE + 6);
   g.addColorStop(0, 'rgba(255,59,107,0)'); g.addColorStop(1, `rgba(255,59,107,${a})`);
-  ctx.fillStyle = g; ctx.fillRect(0, LOSE_Y - 70, W, 76);
+  ctx.fillStyle = g; ctx.fillRect(0, DEADLINE - 70, W, 76);
   ctx.strokeStyle = `rgba(255,79,139,${Math.min(1, a * 2)})`; ctx.lineWidth = 2; ctx.setLineDash([6, 6]);
-  ctx.beginPath(); ctx.moveTo(6, LOSE_Y); ctx.lineTo(W - 6, LOSE_Y); ctx.stroke(); ctx.setLineDash([]);
+  ctx.beginPath(); ctx.moveTo(6, DEADLINE); ctx.lineTo(W - 6, DEADLINE); ctx.stroke(); ctx.setLineDash([]);
 }
 // 생명을 잃은 순간: 화면 가장자리가 빨갛게 번쩍 + 말랑이 머리 위로 깨진 하트가 떠오른다
 function drawLifeLost(dt) {
@@ -1962,8 +2045,10 @@ function render(dt) {
   G.fx = G.fx.filter(p => (p.life -= dt * 1.6) > 0);
   for (const p of G.fx) { p.vy += 600 * dt; p.x += p.vx * dt; p.y += p.vy * dt; ctx.globalAlpha = p.life; ctx.fillStyle = p.c; ctx.beginPath(); ctx.ellipse(p.x, p.y, p.r, p.r * 1.4, Math.atan2(p.vy, p.vx) + Math.PI / 2, 0, 7); ctx.fill(); }
   ctx.globalAlpha = 1;
+  drawWarn(t, dt);
   drawOver(t, dt);
   drawLifeLost(dt);
+  if (G.state === 'hit') drawHitMark(.9 - G.hitT);
   // 점수 글자 (입체 글씨)
   G.texts = G.texts.filter(x => (x.life -= dt * .9) > 0);
   ctx.textAlign = 'center';
@@ -2468,6 +2553,7 @@ function update(dt) {
   if (!G.paused && G.state !== 'done') (G.b.obs || []).forEach(o => { o.a += o.spin * dt; o.hitT += dt; });
   if (G.state === 'flying' && G.moving) stepMoving(dt);
   if (G.state === 'settle') { G.settleT -= dt; if (G.settleT <= 0) afterSettle(); }
+  if (G.state === 'hit') { G.hitT -= dt; if (G.hitT <= 0) { const r = G.hitReason; G.hitReason = null; pushBack(r); if (G.state !== 'done') showToast(T('생명 -1! 남은 생명 {n}', { n: P.lives })); } }
 }
 function frame(now) {
   const dt = Math.min(.05, (now - last) / 1000); last = now;
@@ -2634,6 +2720,8 @@ function sfx(k, n = 0) {
     else if (k === 'win') [523, 659, 784, 1047].forEach((f, i) => tone(f, f * 1.01, .22, 'triangle', .2, i * .11));
     else if (k === 'lose') [392, 330, 262].forEach((f, i) => tone(f, f * .98, .3, 'triangle', .18, i * .16));
     // 게임 오버: 8비트 "빠-밤-밤-바아앙" 내려가는 소리
+    // 경고 선 넘음: 삐-뽀 삐-뽀 경고음
+    else if (k === 'alarm') [0, .32].forEach(d => { tone(988, 988, .14, 'square', .09, d); tone(740, 740, .14, 'square', .09, d + .15); });
     else if (k === 'gameover') { [523, 494, 466].forEach((f, i) => tone(f, f * .99, .2, 'square', .1, i * .22)); tone(440, 220, .9, 'square', .1, .66); tone(110, 55, .9, 'triangle', .22, .66); }
     // 꼬마 놈놈 등장: 휘익 + 낮은 쿵
     else if (k === 'nom') { tone(1400, 300, .22, 'sine', .12); tone(140, 70, .18, 'triangle', .2, .2); }
@@ -3494,7 +3582,8 @@ function showResult() {
     // 놈놈이 깔깔 (말랑이는 옆에서 울먹)
     $('resultMascot').innerHTML = cachedArt('mascotOver', () => Art.img(Art.nomnom(205, 92, 40, { mood: 'happy', mini: true }) + Art.jelly(92, 112, 30, MAL, { ears: true, mood: 'worried' }) + `<ellipse cx="80" cy="118" rx="3" ry="6" fill="#8fd3ff" opacity="0.9"/>` + Art.sparkle(275, 34, 8, '#ffe27a'), { x: 40, y: 10, w: 320, h: 150 }));
     $('resultSticker').innerHTML = '';
-    $('resultMsg').textContent = o.reason === 'line' ? T('생명을 다 썼어요! 위쪽 줄기를 끊어 한꺼번에 떨어뜨려 봐요.') : o.reason === 'time' ? T('시간이 다 됐어요! 망설이지 말고 빨리 쏴 봐요.') : T('생명을 다 썼어요. 다시 해 볼까요?');
+    const hitSay = G.loseHit ? T(HIT_SAY[G.loseHit.what] || HIT_SAY.ground) + ' ' : '';   // 무엇에 닿아 졌는지
+    $('resultMsg').textContent = o.reason === 'line' ? hitSay + T('생명을 다 썼어요! 위쪽 줄기를 끊어 한꺼번에 떨어뜨려 봐요.') : o.reason === 'time' ? T('시간이 다 됐어요! 망설이지 말고 빨리 쏴 봐요.') : T('생명을 다 썼어요. 다시 해 볼까요?');
     $('resultMain').textContent = T('다시 하기');
     $('resultMain').onclick = () => startStage(st.id);
     $('resultSub').textContent = T('지도로');
@@ -3579,7 +3668,9 @@ function loseLife(reason) {
   updateLives(true);
   sfx('stick'); setTimeout(() => sfx('boing', 2), 160);
   try { navigator.vibrate && navigator.vibrate([30, 40, 30]); } catch (e) {}
-  setFace('worried', 2.2);
+  setFace('worried', 2.2); hideTip();
+  // 0.15.1: 무엇에 닿았는지 보이게 0.9초 멈춘 뒤 판을 밀어 올린다 (시간 끝은 바로)
+  if (reason === 'line' && G.loseHit) { G.state = 'hit'; G.hitT = .9; G.hitReason = reason; G.aiming = false; return; }
   pushBack(reason);
   if (G.state === 'done') return;
   showToast(T('생명 -1! 남은 생명 {n}', { n: P.lives }));
@@ -3603,7 +3694,7 @@ function pushBack(reason) {
   h.timeUp = false;
   h.shotT = h.cfg.shotTimer || 0; G.aiming = false;   // 한 발 초침도 처음부터
   if (h.cfg.dropSec) h.dropT = h.cfg.dropSec;
-  G.outcome = null; G.state = 'aim'; G.over = null; G.moving = null;
+  G.outcome = null; G.state = 'aim'; G.over = null; G.moving = null; G.loseHit = null; G.warnOn = false;
   obsCrush();
   if (G.st.boss && Board.count(b) === 0) { Board.pushTop(b, [...G.st.colors]); Board.pushTop(b, [...G.st.colors]); }
   if (!G.st.boss && G.saved >= G.need) return finish(true);
@@ -3704,7 +3795,7 @@ requestAnimationFrame(frame);
 
 // 테스트용 손잡이 (화면에는 영향 없음)
 window.__jp = {
-  get G() { return G; }, lowerCeiling, showBanner, P, STAGES, Board, R, ROW_H, W, H, PIVOT, DEADLINE, LOSE_Y,
+  get G() { return G; }, lowerCeiling, touchHit, touchTargets, showBanner, P, STAGES, Board, R, ROW_H, W, H, PIVOT, DEADLINE, LOSE_Y,
   startStage, rescue, showResult, revive, canRevive, finish, land, hazardsAfterShot, unlockAudio, boom, audioReady: () => !!audio, audioState: () => audio && audio.state, soundHint: () => !$('soundHint').hidden, LUCKY, pickLucky, applyLucky, seenHz: () => P.seenHz, aimLimit, music: () => Music.info(), audioMade: () => audioMade, audioBroken: () => audioBroken, musicTrack: n => Music.setTrack(n), fakeStall() { clockSeen.n = 2; lastMade = -1e9; checkAudioClock(true); }, voices: () => voiceCount, soundMode: () => soundMode, sfx, CS, shoot, swapQueue, setAngle, go, seedRandom,
   reset() { Object.assign(P, { stars: new Array(NST).fill(0), stickers: {}, seenIntro: false, at: 0, seenHz: {}, seenStory: {}, best: {}, lives: START_LIVES }); saveP(); },
   story: () => window.JellyStory,
@@ -3715,7 +3806,7 @@ window.__jp = {
   blocked() { return nomActive('block'); },
   keysOf, NST, save: saveP, update: dt => update(dt), baseMood: () => baseMood(),
   // 날아가는 중·정리 중인 시간을 한 번에 넘기기 (자동 플레이 테스트용)
-  advance() { let n = 0; while (G && (G.state === 'flying' || G.state === 'settle') && n++ < 2000) update(1 / 60); return G && G.state; },
+  advance() { let n = 0; while (G && (G.state === 'flying' || G.state === 'settle' || G.state === 'hit') && n++ < 2000) update(1 / 60); return G && G.state; },
   // 이 각도로 쏘면 어디에 붙고 몇 개가 터지는지 (판은 바꾸지 않음)
   evalShot(angle, color) {
     const b = Board.clone(G.b), tr = Board.trace(b, angle);

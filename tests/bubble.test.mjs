@@ -288,10 +288,10 @@ for (const [label, dev] of [['iPhone SE (320x568)', devices['iPhone SE']], ['Gal
   check('천장이 바닥 선까지 내려오면 실패 창 (다시 하기·지도로)', f1 && !f1.win && f1.reason === 'line' && fr.main === '다시 하기' && fr.sub === '지도로', JSON.stringify([f1, fr]));
   // 실패: 바닥 선
   const f2 = await page.evaluate(() => {
-    const j = window.__jp; j.startStage(5); j.G.y0Target = 380; j.G.need = 99; j.P.lives = 1;
+    const j = window.__jp; j.startStage(5); j.G.y0Target = 470; j.G.need = 99; j.P.lives = 1;   // 0.15.1: 선이 아니라 말랑이·대포에 닿아야 실패
     j.setAngle(-Math.PI / 2); j.shoot(); j.advance(); return j.G.outcome;
   });
-  check('거품이 바닥 선을 넘으면 실패', f2 && !f2.win && f2.reason === 'line', JSON.stringify(f2));
+  check('거품이 말랑이·대포에 닿으면 실패', f2 && !f2.win && f2.reason === 'line', JSON.stringify(f2));
   await page.click('#resultSub');
 
   // 스티커 북

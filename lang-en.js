@@ -515,4 +515,9 @@ JellyI18n.add({
   "거미줄에 걸렸어요!": "Stuck in the web!",
   "튕겨 나갔어요!": "Bounced away!",
   "와작!": "Crunch!",
+  "말랑이에 닿았어요!": "It touched Mallang!",
+  "대포에 닿았어요!": "It touched the cannon!",
+  "기다리는 젤리에 닿았어요!": "It touched a waiting jelly!",
+  "바닥에 닿았어요!": "It hit the ground!",
+  "⚠ 위험! 말랑이·대포에 닿으면 끝!": "⚠ Danger! Don't let it touch Mallang!",
 });
