@@ -2225,7 +2225,13 @@ function drawHazardHud(t) {
     ctx.strokeStyle = 'rgba(255,255,255,.7)'; ctx.lineWidth = 5; ctx.beginPath(); ctx.arc(PIVOT.x, PIVOT.y, 22, 0, 7); ctx.stroke();
     ctx.strokeStyle = k < .35 ? '#ff4f8b' : '#ffd23f'; ctx.beginPath(); ctx.arc(PIVOT.x, PIVOT.y, 22, -Math.PI / 2, -Math.PI / 2 + k * Math.PI * 2); ctx.stroke();
   }
-  if (h.aimBoost > 0) pill(W / 2 - 50, 100, T('반딧불 {n}발', { n: h.aimBoost }), false);
+  // 0.15.3: 대포 바로 위에 띄우면 장전된 구슬을 가려서 옆 빈자리로 (시계가 오른쪽을 쓰면 왼쪽 — 헛방·시계가 같이 나오는 판은 없음)
+  if (h.aimBoost > 0) {
+    const text = T('반딧불 {n}발', { n: h.aimBoost });
+    ctx.font = '800 13px "Baloo 2", "Noto Sans KR", sans-serif';
+    const w = Math.max(100, Math.ceil(ctx.measureText(text).width) + 16);
+    pill(h.clock !== null ? 6 : W - 6 - w, w, text, false);
+  }
   if (h.warn) {
     const a = Math.min(1, (1.8 - h.warn.t) * 3), y = 300;
     ctx.globalAlpha = a; ctx.fillStyle = 'rgba(255,255,255,.95)'; roundRect(W / 2 - 120, y - 18, 240, 34, 17); ctx.fill();
