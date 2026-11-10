@@ -3,6 +3,22 @@
 // 이름 표: 말랑이 Mallang · 노놈 Nonom · 놈놈 Nomnom · 보스 뭉치 Lumpy · 찐득이 Stickum · 푸딩 골렘 Pudding Golem · 철컹이 Clank
 // 초대장 조각은 영어 어순에 맞춰 나눴다: 카드 순서 [2, 0, 1] → "Will you come" "to my birthday" "party?"
 JellyI18n.add({
+  "주인공": "Starring",
+  "생일 주인공": "Birthday star",
+  "구해 준 친구들": "Friends you rescued",
+  "보스": "Bosses",
+  "장난꾸러기 부하": "Little troublemaker",
+  "만든 사람": "Made by",
+  "기획 · 감독": "Planning · Direction",
+  "게임 개발": "Game development",
+  "그림 · 3D 젤리": "Art · 3D jellies",
+  "이야기": "Story",
+  "음악 · 효과음": "Music · Sound",
+  "칩튠 직접 연주": "Live chiptune in code",
+  "테스트": "Playtesting",
+  "함께 놀아 줘서 고마워요!": "Thanks for playing with us!",
+  "끝": "The End",
+  "엔딩 크레딧": "Ending credits",
   "터뜨린 거품 ×{n}": "Bubbles popped ×{n}",
   "떨어뜨린 거품 ×{n}": "Bubbles dropped ×{n}",
   "놈놈 쫓아내기 ×{n}": "Nomnom chased off ×{n}",

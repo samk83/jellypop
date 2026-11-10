@@ -180,6 +180,49 @@ for (const [tag, vp] of [['390', { width: 390, height: 844 }], ['360x640', { wid
   await page.close();
 }
 
+// 6) 엔딩 크레딧: 30판을 깨면 엔딩 컷신 다음에, 다시 깨면 바로 크레딧 → 지도
+{
+  console.log('엔딩 크레딧');
+  const page = await browser.newPage({ viewport: { width: 390, height: 844 } });
+  const errors = [];
+  page.on('pageerror', e => errors.push(e.message));
+  await page.goto(url);
+  await page.evaluate(() => { const j = window.__jp; j.reset(); j.P.seenIntro = true; for (let i = 1; i < 30; i++) j.P.seenStory[i] = true; j.save(); });
+  const win30 = () => page.evaluate(() => { const j = window.__jp; j.startStage(30); j.closeCard(); j.finish(true); });
+  await win30();
+  await page.waitForSelector('#result:not([hidden])', { timeout: 6000 });
+  await page.click('#resultMain');
+  await page.waitForSelector('#story', { timeout: 4000 });
+  check('처음 깨면 엔딩 컷신이 먼저', !(await page.$('#credits')));
+  await page.click('#csSkip');
+  await page.waitForSelector('#credits', { timeout: 4000 });
+  const c = await page.evaluate(() => ({
+    names: document.querySelectorAll('#credits .cr-p').length,
+    hasMal: document.getElementById('credits').textContent.includes('말랑이'),
+    end: document.getElementById('credits').textContent.includes('끝'),
+    inert: document.getElementById('app').inert,
+  }));
+  check('엔딩 컷신 뒤 크레딧: 말랑이·친구·보스 이름과 "끝"', c.names >= 30 && c.hasMal && c.end, JSON.stringify(c));
+  check('크레딧 중에는 뒤 화면이 눌리지 않음', c.inert);
+  const t0 = await page.evaluate(() => document.getElementById('crRoll').scrollTop);
+  await page.waitForTimeout(1200);
+  const t1 = await page.evaluate(() => document.getElementById('crRoll').scrollTop);
+  check('크레딧이 저절로 위로 올라감', t1 > t0 + 20, t0 + '→' + t1);
+  await page.click('#crSkip');
+  check('건너뛰기 → 지도', !(await page.$('#credits')) && await page.isVisible('#map') && !(await page.evaluate(() => document.getElementById('app').inert)));
+  await win30();
+  await page.waitForSelector('#result:not([hidden])', { timeout: 6000 });
+  await page.click('#resultMain');
+  await page.waitForSelector('#credits', { timeout: 4000 });
+  check('다시 깨면 컷신 없이 크레딧만 (다시 보기)', !(await page.$('#story')));
+  await page.evaluate(() => { const r = document.getElementById('crRoll'); r.scrollTop = r.scrollHeight; });
+  await page.waitForTimeout(300);
+  await page.click('#crDone');
+  check('마지막 "지도로" 버튼 → 지도', !(await page.$('#credits')) && await page.isVisible('#map'));
+  check('콘솔 에러 없음', errors.length === 0, errors.join(' | '));
+  await page.close();
+}
+
 await browser.close();
 console.log(`\n결과: ${pass} 통과, ${fail} 실패`);
 process.exit(fail ? 1 : 0);
