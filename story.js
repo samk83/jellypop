@@ -279,5 +279,100 @@ window.JellyStory = (() => {
     if (stopTyping) stopTyping();
     el.remove(); el = null; onKey = null; onResize = null; pending = null; stopTyping = null;
   }
-  return { open, close, has, isOpen: () => !!el, DATA };
+  // ---------- 엔딩 크레딧 (30판을 깨면 엔딩 컷신 뒤에 올라간다) ----------
+  // 화면 아래에서 위로 천천히 올라간다. 누르고 있으면 빨리, 손가락으로 밀면 직접 넘겨 볼 수 있다.
+  const ccss = `
+#credits{position:fixed;inset:0;z-index:41;overflow:hidden;background:#2a1660;color:#fff;-webkit-user-select:none;user-select:none;touch-action:pan-y}
+#credits .cr-bg{position:absolute;inset:-4%;background:#2a1660 url(assets/bg/w5.webp) center 70%/cover no-repeat;filter:saturate(1.1)}
+#credits .cr-veil{position:absolute;inset:0;background:linear-gradient(180deg,rgba(42,22,96,.92),rgba(42,22,96,.55) 22%,rgba(42,22,96,.55) 78%,rgba(42,22,96,.92))}
+#credits .cr-fx{position:absolute;inset:0;pointer-events:none;overflow:hidden}
+#credits .cr-fx>div{position:absolute;top:0;width:12px;animation:csRain 3.2s linear infinite}
+#credits .cr-roll{position:absolute;inset:0;overflow-y:auto;scrollbar-width:none;-webkit-overflow-scrolling:touch}
+#credits .cr-roll::-webkit-scrollbar{display:none}
+#credits .cr-in{display:flex;flex-direction:column;align-items:center;gap:44px;padding:100vh 20px 0;text-align:center}
+#credits .cr-logo{font-family:var(--font-display);font-weight:900;line-height:1;font-size:58px;color:#ff7aa8;text-shadow:0 4px 0 #c2457a,0 10px 24px rgba(0,0,0,.35)}
+#credits .cr-logo small{display:block;margin-top:10px;font-size:20px;color:#ffe27a;text-shadow:0 2px 0 #8a4a1a}
+#credits h3{margin:0 0 14px;font-family:var(--font-display);font-weight:900;font-size:15px;letter-spacing:.12em;color:#ffd1e6}
+#credits .cr-sec{width:min(100%,400px)}
+#credits .cr-cast{display:grid;grid-template-columns:repeat(3,1fr);gap:12px 6px}
+#credits .cr-cast.big{grid-template-columns:repeat(2,1fr)}
+#credits .cr-p{display:flex;flex-direction:column;align-items:center;gap:2px;font-weight:800;font-size:14px}
+#credits .cr-p img{width:58px;height:auto;display:block}
+#credits .cr-cast.big .cr-p img{width:86px}
+#credits .cr-p small{font-size:11px;font-weight:700;color:#ffd1e6;opacity:.85}
+#credits .cr-role{display:grid;grid-template-columns:1fr 1fr;gap:6px 14px;font-size:15px;line-height:1.4;text-align:left}
+#credits .cr-role dt{text-align:right;color:#ffd1e6;font-weight:700}
+#credits .cr-role dd{margin:0;font-weight:900}
+#credits .cr-end{min-height:100vh;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:14px}
+#credits .cr-end .row{display:flex;align-items:flex-end;gap:4px}
+#credits .cr-end .row img{display:block;height:auto}
+#credits .cr-thanks{font-family:var(--font-display);font-weight:900;font-size:26px;color:#ffe27a;text-shadow:0 3px 0 #8a4a1a;word-break:keep-all}
+#credits .cr-fin{font-family:var(--font-display);font-weight:900;font-size:44px;color:#fff;letter-spacing:.08em}
+#credits .cr-skip{position:absolute;right:calc(env(safe-area-inset-right) + 12px);top:calc(env(safe-area-inset-top) + 12px);min-height:44px;min-width:44px;padding:0 16px;border-radius:99px;background:rgba(255,255,255,.88);color:#5a2d91;font-size:15px;box-shadow:0 4px 12px rgba(42,11,78,.25)}
+#credits .cr-done{min-height:50px;padding:0 28px;border-radius:99px;font-size:18px;color:#fff;background:linear-gradient(#ff7aa8,#ff4f8b);box-shadow:0 4px 0 #c2457a,0 8px 16px rgba(0,0,0,.3)}
+@media (prefers-reduced-motion:reduce){#credits .cr-fx{display:none}}
+`;
+  let cel = null, cKey = null, cRaf = 0;
+  function credits(done) {
+    closeCredits();
+    if (!document.getElementById('creditsCss')) { const s = document.createElement('style'); s.id = 'creditsCss'; s.textContent = ccss; document.head.appendChild(s); }
+    ensureCss();   // csRain 애니메이션을 같이 쓴다
+    const friends = [];
+    STAGES.forEach(s => s.friends.forEach(f => { if (!friends.some(x => x.name === f.name)) friends.push({ ...f, w: s.id }); }));
+    const person = (img, name, sub) => `<div class="cr-p">${img}<span>${name}</span>${sub ? `<small>${sub}</small>` : ''}</div>`;
+    const bosses = STAGES.filter(s => s.boss).map(s => person(bossImg(s.boss.kind, 30, 'happy'), s.boss.name, T('스테이지 {n}', { n: s.id })));
+    const roles = [[T('기획 · 감독'), 'JellyDock'], [T('게임 개발'), 'JellyDock × Claude'], [T('그림 · 3D 젤리'), 'JellyDock × Claude'], [T('이야기'), 'JellyDock × Claude'], [T('음악 · 효과음'), T('칩튠 직접 연주')], [T('테스트'), 'JellyDock']];
+    cel = document.createElement('div'); cel.id = 'credits';
+    cel.setAttribute('role', 'dialog'); cel.setAttribute('aria-modal', 'true'); cel.setAttribute('aria-label', T('엔딩 크레딧'));
+    const fx = Array.from({ length: 18 }, (_, i) => `<div style="left:${(i * 37 + 11) % 100}%;animation-delay:${-(i * .53) % 3.2}s;animation-duration:${3 + (i % 5) * .4}s">${confettiPiece(['#ff5f8a', '#ffd23f', '#4fb4ff', '#4fdcc4', '#a76bff'][i % 5], i)}</div>`).join('');
+    cel.innerHTML = `<div class="cr-bg"></div><div class="cr-veil"></div><div class="cr-fx">${fx}</div>` +
+      `<div class="cr-roll" id="crRoll"><div class="cr-in">` +
+      `<div class="cr-logo">JELLY POP!<small>${T('젤리마을 대소동')}</small></div>` +
+      `<div class="cr-sec"><h3>${T('주인공')}</h3><div class="cr-cast big">${person(jellyImg(MAL, 30, { ears: true, mood: 'joy' }), T('말랑이'))}${person(bossImg('nomnom', 30, 'happy'), T('노놈'), T('생일 주인공'))}</div></div>` +
+      `<div class="cr-sec"><h3>${T('구해 준 친구들')}</h3><div class="cr-cast">${friends.map(f => person(jellyImg(f.color, 20, { mood: 'joy' }), f.name, WORLDS[Math.ceil(f.w / 6) - 1])).join('')}</div></div>` +
+      `<div class="cr-sec"><h3>${T('보스')}</h3><div class="cr-cast">${bosses.join('')}${person(nomImg(16), T('꼬마 놈놈'), T('장난꾸러기 부하'))}</div></div>` +
+      `<div class="cr-sec"><h3>${T('만든 사람')}</h3><dl class="cr-role">${roles.map(([a, b]) => `<dt>${a}</dt><dd>${b}</dd>`).join('')}</dl></div>` +
+      `<div class="cr-end"><div class="row">${jellyImg(MAL, 30, { ears: true, mood: 'joy' })}${bossImg('nomnom', 30, 'happy')}</div>` +
+      `<div class="cr-thanks">${T('함께 놀아 줘서 고마워요!')}</div><div class="cr-fin">${T('끝')}</div>` +
+      `<button class="cr-done" id="crDone">${T('지도로')}</button></div>` +
+      `</div></div><button class="cr-skip" id="crSkip">${T('건너뛰기')}</button>`;
+    document.body.appendChild(cel);
+    const me = cel, roll = cel.querySelector('#crRoll');
+    const finish = () => { if (cel !== me) return; closeCredits(); done && done(); };
+    cel.querySelector('#crSkip').onclick = finish;
+    cel.querySelector('#crDone').onclick = finish;
+    // 저절로 올라가기: 초당 약 60px, 누르고 있으면 4배. 손으로 밀면 2초 쉬었다가 다시
+    const reduce = matchMedia('(prefers-reduced-motion: reduce)').matches;
+    let fast = false, pauseUntil = 0, last = performance.now(), pos = 0;
+    roll.addEventListener('pointerdown', () => { fast = true; }); 
+    ['pointerup', 'pointercancel', 'pointerleave'].forEach(t => roll.addEventListener(t, () => { fast = false; }));
+    roll.addEventListener('wheel', () => { pauseUntil = performance.now() + 2000; }, { passive: true });
+    roll.addEventListener('touchmove', () => { fast = false; pauseUntil = performance.now() + 2000; }, { passive: true });
+    const tick = now => {
+      if (cel !== me) return;
+      const dt = Math.min(.1, (now - last) / 1000); last = now;
+      if (Math.abs(roll.scrollTop - pos) > 2) { pos = roll.scrollTop; pauseUntil = now + 2000; }   // 손으로 옮기면(관성 포함) 그 자리부터 2초 쉬었다가 이어서
+      if (!reduce && now > pauseUntil) { pos = Math.min(roll.scrollHeight - roll.clientHeight, pos + (fast ? 240 : 60) * dt); roll.scrollTop = pos; }
+      cRaf = requestAnimationFrame(tick);
+    };
+    if (reduce) roll.scrollTop = roll.querySelector('.cr-logo').offsetTop - 80;
+    cRaf = requestAnimationFrame(tick);
+    const opened = performance.now();
+    cKey = e => {
+      if (e.repeat || performance.now() - opened < 500) { e.preventDefault(); return; }   // 컷신을 넘기던 키를 누르고 있어도 바로 건너뛰지 않게
+      if (e.key === 'Escape') { e.preventDefault(); finish(); }
+      else if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); if (document.activeElement && document.activeElement.tagName === 'BUTTON') document.activeElement.click(); else finish(); }
+      else if (e.key === 'Tab') { e.preventDefault(); const sk = cel.querySelector('#crSkip'), dn = cel.querySelector('#crDone'); if (document.activeElement === sk) dn.focus(); else sk.focus({ preventScroll: true }); }
+    };
+    document.addEventListener('keydown', cKey, true);
+    setTimeout(() => cel === me && cel.querySelector('#crSkip').focus({ preventScroll: true }), 50);
+    return cel;
+  }
+  function closeCredits() {
+    if (!cel) return;
+    cancelAnimationFrame(cRaf);
+    if (cKey) document.removeEventListener('keydown', cKey, true);
+    cel.remove(); cel = null; cKey = null;
+  }
+  return { open, close, has, isOpen: () => !!el, DATA, credits, closeCredits, creditsOpen: () => !!cel };
 })();

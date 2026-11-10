@@ -3751,6 +3751,8 @@ if (window.JellyMonetize) {
 }
 // 스테이지를 처음 깨면 그 스테이지 이야기 컷신 (story.js). 본 컷신은 다시 안 나온다
 function playStory(id, then) {
+  // 마지막 스테이지는 깰 때마다 엔딩 크레딧 (처음 깰 때는 엔딩 컷신 다음에)
+  if (id === NST && window.JellyStory && JellyStory.credits) { const after = then; then = () => { $('app').inert = true; JellyStory.credits(() => { $('app').inert = false; after(); }); }; }
   if (!window.JellyStory || !JellyStory.has(id) || P.seenStory[id]) return then();
   P.seenStory[id] = true; saveP();
   $('app').inert = true;
