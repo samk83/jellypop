@@ -114,7 +114,7 @@ window.JellyMonetize = (() => {
     const TEST = { android: { rewarded: 'ca-app-pub-3940256099942544/5224354917', banner: 'ca-app-pub-3940256099942544/9214589741' }, ios: { rewarded: 'ca-app-pub-3940256099942544/1712485313', banner: 'ca-app-pub-3940256099942544/2435281174' } }[os] || {};
     const unit = k => (A.testing || !ids[k]) ? TEST[k] : ids[k];
     const AdMob = cap.Plugins && cap.Plugins.AdMob;
-    let store = null, storeReady = false;
+    let store = null, storeReady = false, adsBlocked = false;
     async function initStore() {
       const C = window.CdvPurchase; if (!C) return;
       store = C.store;
@@ -130,12 +130,19 @@ window.JellyMonetize = (() => {
       name: 'native-' + os,
       init: async () => {
         if (AdMob) {
+          // 유럽·영국 이용자 개인정보 동의 창(Google UMP)을 광고 시작 전에 확인. 그 외 나라에선 NOT_REQUIRED 라 아무것도 안 뜬다.
+          // 실패해도 게임은 계속 (광고만 못 볼 수 있음). AdMob 콘솔 → 개인정보 보호 및 메시지 에서 메시지를 만들어야 창이 나온다.
+          try {
+            let ci = await AdMob.requestConsentInfo();
+            if (ci && ci.isConsentFormAvailable && ci.status === 'REQUIRED') ci = await AdMob.showConsentForm();
+            if (ci && ci.canRequestAds === false) adsBlocked = true;
+          } catch (e) { console.warn('[monetize] consent', e); }
           await AdMob.initialize({ initializeForTesting: !!A.testing, tagForChildDirectedTreatment: !!A.childDirected });
         }
         await new Promise(res => { if (window.CdvPurchase) return res(); document.addEventListener('deviceready', res, { once: true }); setTimeout(res, 4000); });
         try { await initStore(); } catch (e) { console.warn('[monetize] store', e); }
       },
-      canRewarded: () => !!AdMob,
+      canRewarded: () => !!AdMob && !adsBlocked,
       rewarded: async () => {
         // showRewardVideoAd 는 보상을 받았을 때만 끝난다 → 닫힘(Dismissed) 이벤트로 "안 보고 닫음"도 처리
         let earned = false;

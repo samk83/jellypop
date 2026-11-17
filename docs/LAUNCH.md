@@ -21,6 +21,8 @@ npm run test:app       # 앱 포장(안드로이드·아이폰·토스) 테스�
 
 ## 2. Google Play (안드로이드)
 
+> **2026-11-17 최신 순서는 [LAUNCH-ANDROID.md](LAUNCH-ANDROID.md)**. 이제 클라우드에서 서명된 AAB를 직접 만든다(`cd app && npm run aab`, 서명 키는 `app/android/keystore.properties` — 저장소 밖 보관). 아래 표는 예전 안내.
+
 | 단계 | 누가 | 방법 |
 |---|---|---|
 | 1 | Owner | Play Console 가입($25, 신분 확인) |
@@ -30,7 +32,7 @@ npm run test:app       # 앱 포장(안드로이드·아이폰·토스) 테스�
 | 5 | Owner | Play Console → 앱 만들기 → 인앱 상품 `jellypop_supporter` ₩3,300 → 데이터 보안·콘텐츠 등급 설문(답: [store/LISTING.md](../store/LISTING.md)) → 스크린샷·아이콘 업로드 |
 | 6 | Owner | **비공개 테스트: 테스터 12명 이상, 14일 연속** (2023-11 이후 만든 개인 계정 필수) → 프로덕션 신청 |
 
-여기(클라우드)에서는 Android SDK를 받을 수 없어(dl.google.com 차단) APK를 직접 빌드해 보지는 못했다. 프로젝트 생성·플러그인 연결·설정 값은 `npm run test:app` 으로 확인.
+(2026-11-17 갱신) 클라우드에서 Android SDK 설치·AAB 빌드 성공. 단 에뮬레이터 실행은 안 됨(가속 없음) → 실기기 확인은 Owner 폰. 프로젝트 생성·플러그인 연결·설정 값은 `npm run test:app` 으로 확인.
 
 ## 3. 토스 앱인토스
 
