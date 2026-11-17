@@ -30,3 +30,4 @@
 28. 0.15.2 판 거품을 예전 구슬 모양으로 되돌림 → Owner 확인. 젤리독 반영 완료(2026-10-30, jellydock PR #27)
 29. 0.15.3 반딧불 남은 발 수 글자를 대포 옆으로(구슬 안 가림) → Owner: 플레이 링크 17판 확인 후 젤리독 운영 반영 승인(L3, jellydock `docs/DEPLOY.md` 순서)
 30. 0.16.0 엔딩 크레딧 완료 → Owner: 휴대폰에서 크레딧 속도·길이, "만든 사람" 표기(지금 JellyDock / JellyDock × Claude) 확인. 다음 후보: 크레딧 전용 음악, 타이틀에서 크레딧 다시 보기 버튼, 젤리독 반영(운영 배포 L3)
+31. 앱 0.16.0 안드로이드 출시 빌드 완료(서명 AAB) → Owner: 폰에 시험 APK 설치해 보기, Play Console 앱 만들기·설정·비공개 테스트(12명×14일) 시작, AdMob 가입 후 앱 ID·보상형 광고 단위 ID 전달, 지원 이메일 결정. 순서는 `docs/LAUNCH-ANDROID.md` 7장. Claude: ID 받으면 `testing: false` 새 AAB(versionCode 2), Play 그래픽 이미지 1024×500, 개인정보처리방침 이메일 반영·젤리독 게시(운영 배포 L3)

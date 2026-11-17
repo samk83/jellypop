@@ -99,3 +99,8 @@ app/src/main/assets/public
 app/src/main/assets/capacitor.config.json
 app/src/main/assets/capacitor.plugins.json
 app/src/main/res/xml/config.xml
+
+# 출시 서명 키 (절대 Git에 올리지 않음)
+keystore.properties
+*.jks
+*.keystore

@@ -40,6 +40,16 @@ check('아이폰 세로 고정', /<key>UISupportedInterfaceOrientations<\/key>\s
 check('아이폰 결제 플러그인용 CocoaPods(Podfile) 사용', fs.existsSync(path.join(root, 'app/ios/App/Podfile')) && read('app/ios/App/Podfile').includes("pod 'CordovaPlugins'"));
 const pkg = JSON.parse(read('app/package.json'));
 check('AdMob·스토어 결제 플러그인 버전 고정', /^\d/.test(pkg.dependencies['@capacitor-community/admob']) && /^\d/.test(pkg.dependencies['cordova-plugin-purchase']));
+const gradle = read('app/android/app/build.gradle');
+const vn = (gradle.match(/versionName "([^"]+)"/) || [])[1];
+check('안드로이드 versionName = app/package.json version', vn === pkg.version, `${vn} / ${pkg.version}`);
+check('안드로이드 targetSdk 35 이상(Play 요건)', +(read('app/android/variables.gradle').match(/targetSdkVersion = (\d+)/) || [])[1] >= 35);
+check('출시 서명은 keystore.properties 에서 읽음(키·비밀번호는 저장소에 없음)', gradle.includes('keystore.properties') && gradle.includes('signingConfig signingConfigs.release'));
+{
+  const ig = read('app/android/.gitignore');
+  const tracked = execFileSync('git', ['ls-files', 'app/android'], { cwd: root, encoding: 'utf8' });
+  check('서명 키 파일은 Git 에 안 올라감', ig.includes('keystore.properties') && ig.includes('*.jks') && !/\.(jks|keystore)$|keystore\.properties/m.test(tracked));
+}
 const icon = path.join(root, 'app/android/app/src/main/res/mipmap-xxxhdpi/ic_launcher.png');
 check('앱 아이콘이 젤리팝 그림(기본 Capacitor 아이콘 아님)', fs.statSync(icon).size > 10000, String(fs.statSync(icon).size));
 

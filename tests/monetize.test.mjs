@@ -140,6 +140,8 @@ async function loseStage(page, n = 1) {
     window.__adMode = 'reward';   // 'reward' | 'skip'
     const AdMob = {
       initialize: async o => { __adlog.push(['init', o]); },
+      requestConsentInfo: async () => { __adlog.push(['consentInfo']); return { status: window.__consent || 'NOT_REQUIRED', isConsentFormAvailable: true, canRequestAds: true }; },
+      showConsentForm: async () => { __adlog.push(['consentForm']); return { status: 'OBTAINED', canRequestAds: true }; },
       prepareRewardVideoAd: async o => { __adlog.push(['prepare', o.adId, o.isTesting]); return {}; },
       showRewardVideoAd: () => new Promise(res => {
         setTimeout(() => {
@@ -171,6 +173,7 @@ async function loseStage(page, n = 1) {
   const s = await page.evaluate(() => ({ p: JellyMonetize.provider, log: __adlog, reg: window.__registered }));
   check('공급자 = native-android', s.p === 'native-android');
   { const i = s.log.find(x => x[0] === 'init'); check('AdMob 시작(테스트 모드)', i && i[1].initializeForTesting === true, JSON.stringify(s.log)); }
+  check('개인정보 동의 확인(UMP) — 한국 등 비대상 국가는 동의 창 안 띄움', s.log.some(x => x[0] === 'consentInfo') && !s.log.some(x => x[0] === 'consentForm'), JSON.stringify(s.log));
   check('스토어에 상품 등록(구글 플레이)', s.reg && s.reg[0].id === 'jellypop_supporter' && s.reg[0].platform === 'android-playstore');
   check('서비스 워커는 앱 안에서 등록 안 함', await page.evaluate(() => !navigator.serviceWorker || true));
   await loseStage(page);
@@ -185,6 +188,29 @@ async function loseStage(page, n = 1) {
   const bought = await page.evaluate(() => JellyMonetize.buy('jellypop_supporter'));
   check('스토어 결제 → 상품 지급 + 거래 마무리', bought === true && await page.evaluate(() => window.__finished === true && JellyMonetize.has('noads')));
   check('콘솔 에러 없음', errs.length === 0, errs.join(' | '));
+  await ctx.close();
+}
+
+// 4-2) 유럽 이용자: 동의 창(UMP)이 광고 시작 전에 뜨고, 동의 확인이 실패해도 게임은 시작
+for (const mode of ['REQUIRED', 'THROW']) {
+  const ctx = await browser.newContext(phone);
+  await ctx.addInitScript(m => {
+    window.__adlog = [];
+    const AdMob = {
+      requestConsentInfo: async () => { __adlog.push(['consentInfo']); if (m === 'THROW') throw new Error('ump down'); return { status: 'REQUIRED', isConsentFormAvailable: true, canRequestAds: false }; },
+      showConsentForm: async () => { __adlog.push(['consentForm']); return { status: 'OBTAINED', canRequestAds: true }; },
+      initialize: async o => { __adlog.push(['init', o]); },
+      addListener: async () => ({ remove: () => {} }),
+    };
+    window.Capacitor = { isNativePlatform: () => true, getPlatform: () => 'android', Plugins: { AdMob } };
+  }, mode);
+  const page = await ctx.newPage();
+  const errs = []; page.on('pageerror', e => errs.push(e.message));
+  await page.goto(fileUrl);
+  await page.evaluate(() => JellyMonetize.init());
+  const log = await page.evaluate(() => __adlog.map(x => x[0]));
+  if (mode === 'REQUIRED') check('유럽: 동의 창 → 그 다음 AdMob 시작', log.join(',') === 'consentInfo,consentForm,init', log.join(','));
+  else check('동의 확인 실패해도 AdMob 시작·게임 계속', log.includes('init') && errs.length === 0, log.join(',') + errs.join('|'));
   await ctx.close();
 }
 
