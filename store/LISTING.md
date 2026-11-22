@@ -11,7 +11,7 @@
 | 토스 appName | `jellypop` |
 | 카테고리 | 게임 → 퍼즐 (Puzzle) / 보조: 캐주얼 |
 | 가격 | 무료 (인앱 구매 있음 · 광고 있음) |
-| 인앱 상품 | `jellypop_supporter` · 비소모성(Non-consumable) · ₩3,300 / US$2.99 · "말랑이 후원 팩 / Mallang Supporter Pack" |
+| 인앱 상품 | `jellypop_supporter` · 비소모성(Non-consumable) · ₩3,300 / US$2.99 · "광고 없애기 프리미엄 / Premium — No Ads" (2026-11-22 이름 변경, 예전 이름 말랑이 후원 팩) |
 | 연령 | 전체 이용가(폭력·도박·채팅·위치 없음). 광고는 일반 등급(General)만 |
 | 개인정보처리방침 URL | `https://jellydock.com/jellypop/privacy.html` (젤리독 출시 후) |
 | 지원 이메일 | **Owner 입력 필요** |
@@ -49,7 +49,7 @@
 ● 인터넷 없이도 OK
 한 번 받으면 어디서나 플레이할 수 있어요.
 
-광고는 원할 때만! 실패했을 때 "광고 보고 이어하기"를 고를 수 있고, "말랑이 후원 팩"을 사면 광고 없이 이어할 수 있어요.
+광고는 원할 때만! 실패했을 때 "광고 보고 이어하기"를 고를 수 있고, "광고 없애기 프리미엄"(한 번 구매)을 사면 광고 없이 바로 이어할 수 있어요.
 ```
 
 **새 기능 (첫 출시)**: 젤리팝이 처음 나왔어요! 30개 스테이지에서 젤리 친구들을 구해 주세요.
@@ -87,7 +87,7 @@ Shiny gummy friends and a cheerful retro soundtrack.
 ● Plays offline
 Download once, play anywhere.
 
-Ads only when you want them: choose "Watch an ad to continue" after a loss, or get the Mallang Supporter Pack to continue without ads.
+Ads only when you want them: choose "Watch an ad to continue" after a loss, or get Premium — No Ads (one-time purchase) to continue without ads.
 ```
 
 **What's new (first release)**: Jelly Pop is here! Rescue the jelly friends across 30 stages.
@@ -111,12 +111,14 @@ Ads only when you want them: choose "Watch an ad to continue" after a loss, or g
 - 타깃 연령: **13세 이상 포함**으로 시작 권장 (13세 미만 포함 시 Families 정책 → `monetize-config.js` 의 `childDirected: true` + 가족용 인증 광고만). 결정은 Owner.
 
 ### App Store — 앱 개인정보 보호(Privacy Nutrition Label)
-| 데이터 | 용도 | 사용자와 연결 | 추적 |
+0.17.0부터 아이폰은 첫 판 클리어 뒤 "앱 추적 허용" 창을 띄운다 → **추적 = 예**. 앱 안 `PrivacyInfo.xcprivacy`와 같은 답.
+| 데이터 | 용도 | 사용자와 연결 | 추적에 사용 |
 |---|---|---|---|
-| 식별자 → 기기 ID | 제3자 광고 | 아니요 | 아니요 (추적 권한 요청 안 함 → 맞춤 광고 제한) |
-| 사용 데이터 → 광고 데이터 | 제3자 광고 | 아니요 | 아니요 |
-| 진단 → 충돌 데이터 | 앱 기능 | 아니요 | 아니요 |
+| 식별자 → 기기 ID | 제3자 광고 | 아니요 | **예** (허용한 사람만 광고 ID 사용) |
+| 사용 데이터 → 광고 데이터 | 제3자 광고 | 아니요 | **예** |
+| 사용 데이터 → 제품 상호작용 | 제3자 광고 · 분석 | 아니요 | 아니요 |
+| 진단 → 충돌 데이터 · 성능 데이터 | 앱 기능 | 아니요 | 아니요 |
 
 ### 앱인토스
 - 게임 등급: 게임물관리위원회 등급분류 또는 **스토어 링크**(Google Play 출시 후 링크 제출이 가장 쉬움).
-- 결제(후원 팩): **사업자등록 필요**. 광고만이면 등록 없이 시작 가능(예상 수익 ₩5,000 넘으면 5영업일 안에 등록).
+- 결제(광고 없애기 프리미엄): **사업자등록 필요**. 광고만이면 등록 없이 시작 가능(예상 수익 ₩5,000 넘으면 5영업일 안에 등록).

@@ -53,6 +53,30 @@ check('출시 서명은 keystore.properties 에서 읽음(키·비밀번호는 �
 const icon = path.join(root, 'app/android/app/src/main/res/mipmap-xxxhdpi/ic_launcher.png');
 check('앱 아이콘이 젤리팝 그림(기본 Capacitor 아이콘 아님)', fs.statSync(icon).size > 10000, String(fs.statSync(icon).size));
 
+console.log('아이폰 App Store 준비');
+{
+  check('아이폰 추적 허용(ATT) 창 문구(영어 기본)', /<key>NSUserTrackingUsageDescription<\/key>\s*<string>[^<]{30,}<\/string>/.test(pl));
+  const ko = read('app/ios/App/App/ko.lproj/InfoPlist.strings');
+  check('아이폰 추적 허용 창 한국어 문구', /"NSUserTrackingUsageDescription"\s*=\s*"[^"]*광고[^"]*";/.test(ko));
+  const sk = (pl.match(/<string>[a-z0-9]{10}\.skadnetwork<\/string>/g) || []);
+  check('AdMob 권장 SKAdNetwork 목록(40개 이상, 중복 없음)', sk.length >= 40 && new Set(sk).size === sk.length, String(sk.length));
+  check('아이폰 기기 요구 arm64(옛 armv7 아님)', /<key>UIRequiredDeviceCapabilities<\/key>\s*<array>\s*<string>arm64<\/string>/.test(pl));
+  check('수출 규정(암호화 없음) 미리 답함', /<key>ITSAppUsesNonExemptEncryption<\/key>\s*<false\/>/.test(pl));
+  const pi = read('app/ios/App/App/PrivacyInfo.xcprivacy');
+  check('개인정보 매니페스트: 추적 사용·광고용 기기 ID 표시', /<key>NSPrivacyTracking<\/key>\s*<true\/>/.test(pi) && pi.includes('NSPrivacyCollectedDataTypeDeviceID'));
+  const pbx = read('app/ios/App/App.xcodeproj/project.pbxproj');
+  check('Xcode 프로젝트에 개인정보 매니페스트·한국어 문구 포함', /PrivacyInfo\.xcprivacy in Resources \*\/,/.test(pbx) && /InfoPlist\.strings in Resources \*\/,/.test(pbx) && pbx.includes('path = ko.lproj/InfoPlist.strings'));
+  check('Xcode 지원 언어에 한국어', /knownRegions = \(\s*en,\s*ko,/.test(pbx));
+  const mv = [...pbx.matchAll(/MARKETING_VERSION = ([^;]+);/g)].map(x => x[1]);
+  check('아이폰 버전(MARKETING_VERSION) = app/package.json version', mv.length === 2 && mv.every(v => v === pkg.version), mv.join(','));
+  check('아이폰 번들 ID com.jellydock.jellypop', (pbx.match(/PRODUCT_BUNDLE_IDENTIFIER = com\.jellydock\.jellypop;/g) || []).length === 2);
+  const cm = read('codemagic.yaml');
+  check('클라우드 Mac 빌드 설정: 수동 실행만(자동 trigger 없음)·App Store 서명·번들 ID', !/^\s*triggering:/m.test(cm) && cm.includes('distribution_type: app_store') && cm.includes('bundle_identifier: com.jellydock.jellypop'));
+  check('GitHub Actions 워크플로 없음', !fs.existsSync(path.join(root, '.github/workflows')));
+  const cfg = read('monetize-config.js');
+  check('추적 허용 창은 첫 판 클리어 뒤(afterFirstWin)', /iosTrackingPrompt:\s*'afterFirstWin'/.test(cfg));
+}
+
 console.log('토스 미니앱 묶음');
 if (!fs.existsSync(path.join(toss, 'node_modules'))) { check('app/toss npm install 됨', false, '(cd app/toss && npm install)'); }
 else {

@@ -12,7 +12,7 @@ window.JellyMonetize = (() => {
   // 게임 화면에 넣는 문구의 영어 (i18n.js 사전에 추가 — 정적 HTML 은 게임 시작 때 자동 번역, 나중에 넣는 글자는 T())
   if (window.JellyI18n && window.JellyI18n.add) window.JellyI18n.add({
     '▶ 이어하기': '▶ Continue', '▶ 광고 보고 이어하기': '▶ Watch an ad to continue', '천장이 3칸 올라가요': 'Ceiling goes up 3 rows', '아래쪽 거품을 치워요': 'Clears the bottom bubbles', '시간 +20초': '+20 seconds',
-    '이어서 해 봐요!': 'Keep going!', '후원 팩': 'Supporter Pack', '🎁 후원 팩': '🎁 Supporter Pack', '구매 복원': 'Restore purchases', '닫기': 'Close',
+    '이어서 해 봐요!': 'Keep going!', '프리미엄': 'Premium', '✨ 광고 없애기': '✨ Remove ads', '구매 복원': 'Restore purchases', '닫기': 'Close',
     '구매했어요': 'Purchased', '구매하기': 'Buy',
     "구매는 스토어 계정으로 결제돼요. 한 번 사면 다시 설치해도 '구매 복원'으로 돌아와요.": 'Purchases are billed to your store account. Use “Restore purchases” after reinstalling.',
   });
@@ -38,8 +38,8 @@ window.JellyMonetize = (() => {
     return String(l).slice(0, 2) === 'en' ? 'en' : 'ko';
   };
   const T = {
-    ko: { adLoading: '광고를 불러오는 중…', adFail: '지금은 광고를 볼 수 없어요. 잠시 후 다시 해 봐요.', mockAd: '광고 자리 (시험)', mockSub: '진짜 광고는 계정 연결 후 나와요', buyFail: '결제를 마치지 못했어요.', pending: '스토어에서 결제를 확인하고 있어요. 잠시 후 자동으로 적용돼요.', bought: '고마워요! 후원 팩이 적용됐어요.', restored: '구매 내역을 불러왔어요.', nothing: '복원할 구매가 없어요.' },
-    en: { adLoading: 'Loading ad…', adFail: 'No ad available right now. Try again soon.', mockAd: 'Ad placeholder (test)', mockSub: 'Real ads appear after accounts are connected', buyFail: 'The purchase was not completed.', pending: 'The store is confirming your purchase. It will apply shortly.', bought: 'Thank you! Supporter Pack is active.', restored: 'Purchases restored.', nothing: 'No purchases to restore.' },
+    ko: { adLoading: '광고를 불러오는 중…', adFail: '지금은 광고를 볼 수 없어요. 잠시 후 다시 해 봐요.', mockAd: '광고 자리 (시험)', mockSub: '진짜 광고는 계정 연결 후 나와요', buyFail: '결제를 마치지 못했어요.', pending: '스토어에서 결제를 확인하고 있어요. 잠시 후 자동으로 적용돼요.', bought: '고마워요! 프리미엄이 적용됐어요. 이제 광고가 없어요.', restored: '구매 내역을 불러왔어요.', nothing: '복원할 구매가 없어요.' },
+    en: { adLoading: 'Loading ad…', adFail: 'No ad available right now. Try again soon.', mockAd: 'Ad placeholder (test)', mockSub: 'Real ads appear after accounts are connected', buyFail: 'The purchase was not completed.', pending: 'The store is confirming your purchase. It will apply shortly.', bought: 'Thank you! Premium is active — no more ads.', restored: 'Purchases restored.', nothing: 'No purchases to restore.' },
   };
   const t = k => T[lang()][k];
 
@@ -156,6 +156,14 @@ window.JellyMonetize = (() => {
           AdMob.showRewardVideoAd().then(() => { earned = true; }).catch(() => done(false));
         });
       },
+      // 아이폰 "앱 추적 허용" 창: 아직 안 물어본 경우에만 (거절·제한이면 다시 안 물음)
+      askTracking: async () => {
+        if (os !== 'ios' || !AdMob || !AdMob.trackingAuthorizationStatus) return false;
+        const s = await AdMob.trackingAuthorizationStatus().catch(() => null);
+        if (!s || s.status !== 'notDetermined') return false;
+        await AdMob.requestTrackingAuthorization();
+        return true;
+      },
       showBanner: async () => { if (AdMob && !has('noads')) await AdMob.showBanner({ adId: unit('banner'), isTesting: !!A.testing, position: 'BOTTOM_CENTER', adSize: 'ADAPTIVE_BANNER' }); },
       hideBanner: async () => { if (AdMob) await AdMob.hideBanner().catch(() => {}); },
       canBuy: () => storeReady,
@@ -247,6 +255,14 @@ window.JellyMonetize = (() => {
     async buy(id) { await init(); try { return await provider.buy(id); } catch (e) { console.warn('[monetize] buy', e); return false; } },
     async restore() { await init(); try { return await provider.restore(); } catch (e) { return 0; } },
     showBanner() { return provider && provider.showBanner && CFG.admob.bannerOnMap && !has('noads') ? provider.showBanner().catch(() => {}) : Promise.resolve(); },
+    // 한 판을 깬 뒤 게임이 부른다 → 아이폰에서 처음 깼을 때 한 번만 "앱 추적 허용" 창 (설정 iosTrackingPrompt)
+    // 프리미엄(광고 없음)이면 광고를 안 보니 묻지 않는다
+    async afterWin() {
+      if ((CFG.admob || {}).iosTrackingPrompt === 'off' || has('noads') || !provider || !provider.askTracking) return false;
+      try { if (localStorage.getItem(KEY + '.att')) return false; } catch (e) { /* noop */ }
+      try { localStorage.setItem(KEY + '.att', '1'); } catch (e) { /* noop */ }
+      try { return await provider.askTracking(); } catch (e) { console.warn('[monetize] att', e); return false; }
+    },
     hideBanner() { return provider && provider.hideBanner ? provider.hideBanner().catch(() => {}) : Promise.resolve(); },
     t,
   };

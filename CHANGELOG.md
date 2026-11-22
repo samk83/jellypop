@@ -1,5 +1,13 @@
 # CHANGELOG
 
+## 앱 0.17.0 — 2026-11-22 · 아이폰(App Store) 출시 준비 + 광고 없애기 프리미엄 (Owner: "이거 애플에 광고달고 출시해줘", "광고없애 프리미엄은 가격은 니가 추천해주는 가격을 설정해줘")
+- 결제 상품 "말랑이 후원 팩"을 **"광고 없애기 프리미엄"**(Premium — No Ads)으로 이름 변경. 같은 상품(id `jellypop_supporter`, 비소모성), 가격 ₩3,300 / $2.99 유지(추천가). 타이틀 버튼 "✨ 광고 없애기", 상점 제목 "프리미엄". 그림·속도·해상도·난이도는 그대로
+- 아이폰 "앱 추적 허용"(ATT) 창: 앱을 켤 때가 아니라 **처음 한 판을 깬 뒤 1번만**(1.2초 뒤). 프리미엄 구매자·안드로이드·웹은 안 물음. 한국어·영어 문구(ko/en InfoPlist.strings)
+- iOS 프로젝트: Google 권장 SKAdNetwork 50개, 개인정보 매니페스트 `PrivacyInfo.xcprivacy`, 기기 요구 arm64, 버전 0.17.0. 안드로이드 versionName 0.17.0 · versionCode 2
+- `codemagic.yaml`: Windows에서도 아이폰 앱을 만들 수 있게 Codemagic 클라우드 Mac 빌드(수동 실행만, TestFlight 업로드). GitHub Actions 아님
+- 출시 가이드 `docs/LAUNCH-IOS.md`, 스토어 글·개인정보 라벨(추적=예)·개인정보처리방침 갱신. `sw.js` VERSION 0.17.0
+- 테스트: monetize +8(ATT 시점·안드로이드·프리미엄), app +13(아이폰 App Store 준비). 실제 IPA 빌드·아이폰 실행은 클라우드 Mac 필요 → 미확인
+
 ## 앱 0.16.0 — 2026-11-17 · 안드로이드(Google Play) 출시용 앱 빌드 (Owner: "젤리팝은 안드로이드 먼저 출시해보자")
 - 클라우드에서 Android SDK 36으로 실제 빌드 성공: 서명된 출시용 AAB(11 MB, `jar verified`) + 시험 설치용 APK. 게임 그림·속도·해상도·난이도는 그대로
 - 출시 서명: `app/android/keystore.properties`(Git 제외)에서 키를 읽음. 키 파일·비밀번호는 저장소에 없음(.gitignore). `cd app && npm run aab` / `npm run apk`

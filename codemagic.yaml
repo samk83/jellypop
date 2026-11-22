@@ -1,0 +1,45 @@
+# codemagic.yaml — 아이폰 앱(IPA)을 클라우드 Mac에서 만들어 App Store Connect(TestFlight)에 올리는 설정
+#
+# 왜 필요한가: 아이폰 앱은 Mac(Xcode)에서만 만들 수 있다. 사장님 컴퓨터는 Windows라서
+#   Codemagic(코드매직, 클라우드 Mac 빌드 서비스)의 Mac을 빌려 쓴다. 개인 계정은 매달 무료 빌드 시간이 있다.
+# GitHub Actions 가 아니다(이 저장소는 Actions 를 쓰지 않음). 자동 실행 없음:
+#   아래에 triggering 이 없으므로 사장님이 Codemagic 화면에서 "Start new build"를 눌렀을 때만 돈다.
+# 처음 한 번 준비(docs/LAUNCH-IOS.md 3단계):
+#   1) Apple Developer Program 가입 → App Store Connect 에서 앱(com.jellydock.jellypop) 만들기
+#   2) App Store Connect API 키(App Manager) 만들기 → Codemagic Team settings > Integrations > App Store Connect 에
+#      이름 "jellypop_asc" 로 등록
+#   3) Codemagic Team settings > Code signing identities 에서 iOS 배포 인증서 생성 + 프로필(App Store) 가져오기
+workflows:
+  ios-appstore:
+    name: JellyPop iOS → TestFlight
+    instance_type: mac_mini_m2
+    max_build_duration: 60
+    integrations:
+      app_store_connect: jellypop_asc
+    environment:
+      ios_signing:
+        distribution_type: app_store
+        bundle_identifier: com.jellydock.jellypop
+      node: 22
+      xcode: latest
+      cocoapods: default
+    scripts:
+      - name: 앱 의존성 설치
+        script: cd app && npm ci
+      - name: 게임 파일 복사 + iOS 프로젝트 동기화(pod install 포함)
+        script: cd app && node scripts/copy-web.mjs && npx cap sync ios
+      - name: 서명 설정 적용
+        script: xcode-project use-profiles --project app/ios/App/App.xcodeproj
+      - name: IPA 만들기 (빌드 번호 = Codemagic 빌드 번호)
+        script: |
+          xcode-project build-ipa \
+            --workspace app/ios/App/App.xcworkspace \
+            --scheme App \
+            --archive-xcargs "CURRENT_PROJECT_VERSION=$BUILD_NUMBER"
+    artifacts:
+      - build/ios/ipa/*.ipa
+      - /tmp/xcodebuild_logs/*.log
+    publishing:
+      app_store_connect:
+        auth: integration
+        submit_to_testflight: true
