@@ -15,6 +15,7 @@
 - iOS 프로젝트: Google 권장 SKAdNetwork 50개, 개인정보 매니페스트 `PrivacyInfo.xcprivacy`, 기기 요구 arm64, 버전 0.17.0. 안드로이드 versionName 0.17.0 · versionCode 2
 - `codemagic.yaml`: Windows에서도 아이폰 앱을 만들 수 있게 Codemagic 클라우드 Mac 빌드(수동 실행만, TestFlight 업로드). GitHub Actions 아님
 - 출시 가이드 `docs/LAUNCH-IOS.md`, 스토어 글·개인정보 라벨(추적=예)·개인정보처리방침 갱신. `sw.js` VERSION 0.17.0
+- 심사 대비(같은 버전): 아이폰 전용으로 변경(TARGETED_DEVICE_FAMILY 1, 아이패드에선 좁은 세로 화면이라). 위쪽 배너에서 실제로 없는 "솜사탕 축제 오픈!" 예시 이벤트 삭제 → "천장이 내려와요!" 안내만 남김. 다른 화면은 그대로
 - 테스트: monetize +8(ATT 시점·안드로이드·프리미엄), app +13(아이폰 App Store 준비). 실제 IPA 빌드·아이폰 실행은 클라우드 Mac 필요 → 미확인
 
 ## 앱 0.16.0 — 2026-11-17 · 안드로이드(Google Play) 출시용 앱 빌드 (Owner: "젤리팝은 안드로이드 먼저 출시해보자")
