@@ -22,6 +22,9 @@ window.JellyMonetizeConfig = {
     android: { rewarded: '', banner: '' },
     ios: { rewarded: '', banner: '' },
     bannerOnMap: false,        // 지도 화면 아래 배너 광고 (기본 끔 — 게임 화면을 가리지 않게)
+    // 아이폰 "앱 추적 허용" 창(ATT): 앱을 켜자마자 묻지 않고, 처음으로 한 판을 깬 뒤 딱 한 번 묻는다.
+    // 거절해도 광고·게임은 그대로 된다(맞춤이 아닌 광고). AdMob 콘솔의 'IDFA 안내 메시지'는 만들지 말 것(켜자마자 창이 떠 버림)
+    iosTrackingPrompt: 'afterFirstWin',   // 'afterFirstWin' | 'off'
   },
 
   // ---- 토스 앱인토스(미니앱) ----
@@ -33,10 +36,11 @@ window.JellyMonetizeConfig = {
     {
       id: 'jellypop_supporter',
       type: 'non-consumable',               // 한 번 사면 계속 (복원 가능)
+      // "광고 없애기 프리미엄" (2026-11-22 Owner: 광고 없애는 프리미엄, 가격은 추천값). 예전 이름 '말랑이 후원 팩'과 같은 상품(id 그대로)
       grants: ['noads', 'freecontinue'],    // 광고 없음 + 광고 없이 이어하기
-      price: { KRW: 3300, USD: 2.99 },      // 표시용 기본값. 실제 가격은 스토어에서 받아 온다
-      title: { ko: '말랑이 후원 팩', en: 'Mallang Supporter Pack' },
-      desc: { ko: '광고 없이 이어하기 + 배너 광고 없음', en: 'Continue without ads + no banner ads' },
+      price: { KRW: 3300, USD: 2.99 },      // 표시용 기본값. 실제 가격은 스토어에서 받아 온다 (App Store·Play 모두 ₩3,300 / $2.99 로 등록)
+      title: { ko: '광고 없애기 프리미엄', en: 'Premium — No Ads' },
+      desc: { ko: '광고 없이 바로 이어하기 + 배너 광고 없음 · 한 번 사면 계속', en: 'Continue instantly without ads + no banner ads · one-time purchase' },
     },
   ],
 };

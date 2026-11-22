@@ -368,7 +368,7 @@ img{-webkit-user-drag:none}
 @keyframes hintPulse{0%,100%{transform:scale(1)}50%{transform:scale(1.07)}}
 @media (prefers-reduced-motion:reduce){.sound-hint{animation:none}}
 .sound-hint.calm{animation:none;opacity:.85;font-size:14px;min-height:44px}
-/* 광고 보고 이어하기 · 후원 팩 (monetize.js) */
+/* 광고 보고 이어하기 · 프리미엄(광고 없애기) (monetize.js) */
 .btn.ad{background:linear-gradient(180deg,#7be495,#2fbf71);box-shadow:0 5px 0 #1d8a50,0 8px 16px rgba(42,11,78,.2)}
 .btn.ad:active{box-shadow:0 2px 0 #1d8a50}
 .btn.ad small{display:block;font-size:12px;line-height:1;opacity:.9}
@@ -399,7 +399,7 @@ img{-webkit-user-drag:none}
         <button class="btn light" id="bookBtn1">스티커 북</button>
         <button class="btn light" id="storyBtn">이야기 다시 보기</button>
       </div>
-      <button class="btn light shop-btn" id="shopBtn" hidden>🎁 후원 팩</button>
+      <button class="btn light shop-btn" id="shopBtn" hidden>✨ 광고 없애기</button>
     </div>
     <div class="title-note" id="titleNote"></div>
   </section>
@@ -467,7 +467,7 @@ img{-webkit-user-drag:none}
 <!-- 결과 -->
 <div class="shop" id="shop" hidden role="dialog" aria-modal="true" aria-labelledby="shopTitle">
   <div class="shop-card">
-    <h3 id="shopTitle">후원 팩</h3>
+    <h3 id="shopTitle">프리미엄</h3>
     <div id="shopList"></div>
     <p class="shop-msg" id="shopMsg" role="status" aria-live="polite"></p>
     <button class="btn light" id="shopRestore">구매 복원</button>
@@ -3582,6 +3582,8 @@ function showResult() {
     }
     $('resultSub').textContent = T('다시 하기');
     $('resultSub').onclick = () => startStage(st.id);
+    // 아이폰 앱: 처음 한 판을 깬 기쁜 순간에 딱 한 번 "앱 추적 허용" 창 (monetize.js afterWin — 다른 곳에선 아무 일 없음)
+    if (window.JellyMonetize && JellyMonetize.afterWin) setTimeout(() => { if (!$('result').hidden) JellyMonetize.afterWin(); }, 1200);   // 그새 다음 판으로 넘어갔으면 다음 클리어 때
   } else {
     $('resultTitle').textContent = T('아쉬워요!');
     $('resultStars').hidden = true;
@@ -3651,7 +3653,7 @@ function runTally(o) {
   // 카드 아무 데나 눌러도 바로 끝까지 (버튼은 원래 일)
   $('result').querySelector('.result-card').onclick = e => { if (!e.target.closest('button') && tally) tally.skip(); };
 }
-// ---------- 이어하기 (보상형 광고 · 후원 팩, monetize.js) ----------
+// ---------- 이어하기 (보상형 광고 · 프리미엄, monetize.js) ----------
 function canRevive() {
   if (!G || !G.outcome || G.outcome.win || !window.JellyMonetize) return false;
   if ((G.continues || 0) >= JellyMonetize.continuePerStage) return false;
@@ -3724,7 +3726,7 @@ $('resultAd').onclick = async () => {
   if (ok && G && G.outcome && !G.outcome.win) revive();
   else if (!ok) { btn.hidden = true; showToast(JellyMonetize.t('adFail')); $('resultMain').focus({ preventScroll: true }); }
 };
-// ---------- 후원 팩 (인앱 구매) ----------
+// ---------- 프리미엄 = 광고 없애기 (인앱 구매, 상품 id jellypop_supporter) ----------
 let shopBusy = false;
 async function renderShop() {
   const list = await JellyMonetize.products();
@@ -3746,7 +3748,7 @@ $('shop').addEventListener('keydown', e => { if (e.key === 'Escape') $('shopClos
 $('shopRestore').onclick = async () => { const n = await JellyMonetize.restore(); alertNote(n ? JellyMonetize.t('restored') : JellyMonetize.t('nothing')); renderShop(); };
 if (window.JellyMonetize) {
   JellyMonetize.init().then(updateShopBtn);
-  // 구매가 들어오면 상점 버튼·열린 상점 창을 갱신하고, 후원 팩이면 배너 광고를 바로 내린다
+  // 구매가 들어오면 상점 버튼·열린 상점 창을 갱신하고, 프리미엄이면 배너 광고를 바로 내린다
   JellyMonetize.onChange(() => { updateShopBtn(); if (JellyMonetize.has('noads')) JellyMonetize.hideBanner(); if (!$('shop').hidden) renderShop().catch(() => {}); });
 }
 // 스테이지를 처음 깨면 그 스테이지 이야기 컷신 (story.js). 본 컷신은 다시 안 나온다

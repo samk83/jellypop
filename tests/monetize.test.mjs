@@ -36,7 +36,7 @@ async function loseStage(page, n = 1) {
   await page.goto(fileUrl);
   await page.evaluate(() => JellyMonetize.init());
   check('공급자 = none', await page.evaluate(() => JellyMonetize.provider) === 'none');
-  check('타이틀에 후원 팩 버튼 숨김', await page.locator('#shopBtn').isHidden());
+  check('타이틀에 광고 없애기 버튼 숨김', await page.locator('#shopBtn').isHidden());
   await loseStage(page);
   check('실패 화면에 광고 버튼 없음', await page.locator('#resultAd').isHidden());
   check('기존 버튼(다시 하기·지도로) 그대로', (await page.textContent('#resultMain')) === '다시 하기' && (await page.textContent('#resultSub')) === '지도로');
@@ -53,7 +53,7 @@ async function loseStage(page, n = 1) {
   await page.goto(fileUrl + '?monetize=mock&adms=300&seed=3');
   await page.evaluate(() => JellyMonetize.init());
   check('공급자 = mock', await page.evaluate(() => JellyMonetize.provider) === 'mock');
-  check('타이틀에 후원 팩 버튼 보임', await page.locator('#shopBtn').isVisible());
+  check('타이틀에 광고 없애기 버튼 보임', await page.locator('#shopBtn').isVisible());
   await loseStage(page);
   check('실패 화면에 "광고 보고 이어하기" 보임', await page.locator('#resultAd').isVisible() && (await page.textContent('#resultAd')).includes('광고 보고 이어하기'));
   await page.screenshot({ path: path.join(shots, 'monetize-continue.png') });
@@ -89,7 +89,7 @@ async function loseStage(page, n = 1) {
   const page = await ctx.newPage();
   await page.goto(fileUrl + '?monetize=mock&adms=200&lang=en');
   await page.evaluate(() => JellyMonetize.init());
-  check('후원 팩 버튼 영어', (await page.textContent('#shopBtn')).includes('Supporter Pack'));
+  check('광고 없애기 버튼 영어', (await page.textContent('#shopBtn')).includes('Remove ads'));
   await loseStage(page);
   const t = await page.textContent('#resultAd');
   check('이어하기 버튼 영어', t.includes('Watch an ad to continue') && t.includes('Ceiling goes up 3 rows'), t);
@@ -97,13 +97,13 @@ async function loseStage(page, n = 1) {
   check('가짜 광고 안내도 영어', (await page.textContent('#mockAd')).includes('Ad placeholder'));
   await page.evaluate(() => { document.getElementById('result').hidden = true; window.__jp.go('title'); });
   await page.click('#shopBtn');
-  check('상점 영어(상품·버튼)', (await page.textContent('#shop')).includes('Mallang Supporter Pack') && (await page.textContent('#shop')).includes('Buy · $2.99') && (await page.textContent('#shop')).includes('Restore purchases'));
+  check('상점 영어(상품·버튼)', (await page.textContent('#shop')).includes('Premium — No Ads') && (await page.textContent('#shop')).includes('Buy · $2.99') && (await page.textContent('#shop')).includes('Restore purchases'));
   await ctx.close();
 }
 
-// 3) 후원 팩 구매 (가짜 결제) → 광고 없이 이어하기
+// 3) 프리미엄(광고 없애기) 구매 (가짜 결제) → 광고 없이 이어하기
 {
-  console.log('후원 팩 구매 (가짜 결제)');
+  console.log('프리미엄(광고 없애기) 구매 (가짜 결제)');
   const ctx = await browser.newContext(phone);
   const page = await ctx.newPage();
   const errs = []; page.on('pageerror', e => errs.push(e.message));
@@ -111,7 +111,7 @@ async function loseStage(page, n = 1) {
   await page.evaluate(() => JellyMonetize.init());
   await page.click('#shopBtn');
   check('상점 창이 열린다', await page.locator('#shop').isVisible());
-  check('상품·가격 표시', (await page.textContent('#shopList')).includes('말랑이 후원 팩') && (await page.textContent('#shopList')).includes('₩3,300'));
+  check('상품·가격 표시(광고 없애기 프리미엄 ₩3,300)', (await page.textContent('#shopList')).includes('광고 없애기 프리미엄') && (await page.textContent('#shopList')).includes('₩3,300'));
   await page.screenshot({ path: path.join(shots, 'monetize-shop.png') });
   await page.click('[data-buy="jellypop_supporter"]');
   await page.waitForFunction(() => document.getElementById('shopList').textContent.includes('구매했어요'));
@@ -212,6 +212,45 @@ for (const mode of ['REQUIRED', 'THROW']) {
   if (mode === 'REQUIRED') check('유럽: 동의 창 → 그 다음 AdMob 시작', log.join(',') === 'consentInfo,consentForm,init', log.join(','));
   else check('동의 확인 실패해도 AdMob 시작·게임 계속', log.includes('init') && errs.length === 0, log.join(',') + errs.join('|'));
   await ctx.close();
+}
+
+// 4-3) 아이폰: "앱 추적 허용"(ATT) 창은 켜자마자가 아니라 처음 한 판을 깬 뒤 한 번만
+{
+  console.log('아이폰 앱 추적 허용(ATT) 창 시점');
+  const winOnce = page => page.evaluate(() => { const j = window.__jp; j.startStage(1); j.closeCard(); j.G.state = 'done'; j.G.outcome = { win: true, rows: [] }; j.showResult(); });
+  for (const os of ['ios', 'android', 'ios-premium']) {
+    const ctx = await browser.newContext(phone);
+    await ctx.addInitScript(o => {
+      window.__att = [];
+      const AdMob = {
+        requestConsentInfo: async () => ({ status: 'NOT_REQUIRED', canRequestAds: true }),
+        initialize: async () => {}, addListener: async () => ({ remove: () => {} }),
+        trackingAuthorizationStatus: async () => ({ status: window.__att.length ? 'denied' : 'notDetermined' }),
+        requestTrackingAuthorization: async () => { window.__att.push(Date.now()); },
+      };
+      window.Capacitor = { isNativePlatform: () => true, getPlatform: () => (o === 'android' ? 'android' : 'ios'), Plugins: { AdMob } };
+      if (o === 'ios-premium') localStorage.setItem('jellypop2.ent', JSON.stringify({ noads: true, freecontinue: true, 'own:jellypop_supporter': true }));
+    }, os);
+    const page = await ctx.newPage();
+    const errs = []; page.on('pageerror', e => errs.push(e.message));
+    await page.goto(fileUrl);
+    await page.evaluate(() => { const j = window.__jp; j.P.seenIntro = true; return JellyMonetize.init(); });
+    await page.waitForTimeout(300);
+    const atStart = await page.evaluate(() => __att.length);
+    await winOnce(page); await page.waitForTimeout(1600);
+    const afterWin = await page.evaluate(() => __att.length);
+    await page.reload(); await page.evaluate(() => JellyMonetize.init());
+    await winOnce(page); await page.waitForTimeout(1600);
+    const afterSecond = await page.evaluate(() => __att.length);
+    if (os === 'ios') {
+      check('아이폰: 앱을 켰을 땐 추적 허용 창 없음', atStart === 0);
+      check('아이폰: 처음 한 판 깬 뒤 추적 허용 창 1번', afterWin === 1, String(afterWin));
+      check('아이폰: 다시 깨도 또 묻지 않음', afterSecond === 0, String(afterSecond));
+    } else if (os === 'android') check('안드로이드: 추적 허용 창 없음', atStart + afterWin + afterSecond === 0);
+    else check('아이폰 프리미엄(광고 없음): 추적 허용 창 묻지 않음', atStart + afterWin === 0);
+    check(`콘솔 에러 없음(${os})`, errs.length === 0, errs.join(' | '));
+    await ctx.close();
+  }
 }
 
 // 5) 토스 앱인토스(가짜 브리지)
