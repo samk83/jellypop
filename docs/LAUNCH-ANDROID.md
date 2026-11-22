@@ -1,6 +1,6 @@
 # 젤리팝 안드로이드(Google Play) 출시 가이드
 
-작성 2026-11-17 · 게임 버전 0.16.0 · 앱 ID `com.jellydock.jellypop`
+작성 2026-11-17 · 갱신 2026-11-22 · 게임 버전 0.17.0 · 앱 ID `com.jellydock.jellypop`
 이 문서 하나만 보고 따라 하면 된다. 파일 경로(android/…, screenshots/…)는 프로젝트 Library의 jellypop-launch/ 폴더 기준. 서명 키는 저장소에 없다.
 
 ---
@@ -9,8 +9,8 @@
 
 | 항목 | 상태 | 파일 |
 |---|---|---|
-| 출시용 앱 파일(AAB, 서명됨) | ✅ 클라우드에서 실제 빌드·서명 확인 | `android/jellypop-0.16.0-release.aab` (11 MB) |
-| 휴대폰 시험 설치용 APK | ✅ 빌드됨 | `android/jellypop-0.16.0-test-install.apk` (14 MB) |
+| 출시용 앱 파일(AAB, 서명됨) | ✅ 클라우드에서 실제 빌드·서명 확인 | `android/jellypop-0.17.0-release.aab` (11 MB) |
+| 휴대폰 시험 설치용 APK | ✅ 빌드됨 | `android/jellypop-0.17.0-test-install.apk` (14 MB) |
 | 업로드 서명 키 + 비밀번호 | ✅ 만들어 둠 | `android/signing-KEEP-SECRET/` (아래 1장 꼭 읽기) |
 | 스토어 등록 글(한/영) | ✅ | 저장소 `store/LISTING.md`, 사본 `LISTING.md` |
 | 아이콘 512px | ✅ | 저장소 `store/icons/play-512.png` |
@@ -19,18 +19,18 @@
 | 광고 | ⚠️ **Google 테스트 광고** 상태 | 진짜 광고 ID 받으면 Claude가 바꿔서 새 AAB |
 | 실제 휴대폰에서 실행 | ❌ 아직 확인 못 함 | 클라우드에 에뮬레이터 가속이 없음 → 사장님 폰으로 확인(3장) |
 
-빌드 확인 내용: 대상 안드로이드 36(Play 요건 35 이상 충족), 버전 0.16.0(코드 1), 결제 라이브러리 9.0(요건 8 이상 충족), 서명 검증 `jar verified`.
+빌드 확인 내용: 대상 안드로이드 36(Play 요건 35 이상 충족), 버전 0.17.0(코드 2), 결제 라이브러리 9.0(요건 8 이상 충족), 서명 검증 `jar verified`.
 
 ---
 
 ## 1. 수익모델 — 이렇게 확정
 
-**무료 게임 + "광고 보고 이어하기" + "말랑이 후원 팩" ₩3,300**
+**무료 게임 + "광고 보고 이어하기" + "광고 없애기 프리미엄" ₩3,300**
 
 | 항목 | 내용 |
 |---|---|
 | 광고 | 실패했을 때만 "▶ 광고 보고 이어하기"(보상형, 한 판 1번). 판 사이 강제 광고 없음, 배너 없음 |
-| 결제 | "말랑이 후원 팩" ₩3,300 한 번 구매(상품 ID `jellypop_supporter`): 광고 없이 이어하기 |
+| 결제 | "광고 없애기 프리미엄" ₩3,300 한 번 구매(상품 ID `jellypop_supporter`): 광고 없이 이어하기 |
 | 안 하는 것 | 구독, 유료 앱, 전면 광고, 뽑기, 에너지(하트 충전 대기) |
 | 대상 연령 | 전 연령 캐주얼 퍼즐, 주 대상은 13세 이상 청소년·어른. 콘텐츠 등급은 전체 이용가. Play Console에는 **사실대로** 답함(4-2) |
 
@@ -61,7 +61,7 @@
 
 ## 3. 사장님 폰으로 먼저 시험 (10분)
 
-1. 갤럭시 폰에서 Library의 `jellypop-0.16.0-test-install.apk` 를 내려받는다.
+1. 갤럭시 폰에서 Library의 `jellypop-0.17.0-test-install.apk` 를 내려받는다.
 2. 누르면 "출처를 알 수 없는 앱" 경고 → **설정 → 이 출처 허용** → 설치.
 3. 확인할 것: 첫 화면·소리 / 1판 플레이 / 일부러 져서 **"광고 보고 이어하기" → "Test Ad" 표시 광고**가 나오는지 / 상점 버튼 눌러 보기(시험판이라 결제는 안 됨, 정상).
 4. 이상한 점은 스크린샷과 함께 알려 주면 Claude가 고친다.
@@ -91,7 +91,7 @@ Play Console: https://play.google.com/console
 | Health | None |
 | Advertising ID | **Yes** → 용도 `Advertising or marketing` (AdMob 때문) |
 | App category | Game → **Puzzle**, 이메일 = 지원 이메일 |
-| Store listing | `LISTING.md` 의 앱 이름·짧은 설명·자세한 설명 붙여넣기, 아이콘 512px, 스크린샷 2장 이상 (그래픽 이미지 1024×500 필요 — Claude가 만들어 드림) |
+| Store listing | `LISTING.md` 의 앱 이름·짧은 설명·자세한 설명 붙여넣기, 아이콘 512px, 스크린샷 2장 이상 + 그래픽 이미지 1024×500: `android/store/play-feature-ko.png`(영어 등록 글에는 `play-feature-en.png`) |
 
 **Data safety(데이터 보안) 답**:
 - Does your app collect or share user data? → **Yes** (광고 SDK 때문)
@@ -103,18 +103,18 @@ Play Console: https://play.google.com/console
 ### 4-3. 거래자(Trader) 신고
 **Settings → Developer account → Account details**에서 "거래자 여부" 질문 → 광고·결제로 돈을 버니 **Trader(거래자)** 선택. 주소·전화·이메일이 스토어에 공개될 수 있다(EU 법 요건). 공개가 싫으면 EU를 배포 국가에서 빼는 방법도 있다(아래 4-6).
 
-### 4-4. 결제 프로필 + 후원 팩 상품
+### 4-4. 결제 프로필 + 광고 없애기 프리미엄 상품
 1. **Settings → Payments profile** → 은행 계좌 등록(정산용, 무료).
 2. 처음 AAB를 한 번 올린 뒤(4-5) **Monetize with Play → Products → One-time products → Create one-time product** (메뉴 이름은 바뀔 수 있음)
    - Product ID `jellypop_supporter` (정확히 이 철자)
-   - Name `말랑이 후원 팩` / Description `광고 없이 이어하기`
+   - Name `광고 없애기 프리미엄` / Description `광고 없이 이어하기, 한 번 사면 계속`
    - 구매 옵션(Purchase option) 추가 → 가격 ₩3,300 → **Activate**
 
 ### 4-5. 비공개 테스트(필수: 테스터 12명 × 14일)
 2023-11 이후 만든 개인 계정은 이걸 통과해야 정식 출시 신청이 열린다.
 1. **Test and release → Testing → Closed testing → Create track**
 2. **Testers**: 이메일 목록 만들기 → 가족·지인 Gmail **12명 이상** (여유 있게 15명 권장)
-3. **Create new release** → `jellypop-0.16.0-release.aab` 업로드 → 출시 노트 "첫 시험판" → **Review release → Start rollout**
+3. **Create new release** → `jellypop-0.17.0-release.aab` 업로드 → 출시 노트 "첫 시험판" → **Review release → Start rollout**
 4. 검토(보통 1~3일) 통과 후 테스터에게 **참여 링크** 전달 → 각자 폰에서 링크 열고 "테스터 되기" → Play 스토어에서 설치
 5. **14일 연속**으로 12명 이상이 설치 상태 유지(가끔 열어 보기). 중간에 빠지면 날짜가 다시 셈될 수 있음
 
@@ -162,13 +162,13 @@ Play Console: https://play.google.com/console
 | 4 | Play Console 앱 만들기 + 설정 + 비공개 테스트 시작 | 이번 주 | 0 | https://play.google.com/console |
 | 5 | 테스터 12명 이상 모으기(Gmail) | 이번 주 | 0 | — |
 | 6 | AdMob 가입 → 앱 ID·광고 단위 ID 전달 | 2주 안 | 0 | https://admob.google.com |
-| 7 | 결제 프로필(계좌) + 후원 팩 상품 만들기 | 2주 안 | 0 | Play Console → Settings |
+| 7 | 결제 프로필(계좌) + 프리미엄 상품 만들기 | 2주 안 | 0 | Play Console → Settings |
 | 8 | 정식 출시 버튼 | 14일 테스트 뒤 | 0 | Play Console |
 
 ## 8. Claude가 이어서 할 일
 - 이메일 받으면: 개인정보처리방침 완성 → 젤리독에 올리기(운영 배포라 승인 받고)
 - 광고 ID 받으면: 진짜 광고 버전 AAB(버전 코드 2)
-- Play 그래픽 이미지(1024×500) 제작
+- ~~Play 그래픽 이미지(1024×500)~~ 완료(2026-11-22)
 - 폰 시험에서 나온 문제 수정
 
 ## 9. 다음 버전 올리는 법 (Claude 작업, 참고)
