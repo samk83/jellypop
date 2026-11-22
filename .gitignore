@@ -6,3 +6,8 @@ design/music/out/
 design/screens/gameover-iphone13.png
 design/screens/nom-penalty-iphone13.png
 design/screens/result-score-iphone13.png
+
+# App Store 소개 이미지: 다시 만들 수 있는 결과물(용량 큼) — 프로젝트 폴더 jellypop-launch/appstore-images/ 에 보관
+design/store/promo/raw/
+design/store/promo/.tmp/
+store/appstore/

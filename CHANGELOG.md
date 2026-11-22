@@ -1,5 +1,10 @@
 # CHANGELOG
 
+## 스토어 이미지 — 2026-11-22 · App Store 소개 이미지 (Owner: "앱스토어에서 나올 이미지 재미있게 잘 뽑아줘")
+- `design/store/promo-shots.mjs`: 실제 게임(index.html)에서 7장면(타이틀·펑!·친구 구출·최종 보스·지도·클리어·이야기)을 아이폰·아이패드 크기로 캡처. 잠깐 뜨는 배너·팁·토스트만 숨김
+- `design/store/promo-compose.mjs`: 홍보 문구(한/영)·말랑이·보스 그림(sprites3d.js에서 꺼낸 `design/store/promo/sprites/`)·배경을 합성 → `store/appstore/<ko|en>/<iphone-6.9|ipad-13>/`
+- `design/store/promo-flatten.py`: 투명도 제거(RGB)·크기 검사. 전부 `npm run promo`. 게임 코드·그림·속도는 그대로
+
 ## 스토어 자료 — 2026-11-22 · Google Play 그래픽 이미지
 - `store/feature/play-feature-ko.png`·`-en.png`(1024×500): 타이틀 배경 + 기존 3D 말랑이·친구·거품 그림 + JELLY POP! 로고. 다시 만들기 `node design/store/make-feature.mjs`
 - 출시 가이드 `docs/LAUNCH-ANDROID.md`를 0.17.0(versionCode 2)·"광고 없애기 프리미엄"으로 갱신. 서명된 0.17.0 AAB 클라우드 빌드 확인(`jar verified`)
