@@ -20,7 +20,7 @@
 | 스토어 등록 글(한/영) | ✅ | `store/LISTING.md` |
 | 스크린샷 6.7인치(1290×2796, 한/영 5장씩) | ✅ | `store/screenshots/<ko|en>/phone-6.7/` |
 | 아이콘 1024px | ✅ | `app/ios/App/App/Assets.xcassets/AppIcon.appiconset/` |
-| 개인정보처리방침 | ✅ 문의처 jellydock.com/contact, 젤리독 운영 주소에 게시 | `privacy.html` |
+| 개인정보처리방침 | ✅ 문의처 support@jellydock.com, 젤리독 운영 주소에 게시 | `privacy.html` |
 | **IPA 빌드** | ❌ 아직(클라우드 Mac 필요, 4장) | — |
 | **실제 아이폰 실행** | ❌ 아직(TestFlight로 확인, 5장) | — |
 
