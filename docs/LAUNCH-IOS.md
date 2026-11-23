@@ -101,9 +101,9 @@ App Store Connect → 젤리팝 → **Monetization → In-App Purchases → +**
 ### 3-5. Codemagic 준비 (클라우드 Mac)
 1. https://codemagic.io/signup → **GitHub로 가입** → 저장소 `samk83/jellypop` 추가.
 2. App Store Connect → **Users and Access → Integrations → App Store Connect API → +** → 이름 `Codemagic`, Access **App Manager** → Generate → **.p8 파일 내려받기**(한 번만 받을 수 있음), Issuer ID·Key ID 복사.
-3. Codemagic → **Team settings → Integrations → App Store Connect → Connect** → 이름을 정확히 **`jellypop_asc`** 로, 2번의 값 3개 입력.
+3. Codemagic → **Team settings → Integrations → App Store Connect → Connect** → 이름을 정확히 **`Baton Note`** 로, 2번의 값 3개 입력.
 4. Codemagic → **Team settings → codemagic.yaml settings → Code signing identities**
-   - iOS certificates → **Generate certificate** → Type **Apple Distribution**, API key `jellypop_asc` → 이름 `jellypop_dist`
+   - iOS certificates → **Generate certificate** → Type **Apple Distribution**, API key `Baton Note` → 이름 `jellypop_dist`
    - iOS provisioning profiles → **Fetch profiles** → `com.jellydock.jellypop` **App Store** 프로필 선택(없으면 developer.apple.com에서 Distribution → App Store 프로필 만든 뒤 다시 Fetch)
 
 ## 4. 앱 만들기 (IPA) — 버튼 한 번
