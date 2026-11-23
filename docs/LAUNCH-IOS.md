@@ -20,7 +20,7 @@
 | 스토어 등록 글(한/영) | ✅ | `store/LISTING.md` |
 | 스크린샷 6.7인치(1290×2796, 한/영 5장씩) | ✅ | `store/screenshots/<ko|en>/phone-6.7/` |
 | 아이콘 1024px | ✅ | `app/ios/App/App/Assets.xcassets/AppIcon.appiconset/` |
-| 개인정보처리방침 | ✅ 초안 / ⚠️ 연락 이메일 칸 비어 있음, 젤리독 주소에 올려야 함 | `privacy.html` |
+| 개인정보처리방침 | ✅ 문의처 jellydock.com/contact, 젤리독 운영 주소에 게시 | `privacy.html` |
 | **IPA 빌드** | ❌ 아직(클라우드 Mac 필요, 4장) | — |
 | **실제 아이폰 실행** | ❌ 아직(TestFlight로 확인, 5장) | — |
 
@@ -126,7 +126,7 @@ Codemagic → 젤리팝 → **Start new build** → 브랜치 `main` → 워크�
 | 스크린샷 6.7/6.9인치 | `store/screenshots/ko/phone-6.7/` 5장 (영어 페이지는 `en/`) |
 | 부제·설명·키워드 | `store/LISTING.md` 그대로 복사 |
 | 지원 URL | `https://jellydock.com/apps/jelly-pop` |
-| 개인정보처리방침 URL | `https://jellydock.com/jellypop/privacy.html` (⚠️ 이메일 넣고 젤리독에 올린 뒤) |
+| 개인정보처리방침 URL | `https://jellydock.com/jellypop/privacy.html` |
 | 카테고리 | Games → Puzzle / 보조 Casual |
 | 연령 등급 설문 | 전부 "없음" → **4+** · ⚠️ **Kids(어린이) 카테고리는 선택하지 말 것**(어린이 카테고리는 맞춤 광고·추적 금지) |
 | 앱 개인정보 보호(Privacy) | `store/LISTING.md` "App Store — 앱 개인정보 보호" 표 그대로: 기기 ID·광고 데이터 = 제3자 광고·추적 예 / 제품 상호작용 = 광고·분석 / 충돌·성능 = 앱 기능. 모두 "사용자와 연결 안 됨" |
