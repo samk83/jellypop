@@ -54,7 +54,7 @@
 		<string>UIInterfaceOrientationPortrait</string>
 	</array>
 	<key>GADApplicationIdentifier</key>
-	<string>ca-app-pub-3940256099942544~1458002511</string>
+	<string>ca-app-pub-9373122711379804~3017391940</string>
 	<!-- Google AdMob 권장 SKAdNetwork 목록(2026-11-22 developers.google.com/admob/ios/3p-skadnetworks, 50개) -->
 	<key>SKAdNetworkItems</key>
 	<array>

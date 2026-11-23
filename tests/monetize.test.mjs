@@ -224,7 +224,8 @@ for (const mode of ['REQUIRED', 'THROW']) {
       window.__att = [];
       const AdMob = {
         requestConsentInfo: async () => ({ status: 'NOT_REQUIRED', canRequestAds: true }),
-        initialize: async () => {}, addListener: async () => ({ remove: () => {} }),
+        initialize: async o => { window.__init = o; }, addListener: async () => ({ remove: () => {} }),
+        prepareRewardVideoAd: async o => { window.__prep = o; }, showRewardVideoAd: async () => ({}),
         trackingAuthorizationStatus: async () => ({ status: window.__att.length ? 'denied' : 'notDetermined' }),
         requestTrackingAuthorization: async () => { window.__att.push(Date.now()); },
       };
@@ -237,6 +238,7 @@ for (const mode of ['REQUIRED', 'THROW']) {
     await page.evaluate(() => { const j = window.__jp; j.P.seenIntro = true; return JellyMonetize.init(); });
     await page.waitForTimeout(300);
     const atStart = await page.evaluate(() => __att.length);
+    const initTesting = await page.evaluate(() => window.__init && window.__init.initializeForTesting);
     await winOnce(page); await page.waitForTimeout(1600);
     const afterWin = await page.evaluate(() => __att.length);
     await page.reload(); await page.evaluate(() => JellyMonetize.init());
@@ -244,9 +246,12 @@ for (const mode of ['REQUIRED', 'THROW']) {
     const afterSecond = await page.evaluate(() => __att.length);
     if (os === 'ios') {
       check('아이폰: 앱을 켰을 땐 추적 허용 창 없음', atStart === 0);
+      check('아이폰: 실광고 모드(테스트 아님)', initTesting === false, String(initTesting));
+      const cfg = await page.evaluate(() => JellyMonetizeConfig.admob.ios.rewarded);
+      check('아이폰: 보상형 광고 = 실제 AdMob 단위 ID', /^ca-app-pub-9373122711379804\/\d+$/.test(cfg), cfg);
       check('아이폰: 처음 한 판 깬 뒤 추적 허용 창 1번', afterWin === 1, String(afterWin));
       check('아이폰: 다시 깨도 또 묻지 않음', afterSecond === 0, String(afterSecond));
-    } else if (os === 'android') check('안드로이드: 추적 허용 창 없음', atStart + afterWin + afterSecond === 0);
+    } else if (os === 'android') { check('안드로이드: 추적 허용 창 없음', atStart + afterWin + afterSecond === 0); check('안드로이드: 아직 테스트 광고 모드', initTesting === true, String(initTesting)); }
     else check('아이폰 프리미엄(광고 없음): 추적 허용 창 묻지 않음', atStart + afterWin === 0);
     check(`콘솔 에러 없음(${os})`, errs.length === 0, errs.join(' | '));
     await ctx.close();

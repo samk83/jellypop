@@ -36,6 +36,7 @@ check('안드로이드 AdMob 앱 ID 연결', man.includes('com.google.android.gm
 check('안드로이드 세로 고정', man.includes('android:screenOrientation="portrait"'));
 const pl = read('app/ios/App/App/Info.plist');
 check('아이폰 AdMob 앱 ID 연결', /<key>GADApplicationIdentifier<\/key>\s*<string>ca-app-pub-\d+~\d+<\/string>/.test(pl));
+check('아이폰 AdMob 앱 ID = 실제 계정(시험 ID 아님)', pl.includes('ca-app-pub-9373122711379804~3017391940') && !pl.includes('3940256099942544'));
 check('아이폰 세로 고정', /<key>UISupportedInterfaceOrientations<\/key>\s*<array>\s*<string>UIInterfaceOrientationPortrait<\/string>\s*<\/array>/.test(pl));
 check('아이폰 결제 플러그인용 CocoaPods(Podfile) 사용', fs.existsSync(path.join(root, 'app/ios/App/Podfile')) && read('app/ios/App/Podfile').includes("pod 'CordovaPlugins'"));
 const pkg = JSON.parse(read('app/package.json'));

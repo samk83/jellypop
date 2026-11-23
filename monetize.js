@@ -112,7 +112,9 @@ window.JellyMonetize = (() => {
     const A = CFG.admob || {}, ids = A[os] || {};
     // Google 공식 테스트 광고 ID (https://developers.google.com/admob/android/test-ads , /ios/test-ads)
     const TEST = { android: { rewarded: 'ca-app-pub-3940256099942544/5224354917', banner: 'ca-app-pub-3940256099942544/9214589741' }, ios: { rewarded: 'ca-app-pub-3940256099942544/1712485313', banner: 'ca-app-pub-3940256099942544/2435281174' } }[os] || {};
-    const unit = k => (A.testing || !ids[k]) ? TEST[k] : ids[k];
+    // testing 은 true/false 또는 { android, ios } (플랫폼별). 실ID가 없는 칸은 항상 테스트 광고 단위
+    const testing = (A.testing && typeof A.testing === 'object') ? !!A.testing[os] : !!A.testing;
+    const unit = k => (testing || !ids[k]) ? TEST[k] : ids[k];
     const AdMob = cap.Plugins && cap.Plugins.AdMob;
     let store = null, storeReady = false, adsBlocked = false;
     async function initStore() {
@@ -137,7 +139,7 @@ window.JellyMonetize = (() => {
             if (ci && ci.isConsentFormAvailable && ci.status === 'REQUIRED') ci = await AdMob.showConsentForm();
             if (ci && ci.canRequestAds === false) adsBlocked = true;
           } catch (e) { console.warn('[monetize] consent', e); }
-          await AdMob.initialize({ initializeForTesting: !!A.testing, tagForChildDirectedTreatment: !!A.childDirected });
+          await AdMob.initialize({ initializeForTesting: testing, tagForChildDirectedTreatment: !!A.childDirected });
         }
         await new Promise(res => { if (window.CdvPurchase) return res(); document.addEventListener('deviceready', res, { once: true }); setTimeout(res, 4000); });
         try { await initStore(); } catch (e) { console.warn('[monetize] store', e); }
@@ -146,7 +148,7 @@ window.JellyMonetize = (() => {
       rewarded: async () => {
         // showRewardVideoAd 는 보상을 받았을 때만 끝난다 → 닫힘(Dismissed) 이벤트로 "안 보고 닫음"도 처리
         let earned = false;
-        await AdMob.prepareRewardVideoAd({ adId: unit('rewarded'), isTesting: !!A.testing });
+        await AdMob.prepareRewardVideoAd({ adId: unit('rewarded'), isTesting: testing });
         return new Promise(async res => {
           const hs = [];
           const done = v => { hs.forEach(h => h.remove()); res(v); };
@@ -164,7 +166,7 @@ window.JellyMonetize = (() => {
         await AdMob.requestTrackingAuthorization();
         return true;
       },
-      showBanner: async () => { if (AdMob && !has('noads')) await AdMob.showBanner({ adId: unit('banner'), isTesting: !!A.testing, position: 'BOTTOM_CENTER', adSize: 'ADAPTIVE_BANNER' }); },
+      showBanner: async () => { if (AdMob && !has('noads')) await AdMob.showBanner({ adId: unit('banner'), isTesting: testing, position: 'BOTTOM_CENTER', adSize: 'ADAPTIVE_BANNER' }); },
       hideBanner: async () => { if (AdMob) await AdMob.hideBanner().catch(() => {}); },
       canBuy: () => storeReady,
       products: async () => CFG.products.map(p => {

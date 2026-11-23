@@ -17,10 +17,10 @@ window.JellyMonetizeConfig = {
   // ---- 안드로이드·아이폰 앱(Capacitor) — AdMob ----
   // 비어 있으면 Google 공식 "테스트 광고"가 나온다 (돈 안 됨, 개발 확인용). 출시 전에 진짜 ID로 바꾸기
   admob: {
-    testing: true,
+    testing: { android: true, ios: false },   // 플랫폼별. 아이폰 = 실광고(2026-11-23), 안드로이드 = AdMob ID 받기 전까지 시험 광고
     childDirected: false,      // 13세 미만 대상 앱으로 등록하면 true (Families 정책)
     android: { rewarded: '', banner: '' },
-    ios: { rewarded: '', banner: '' },
+    ios: { rewarded: 'ca-app-pub-9373122711379804/2564297508', banner: '' },   // AdMob 앱 'JellyPop iOS' · 보상형 'continue'
     bannerOnMap: false,        // 지도 화면 아래 배너 광고 (기본 끔 — 게임 화면을 가리지 않게)
     // 아이폰 "앱 추적 허용" 창(ATT): 앱을 켜자마자 묻지 않고, 처음으로 한 판을 깬 뒤 딱 한 번 묻는다.
     // 거절해도 광고·게임은 그대로 된다(맞춤이 아닌 광고). AdMob 콘솔의 'IDFA 안내 메시지'는 만들지 말 것(켜자마자 창이 떠 버림)
