@@ -1,5 +1,9 @@
 # CHANGELOG
 
+## 앱 0.17.0 (빌드 3) — 2026-11-25 · App Store 반려 ITMS-91064 수정
+- `PrivacyInfo.xcprivacy`: `NSPrivacyTracking=true` + 빈 `NSPrivacyTrackingDomains` 조합이 Apple 검사에 걸림. 두 키를 빼고(Google Mobile Ads SDK 매니페스트와 같은 방식) 추적용 데이터는 기존처럼 DeviceID 등 `Tracking=true`로 표시. 도메인을 적으면 ATT 거부 사용자에게 광고 도메인이 막혀서 넣지 않음. App Store Connect 앱 개인정보(추적 사용)와는 그대로 일치
+- 테스트: 매니페스트에 추적 도메인 없는 `NSPrivacyTracking` 금지 검사 추가
+
 ## 스토어 이미지 — 2026-11-22 · App Store 소개 이미지 (Owner: "앱스토어에서 나올 이미지 재미있게 잘 뽑아줘")
 - `design/store/promo-shots.mjs`: 실제 게임(index.html)에서 7장면(타이틀·펑!·친구 구출·최종 보스·지도·클리어·이야기)을 아이폰·아이패드 크기로 캡처. 잠깐 뜨는 배너·팁·토스트만 숨김
 - `design/store/promo-compose.mjs`: 홍보 문구(한/영)·말랑이·보스 그림(sprites3d.js에서 꺼낸 `design/store/promo/sprites/`)·배경을 합성 → `store/appstore/<ko|en>/<iphone-6.9|ipad-13>/`

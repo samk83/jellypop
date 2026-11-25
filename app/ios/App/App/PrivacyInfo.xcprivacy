@@ -5,10 +5,10 @@
      App Store Connect '앱 개인정보 보호' 답과 맞출 것: docs/LAUNCH-IOS.md -->
 <plist version="1.0">
 <dict>
-	<key>NSPrivacyTracking</key>
-	<true/>
-	<key>NSPrivacyTrackingDomains</key>
-	<array/>
+	<!-- NSPrivacyTracking / NSPrivacyTrackingDomains 는 일부러 넣지 않는다 (Google Mobile Ads SDK 매니페스트와 같은 방식).
+	     true 로 두면 추적 도메인을 1개 이상 적어야 하고(빈 배열이면 ITMS-91064 거절),
+	     도메인을 적으면 ATT 거부 사용자에게 iOS 가 그 도메인 접속을 막아 광고가 안 나올 수 있다.
+	     추적에 쓰이는 데이터(DeviceID 등)는 아래 CollectedDataTypes 의 Tracking=true 로 표시한다. -->
 	<key>NSPrivacyCollectedDataTypes</key>
 	<array>
 		<dict>
