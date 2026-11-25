@@ -64,7 +64,9 @@ console.log('아이폰 App Store 준비');
   check('아이폰 기기 요구 arm64(옛 armv7 아님)', /<key>UIRequiredDeviceCapabilities<\/key>\s*<array>\s*<string>arm64<\/string>/.test(pl));
   check('수출 규정(암호화 없음) 미리 답함', /<key>ITSAppUsesNonExemptEncryption<\/key>\s*<false\/>/.test(pl));
   const pi = read('app/ios/App/App/PrivacyInfo.xcprivacy');
-  check('개인정보 매니페스트: 추적 사용·광고용 기기 ID 표시', /<key>NSPrivacyTracking<\/key>\s*<true\/>/.test(pi) && pi.includes('NSPrivacyCollectedDataTypeDeviceID'));
+  check('개인정보 매니페스트: 광고용 기기 ID 를 추적용으로 표시', /NSPrivacyCollectedDataTypeDeviceID<\/string>[\s\S]*?NSPrivacyCollectedDataTypeTracking<\/key>\s*<true\/>/.test(pi));
+  // ITMS-91064: NSPrivacyTracking 이 true 면 NSPrivacyTrackingDomains 가 비면 안 된다. 둘 다 빼 두는 방식(GMA SDK 와 같음)
+  check('개인정보 매니페스트: 추적 도메인 없이 NSPrivacyTracking=true 금지 (ITMS-91064)', !/<key>NSPrivacyTracking<\/key>/.test(pi) && !/<key>NSPrivacyTrackingDomains<\/key>/.test(pi));
   const pbx = read('app/ios/App/App.xcodeproj/project.pbxproj');
   check('Xcode 프로젝트에 개인정보 매니페스트·한국어 문구 포함', /PrivacyInfo\.xcprivacy in Resources \*\/,/.test(pbx) && /InfoPlist\.strings in Resources \*\/,/.test(pbx) && pbx.includes('path = ko.lproj/InfoPlist.strings'));
   check('Xcode 지원 언어에 한국어', /knownRegions = \(\s*en,\s*ko,/.test(pbx));
