@@ -17,7 +17,7 @@ window.JellyMonetizeConfig = {
   // ---- 안드로이드·아이폰 앱(Capacitor) — AdMob ----
   // 비어 있으면 Google 공식 "테스트 광고"가 나온다 (돈 안 됨, 개발 확인용). 출시 전에 진짜 ID로 바꾸기
   admob: {
-    testing: { android: true, ios: false },   // 플랫폼별. 아이폰 = 실광고(2026-11-23), 안드로이드 = AdMob ID 받기 전까지 시험 광고
+    testing: { android: true, ios: true },   // 녹화 전용 빌드: Google 시험 광고 (main에 합치지 말 것)   // 플랫폼별. 아이폰 = 실광고(2026-11-23), 안드로이드 = AdMob ID 받기 전까지 시험 광고
     childDirected: false,      // 13세 미만 대상 앱으로 등록하면 true (Families 정책)
     android: { rewarded: '', banner: '' },
     ios: { rewarded: 'ca-app-pub-9373122711379804/2564297508', banner: '' },   // AdMob 앱 'JellyPop iOS' · 보상형 'continue'
