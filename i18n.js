@@ -1,18 +1,18 @@
 // i18n.js — 언어 전환 (한국어 / English). 다른 스크립트보다 먼저 불러온다.
 // 키 = 한국어 원문. T('스테이지 {n}', { n }) → 영어면 사전(lang-en.js) 값, 사전에 없으면 원문 그대로.
-// 언어 고르기: 주소 ?lang=en|ko → 저장된 선택(localStorage 'jellypop2.lang') → 브라우저 언어(ko면 한국어, 나머지 영어)
+// 언어 고르기: 주소 ?lang=en|ko → 브라우저(기기) 언어(ko면 한국어, 나머지 영어)
+// 0.17.1: 타이틀 언어 버튼을 없앴으므로 예전에 버튼으로 저장된 선택(localStorage 'jellypop2.lang')은 읽지 않고 지운다
 // 정적 HTML 글자는 JellyI18n.apply(document.body)가 텍스트·aria-label·title을 사전으로 바꾼다.
 // 다른 파일에서 영어 문구 추가: JellyI18n.add({ '한국어': 'English' })
 window.JellyI18n = (() => {
   const KEY = 'jellypop2.lang', LANGS = ['ko', 'en'];
   const dict = {};
+  try { localStorage.removeItem(KEY); } catch (e) { /* 저장소를 못 쓰는 환경 */ }
   function pick() {
     try {
       const q = new URLSearchParams(location.search).get('lang');
       if (LANGS.includes(q)) return q;
-      const saved = localStorage.getItem(KEY);
-      if (LANGS.includes(saved)) return saved;
-    } catch (e) { /* 저장소를 못 쓰는 환경 */ }
+    } catch (e) { /* 주소를 못 읽는 환경 */ }
     const nav = (navigator.languages && navigator.languages[0]) || navigator.language || '';
     return /^ko\b/i.test(nav) ? 'ko' : 'en';
   }
@@ -27,13 +27,6 @@ window.JellyI18n = (() => {
     return fill(s, v);
   }
   function add(obj) { Object.assign(dict, obj); }
-  function set(next) {
-    if (!LANGS.includes(next) || next === lang) return;
-    try { localStorage.setItem(KEY, next); } catch (e) { /* 저장 못 해도 이번 주소로는 바뀜 */ }
-    const u = new URL(location.href);
-    u.searchParams.set('lang', next);
-    location.replace(u.href);
-  }
   // 앞뒤 공백은 그대로 두고 가운데 글자만 사전으로 바꾼다
   function swap(s) {
     const m = /^(\s*)([\s\S]*?)(\s*)$/.exec(s);
@@ -53,6 +46,6 @@ window.JellyI18n = (() => {
       if (el.hasAttribute(a)) { const v = swap(el.getAttribute(a)); if (v !== el.getAttribute(a)) el.setAttribute(a, v); }
     }));
   }
-  return { lang, t, add, set, apply, dict };
+  return { lang, t, add, apply, dict };
 })();
 window.T = window.JellyI18n.t;
