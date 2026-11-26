@@ -142,7 +142,7 @@ async function loseStage(page, n = 1) {
       initialize: async o => { __adlog.push(['init', o]); },
       requestConsentInfo: async () => { __adlog.push(['consentInfo']); return { status: window.__consent || 'NOT_REQUIRED', isConsentFormAvailable: true, canRequestAds: true }; },
       showConsentForm: async () => { __adlog.push(['consentForm']); return { status: 'OBTAINED', canRequestAds: true }; },
-      prepareRewardVideoAd: async o => { __adlog.push(['prepare', o.adId, o.isTesting]); return {}; },
+      prepareRewardVideoAd: async o => { __adlog.push(['prepare', o.adId, o.isTesting]); if (sessionStorage.getItem('nofill')) throw new Error('No ad to show'); return {}; },
       showRewardVideoAd: () => new Promise(res => {
         setTimeout(() => {
           if (__adMode === 'reward') { (L.onRewardedVideoAdReward || []).forEach(f => f({ type: 'coin', amount: 1 })); res({ type: 'coin', amount: 1 }); }
@@ -185,6 +185,16 @@ async function loseStage(page, n = 1) {
   // 광고를 중간에 닫으면 보상 없음
   const r2 = await page.evaluate(async () => { __adMode = 'skip'; localStorage.removeItem('jellypop2.ent'); return JellyMonetize.rewarded('continue'); });
   check('광고를 닫으면 보상 없음(false)', r2 === false);
+  // 광고 재고가 없으면(새 앱 승인 전 등) 'noad' → 기다리게 하지 않고 그냥 이어하기
+  const r3 = await page.evaluate(async () => { sessionStorage.setItem('nofill', '1'); return JellyMonetize.rewarded('continue'); });
+  check("광고를 못 불러오면 'noad'", r3 === 'noad', String(r3));
+  await page.reload();
+  await page.evaluate(() => JellyMonetize.init());
+  await loseStage(page);
+  await page.click('#resultAd');
+  await page.waitForFunction(() => document.getElementById('result').hidden, null, { timeout: 3000 }).catch(() => {});
+  check('광고가 없으면 안내 후 그냥 이어진다', await page.evaluate(() => document.getElementById('result').hidden && window.__jp.G.state === 'aim'));
+  await page.evaluate(() => sessionStorage.removeItem('nofill'));
   const bought = await page.evaluate(() => JellyMonetize.buy('jellypop_supporter'));
   check('스토어 결제 → 상품 지급 + 거래 마무리', bought === true && await page.evaluate(() => window.__finished === true && JellyMonetize.has('noads')));
   check('콘솔 에러 없음', errs.length === 0, errs.join(' | '));

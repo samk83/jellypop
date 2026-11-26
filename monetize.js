@@ -38,8 +38,8 @@ window.JellyMonetize = (() => {
     return String(l).slice(0, 2) === 'en' ? 'en' : 'ko';
   };
   const T = {
-    ko: { adLoading: '광고를 불러오는 중…', adFail: '지금은 광고를 볼 수 없어요. 잠시 후 다시 해 봐요.', mockAd: '광고 자리 (시험)', mockSub: '진짜 광고는 계정 연결 후 나와요', buyFail: '결제를 마치지 못했어요.', pending: '스토어에서 결제를 확인하고 있어요. 잠시 후 자동으로 적용돼요.', bought: '고마워요! 프리미엄이 적용됐어요. 이제 광고가 없어요.', restored: '구매 내역을 불러왔어요.', nothing: '복원할 구매가 없어요.' },
-    en: { adLoading: 'Loading ad…', adFail: 'No ad available right now. Try again soon.', mockAd: 'Ad placeholder (test)', mockSub: 'Real ads appear after accounts are connected', buyFail: 'The purchase was not completed.', pending: 'The store is confirming your purchase. It will apply shortly.', bought: 'Thank you! Premium is active — no more ads.', restored: 'Purchases restored.', nothing: 'No purchases to restore.' },
+    ko: { adLoading: '광고를 불러오는 중…', adFail: '지금은 광고를 볼 수 없어요. 잠시 후 다시 해 봐요.', noAdFree: '지금은 광고가 없어요. 이번엔 그냥 이어할게요!', mockAd: '광고 자리 (시험)', mockSub: '진짜 광고는 계정 연결 후 나와요', buyFail: '결제를 마치지 못했어요.', pending: '스토어에서 결제를 확인하고 있어요. 잠시 후 자동으로 적용돼요.', bought: '고마워요! 프리미엄이 적용됐어요. 이제 광고가 없어요.', restored: '구매 내역을 불러왔어요.', nothing: '복원할 구매가 없어요.' },
+    en: { adLoading: 'Loading ad…', adFail: 'No ad available right now. Try again soon.', noAdFree: 'No ad right now, so this one is on us. Keep going!', mockAd: 'Ad placeholder (test)', mockSub: 'Real ads appear after accounts are connected', buyFail: 'The purchase was not completed.', pending: 'The store is confirming your purchase. It will apply shortly.', bought: 'Thank you! Premium is active — no more ads.', restored: 'Purchases restored.', nothing: 'No purchases to restore.' },
   };
   const t = k => T[lang()][k];
 
@@ -147,15 +147,16 @@ window.JellyMonetize = (() => {
       canRewarded: () => !!AdMob && !adsBlocked,
       rewarded: async () => {
         // showRewardVideoAd 는 보상을 받았을 때만 끝난다 → 닫힘(Dismissed) 이벤트로 "안 보고 닫음"도 처리
+        // 'noad' = 광고를 못 불러옴(재고 없음·새 앱 승인 전 등). 이용자 잘못이 아니니 게임 쪽에서 그냥 이어하게 한다
         let earned = false;
-        await AdMob.prepareRewardVideoAd({ adId: unit('rewarded'), isTesting: testing });
+        try { await AdMob.prepareRewardVideoAd({ adId: unit('rewarded'), isTesting: testing }); } catch (e) { console.warn('[monetize] no ad', e); return 'noad'; }
         return new Promise(async res => {
           const hs = [];
           const done = v => { hs.forEach(h => h.remove()); res(v); };
           hs.push(await AdMob.addListener('onRewardedVideoAdReward', () => { earned = true; }));
           hs.push(await AdMob.addListener('onRewardedVideoAdDismissed', () => done(earned)));
-          hs.push(await AdMob.addListener('onRewardedVideoAdFailedToShow', () => done(false)));
-          AdMob.showRewardVideoAd().then(() => { earned = true; }).catch(() => done(false));
+          hs.push(await AdMob.addListener('onRewardedVideoAdFailedToShow', () => done('noad')));
+          AdMob.showRewardVideoAd().then(() => { earned = true; }).catch(() => done(earned || 'noad'));
         });
       },
       // 아이폰 "앱 추적 허용" 창: 아직 안 물어본 경우에만 (거절·제한이면 다시 안 물음)
@@ -243,13 +244,13 @@ window.JellyMonetize = (() => {
     // 이어하기 버튼을 보여 줄지: 후원 팩이 있으면 광고 없이, 아니면 보상형 광고가 될 때만
     canContinue() { return !!provider && CFG.enabled && (has('freecontinue') || provider.canRewarded()); },
     continuePerStage: CFG.continuePerStage,
-    // 보상형 광고 → true 면 보상 지급. 후원 팩이 있으면 광고 없이 바로 true
+    // 보상형 광고 → true 면 보상 지급, 'noad' 면 광고를 못 불러옴(게임이 그냥 이어하게 함), false 면 끝까지 안 봄. 후원 팩이 있으면 광고 없이 바로 true
     async rewarded(placement) {
       await init();
       if (has('freecontinue')) return true;
       if (busy || !provider.canRewarded()) return false;
       busy = true;
-      try { return !!(await provider.rewarded(placement)); } catch (e) { console.warn('[monetize] ad', e); return false; } finally { busy = false; }
+      try { const r = await provider.rewarded(placement); return r === 'noad' ? 'noad' : !!r; } catch (e) { console.warn('[monetize] ad', e); return 'noad'; } finally { busy = false; }
     },
     canShop() { return !!provider && CFG.enabled && provider.canBuy(); },
     products: () => init().then(() => provider.products()),

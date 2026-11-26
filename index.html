@@ -3723,7 +3723,8 @@ $('resultAd').onclick = async () => {
   btn.disabled = true;
   const ok = await withAdPause(() => JellyMonetize.rewarded('continue'));
   btn.disabled = false;
-  if (ok && G && G.outcome && !G.outcome.win) revive();
+  if (ok === 'noad' && G && G.outcome && !G.outcome.win) { showToast(JellyMonetize.t('noAdFree')); revive(); }   // 광고가 없을 땐 기다리게 하지 않고 이어하기
+  else if (ok === true && G && G.outcome && !G.outcome.win) revive();
   else if (!ok) { btn.hidden = true; showToast(JellyMonetize.t('adFail')); $('resultMain').focus({ preventScroll: true }); }
 };
 // ---------- 프리미엄 = 광고 없애기 (인앱 구매, 상품 id jellypop_supporter) ----------
