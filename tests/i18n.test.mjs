@@ -15,17 +15,17 @@ function check(name, ok, info = '') {
 const HANGUL = /[가-힣]/;
 const browser = await chromium.launch(process.env.CHROMIUM ? { executablePath: process.env.CHROMIUM } : {});
 
-// 화면에 보이는 글자 (언어 버튼 '한국어'는 일부러 한국어)
+// 화면에 보이는 글자
 const visibleText = () => {
   const out = [];
   const walk = document.createTreeWalker(document.body, NodeFilter.SHOW_TEXT);
   for (let n = walk.nextNode(); n; n = walk.nextNode()) {
     const el = n.parentElement;
-    if (!el || el.closest('script,style,#langBtn,[hidden]') || !n.nodeValue.trim()) continue;
+    if (!el || el.closest('script,style,[hidden]') || !n.nodeValue.trim()) continue;
     const r = el.getBoundingClientRect(), cs = getComputedStyle(el);
     if (r.width && r.height && cs.visibility !== 'hidden' && cs.display !== 'none') out.push(n.nodeValue.trim());
   }
-  document.querySelectorAll('[aria-label]').forEach(el => { if (!el.closest('#langBtn')) out.push(el.getAttribute('aria-label')); });
+  document.querySelectorAll('[aria-label]').forEach(el => out.push(el.getAttribute('aria-label')));
   return out;
 };
 
@@ -57,28 +57,27 @@ const visibleText = () => {
   check('영어 문구의 {n}·{name} 자리가 한국어와 같음', params.length === 0, params.join(' | '));
 }
 
-// 2) 언어 고르기: 브라우저 언어 → 저장된 선택 → 주소 ?lang
+// 2) 언어 고르기: 주소 ?lang → 브라우저(기기) 언어. 0.17.1부터 언어 버튼 없음, 예전 저장값은 무시하고 지움
 {
   console.log('언어 고르기');
   const en = await browser.newPage({ locale: 'en-US' });
   await en.goto(url);
-  const a = await en.evaluate(() => ({ lang: JellyI18n.lang, html: document.documentElement.lang, start: document.getElementById('startBtn').textContent, btn: document.getElementById('langBtn').textContent, title: document.title }));
+  const a = await en.evaluate(() => ({ lang: JellyI18n.lang, html: document.documentElement.lang, start: document.getElementById('startBtn').textContent, title: document.title }));
   check('영어 브라우저는 영어로 시작 (모험 시작 → Start Adventure!)', a.lang === 'en' && a.html === 'en' && a.start === 'Start Adventure!' && a.title.startsWith('Jelly Pop'), JSON.stringify(a));
-  check('영어일 때 언어 버튼은 "한국어"', a.btn === '한국어', a.btn);
+  check('타이틀에 언어 바꾸기 버튼이 없음', await en.evaluate(() => !document.getElementById('langBtn') && !document.querySelector('.lang-btn')));
   await en.close();
 
   const ko = await browser.newPage({ locale: 'ko-KR' });
   await ko.goto(url);
-  const b = await ko.evaluate(() => ({ lang: JellyI18n.lang, start: document.getElementById('startBtn').textContent, btn: document.getElementById('langBtn').textContent }));
-  check('한국어 브라우저는 한국어로 시작, 버튼은 "English"', b.lang === 'ko' && b.start === '모험 시작!' && b.btn === 'English', JSON.stringify(b));
-  // 버튼을 누르면 영어로 바뀌고, 다시 열어도 영어 (저장)
-  await Promise.all([ko.waitForNavigation(), ko.click('#langBtn')]);
-  const c = await ko.evaluate(() => ({ lang: JellyI18n.lang, start: document.getElementById('startBtn').textContent, saved: localStorage.getItem('jellypop2.lang') }));
-  check('언어 버튼을 누르면 영어로 바뀌고 저장됨', c.lang === 'en' && c.start === 'Start Adventure!' && c.saved === 'en', JSON.stringify(c));
+  const b = await ko.evaluate(() => ({ lang: JellyI18n.lang, start: document.getElementById('startBtn').textContent }));
+  check('한국어 브라우저는 한국어로 시작', b.lang === 'ko' && b.start === '모험 시작!', JSON.stringify(b));
+  // 예전 버튼으로 저장된 영어 선택이 남아 있어도 기기 언어를 따르고, 저장값은 지워짐
+  await ko.evaluate(() => localStorage.setItem('jellypop2.lang', 'en'));
   await ko.goto(url);
-  check('다시 열어도 저장된 영어 유지 (한국어 브라우저여도)', await ko.evaluate(() => JellyI18n.lang) === 'en');
-  await ko.goto(url + '?lang=ko');
-  check('주소 ?lang=ko 가 저장된 선택보다 우선', await ko.evaluate(() => JellyI18n.lang) === 'ko');
+  const c = await ko.evaluate(() => ({ lang: JellyI18n.lang, saved: localStorage.getItem('jellypop2.lang') }));
+  check('예전에 저장된 언어 선택은 무시하고 지움 (기기 언어 우선)', c.lang === 'ko' && c.saved === null, JSON.stringify(c));
+  await ko.goto(url + '?lang=en');
+  check('주소 ?lang=en 은 그대로 동작', await ko.evaluate(() => JellyI18n.lang) === 'en');
   await ko.close();
 }
 

@@ -101,8 +101,6 @@ img{-webkit-user-drag:none}
 .title-actions .row{display:grid;grid-template-columns:1fr 1fr;gap:10px}
 .title-actions .row .btn{padding:0 10px;font-size:16px;min-height:48px}
 .title-actions .btn.big{min-height:60px;font-size:24px}
-.lang-btn{position:absolute;z-index:3;top:calc(env(safe-area-inset-top) + 10px);right:12px;min-height:44px;padding:0 14px;border:0;border-radius:22px;
-  font:900 14px var(--font-body);color:var(--pink-dark,#c2245a);background:rgba(255,255,255,.88);box-shadow:0 3px 0 rgba(90,45,145,.25);cursor:pointer}
 .title-note{position:relative;font-size:13px;color:var(--ink-soft);margin-top:4px;font-weight:700}
 #title.f3d .title-note{color:#fff;text-shadow:0 1px 3px rgba(0,0,0,.6)}
 
@@ -390,7 +388,6 @@ img{-webkit-user-drag:none}
   <section class="screen" id="title">
     <div class="art" id="titleArt" aria-hidden="true"></div>
     <h1 class="title-logo"><span class="l1">JELLY</span><span class="l2">POP!</span></h1>
-    <button class="lang-btn" id="langBtn" type="button"></button>
     <div class="ribbon">젤리마을 대소동</div>
     <div class="title-cast" id="titleCast" aria-hidden="true"></div>
     <div class="title-actions">
@@ -508,17 +505,9 @@ img{-webkit-user-drag:none}
 (() => {
 'use strict';
 const Art = window.Gummy, AC = Art.C;
-// 언어: 정적 HTML 글자를 사전으로 바꾸고, 타이틀의 언어 버튼은 다른 언어로 바꾼다 (i18n.js)
+// 언어: 기기(브라우저) 언어를 따른다. 정적 HTML 글자를 사전으로 바꾼다 (i18n.js). 0.17.1: 타이틀 언어 버튼 없앰 (Owner)
 JellyI18n.apply(document.body);
 document.title = T('젤리팝 젤리마을 대소동');
-{
-  const other = JellyI18n.lang === 'ko' ? 'en' : 'ko';
-  const lb = document.getElementById('langBtn');
-  lb.textContent = other === 'en' ? 'English' : '한국어';
-  lb.lang = other;
-  lb.setAttribute('aria-label', other === 'en' ? 'Play in English' : '한국어로 하기');
-  lb.onclick = () => JellyI18n.set(other);
-}
 // ============================================================
 // 기본 값
 // ============================================================
