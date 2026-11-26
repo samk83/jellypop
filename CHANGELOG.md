@@ -1,5 +1,10 @@
 # CHANGELOG
 
+## 앱 0.17.0 (빌드 4) — 2026-11-26 · 아이폰 실기기 확인 후 수정 (Owner: TestFlight에서 "소리가 안나", "영어 폰인데 앱 이름이 한글로 나옴")
+- 소리: 네이티브 오디오 세션을 `playback` + `mixWithOthers`로 설정(AppDelegate). 무음 스위치를 켜도 게임 소리가 나고, 듣던 음악은 끊지 않음. 앱이 돌아올 때마다 다시 맞춤(광고 뒤 대비)
+- 홈 화면 앱 이름: 기본 "Jelly Pop", 한국어 기기만 "젤리팝"(en/ko InfoPlist.strings)
+- 테스트 2개 추가(42 통과)
+
 ## 앱 0.17.0 (빌드 3) — 2026-11-25 · App Store 반려 ITMS-91064 수정
 - `PrivacyInfo.xcprivacy`: `NSPrivacyTracking=true` + 빈 `NSPrivacyTrackingDomains` 조합이 Apple 검사에 걸림. 두 키를 빼고(Google Mobile Ads SDK 매니페스트와 같은 방식) 추적용 데이터는 기존처럼 DeviceID 등 `Tracking=true`로 표시. 도메인을 적으면 ATT 거부 사용자에게 광고 도메인이 막혀서 넣지 않음. App Store Connect 앱 개인정보(추적 사용)와는 그대로 일치
 - 테스트: 매니페스트에 추적 도메인 없는 `NSPrivacyTracking` 금지 검사 추가

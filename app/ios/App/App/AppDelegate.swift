@@ -1,5 +1,6 @@
 import UIKit
 import Capacitor
+import AVFoundation
 
 @UIApplicationMain
 class AppDelegate: UIResponder, UIApplicationDelegate {
@@ -8,7 +9,19 @@ class AppDelegate: UIResponder, UIApplicationDelegate {
 
     func application(_ application: UIApplication, didFinishLaunchingWithOptions launchOptions: [UIApplication.LaunchOptionsKey: Any]?) -> Bool {
         // Override point for customization after application launch.
+        configureAudioSession()
         return true
+    }
+
+    // 아이폰 무음 스위치를 켜 둬도 게임 소리가 나게 (웹 버전의 navigator.audioSession 'playback' 과 같은 동작).
+    // mixWithOthers: 사용자가 듣던 음악은 끊지 않는다. 광고 SDK 가 바꿔 놓을 수 있어 앱이 돌아올 때마다 다시 맞춘다.
+    private func configureAudioSession() {
+        do {
+            try AVAudioSession.sharedInstance().setCategory(.playback, mode: .default, options: [.mixWithOthers])
+            try AVAudioSession.sharedInstance().setActive(true)
+        } catch {
+            print("JellyPop audio session: \(error)")
+        }
     }
 
     func applicationWillResignActive(_ application: UIApplication) {
@@ -27,6 +40,7 @@ class AppDelegate: UIResponder, UIApplicationDelegate {
 
     func applicationDidBecomeActive(_ application: UIApplication) {
         // Restart any tasks that were paused (or not yet started) while the application was inactive. If the application was previously in the background, optionally refresh the user interface.
+        configureAudioSession()
     }
 
     func applicationWillTerminate(_ application: UIApplication) {
