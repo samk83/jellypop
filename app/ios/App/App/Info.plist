@@ -4,8 +4,9 @@
 <dict>
 	<key>CFBundleDevelopmentRegion</key>
 	<string>en</string>
+	<!-- 홈 화면 앱 이름: 기본(영어 등) Jelly Pop, 한국어 기기는 ko.lproj/InfoPlist.strings 의 젤리팝 -->
 	<key>CFBundleDisplayName</key>
-        <string>젤리팝</string>
+	<string>Jelly Pop</string>
 	<key>CFBundleExecutable</key>
 	<string>$(EXECUTABLE_NAME)</string>
 	<key>CFBundleIdentifier</key>

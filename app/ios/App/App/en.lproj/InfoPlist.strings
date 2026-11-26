@@ -1,2 +1,5 @@
 /* App Tracking Transparency prompt — English */
 "NSUserTrackingUsageDescription" = "Allowing this lets us show you more relevant ads. The game is free thanks to optional ads. You can still play everything if you choose not to allow it.";
+
+/* 홈 화면 앱 이름 — English */
+"CFBundleDisplayName" = "Jelly Pop";

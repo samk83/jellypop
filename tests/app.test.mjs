@@ -63,6 +63,9 @@ console.log('아이폰 App Store 준비');
   check('AdMob 권장 SKAdNetwork 목록(40개 이상, 중복 없음)', sk.length >= 40 && new Set(sk).size === sk.length, String(sk.length));
   check('아이폰 기기 요구 arm64(옛 armv7 아님)', /<key>UIRequiredDeviceCapabilities<\/key>\s*<array>\s*<string>arm64<\/string>/.test(pl));
   check('수출 규정(암호화 없음) 미리 답함', /<key>ITSAppUsesNonExemptEncryption<\/key>\s*<false\/>/.test(pl));
+  check('홈 화면 앱 이름: 기본 영어 Jelly Pop, 한국어 젤리팝', /<key>CFBundleDisplayName<\/key>\s*<string>Jelly Pop<\/string>/.test(pl) && /"CFBundleDisplayName" = "Jelly Pop";/.test(read('app/ios/App/App/en.lproj/InfoPlist.strings')) && /"CFBundleDisplayName" = "젤리팝";/.test(read('app/ios/App/App/ko.lproj/InfoPlist.strings')));
+  const ad = read('app/ios/App/App/AppDelegate.swift');
+  check('아이폰 무음 스위치에도 소리: 오디오 세션 playback + mixWithOthers', /setCategory\(\.playback, mode: \.default, options: \[\.mixWithOthers\]\)/.test(ad) && /didFinishLaunching[\s\S]*configureAudioSession\(\)/.test(ad) && /applicationDidBecomeActive[\s\S]*configureAudioSession\(\)/.test(ad));
   const pi = read('app/ios/App/App/PrivacyInfo.xcprivacy');
   check('개인정보 매니페스트: 광고용 기기 ID 를 추적용으로 표시', /NSPrivacyCollectedDataTypeDeviceID<\/string>[\s\S]*?NSPrivacyCollectedDataTypeTracking<\/key>\s*<true\/>/.test(pi));
   // ITMS-91064: NSPrivacyTracking 이 true 면 NSPrivacyTrackingDomains 가 비면 안 된다. 둘 다 빼 두는 방식(GMA SDK 와 같음)
