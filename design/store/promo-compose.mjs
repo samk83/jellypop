@@ -20,7 +20,7 @@ const SLIDES = [
   { id: 'pop', bg: ['#6fd3ff', '#a9e8ff', '#e3fbff'], tilt: -3, hero: 'malang-happy', heroPos: 'bl', side: ['green-happy', 'peach-joy'], burst: true,
     ko: ['손가락 하나로 조준·발사', '같은 색 3개면<br><em>펑!</em>'], en: ['Aim & shoot with one finger', 'Match 3 and<br><em>POP!</em>'] },
   { id: 'rescue', bg: ['#7be3b4', '#b9f3d3', '#fff6c9'], tilt: 3, hero: 'yellow-joy', heroPos: 'br', side: ['blue-joy', 'purple-joy', 'peach-joy'],
-    ko: ['거품 속에 갇힌 친구들', '톡! 터뜨려<br><em>구출해요</em>'], en: ['Friends trapped in bubbles', 'Pop them<br><em>free!</em>'] },
+    ko: ['거품 속에 갇힌 친구들', '톡! 터뜨려<br><em>구출해요</em>'], en: ['Friends trapped in bubbles', 'Pop to<br><em>rescue them!</em>'] },
   { id: 'boss', bg: ['#6a3fd6', '#a874ff', '#ff9ccf'], tilt: -3, hero: 'boss-mungchi', heroPos: 'tr', side: ['nom'], dark: true,
     ko: ['장난꾸러기 노놈 일당', '보스와<br><em>한판 승부!</em>'], en: ['Meet mischievous Nonom', 'Epic<br><em>boss battles!</em>'] },
   { id: 'map', bg: ['#ffb36b', '#ffd59e', '#fff3d6'], tilt: 0, hero: 'malang-joy', heroPos: 'bl', side: ['green-happy', 'blue-joy'], badge: ['30', '스테이지', 'STAGES'],
